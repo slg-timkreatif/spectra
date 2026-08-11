@@ -392,7 +392,6 @@
             }
         };
 
-        // PERBAIKAN: Animasi Loading Proses Login UX
         async function prosesLoginAdmin() {
             const inputKode = document.getElementById('kode-akses-admin').value.trim().toUpperCase();
             if (!inputKode) { 
@@ -403,7 +402,6 @@
             const btnLogin = document.getElementById('btn-login-admin');
             const originalBtnHTML = btnLogin.innerHTML;
             
-            // Ubah tombol ke state Loading
             btnLogin.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 18px; height: 18px;"></i> Memverifikasi...`;
             btnLogin.disabled = true;
             lucide.createIcons();
@@ -417,7 +415,6 @@
                     const profil = ADMIN_DATA.masterAkses.find(a => String(a.Kode_Akses).trim().toUpperCase() === inputKode && String(a.Peran).trim().toUpperCase() === "ADMIN");
                     
                     if (!profil) { 
-                        // Kembalikan tombol jika gagal
                         btnLogin.innerHTML = originalBtnHTML;
                         btnLogin.disabled = false;
                         lucide.createIcons();
@@ -428,12 +425,11 @@
                     adminAktif = profil; 
                     localStorage.setItem('spectra_admin_session', JSON.stringify(profil));
                     
-                    // Ubah tombol ke state Sukses Hijau
                     btnLogin.style.backgroundColor = 'var(--success)';
                     btnLogin.style.borderColor = 'var(--success)';
                     btnLogin.innerHTML = `<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Akses Diterima`;
                     btnLogin.disabled = false;
-                    btnLogin.style.pointerEvents = 'none'; // cegah double click
+                    btnLogin.style.pointerEvents = 'none';
                     lucide.createIcons();
                     
                     setTimeout(() => {
@@ -513,7 +509,6 @@
             } finally { 
                 document.getElementById('loading-overlay').style.display = 'none'; 
                 
-                // Menangkap kembali elemen DOM (untuk mengatasi issue elemen SVG terganti)
                 iconRefresh = document.getElementById('icon-refresh'); 
                 if(iconRefresh) iconRefresh.classList.remove('lucide-spin'); 
                 
@@ -594,7 +589,6 @@
 
             let list = Object.values(rekap);
             
-            // PERBAIKAN BUG STATUS: Jika belum ada nilai sama sekali (0 Juri), paksa status ke DRAFT/PROSES
             list.forEach(p => {
                 if (p.jmlJuri === 0) p.statusValidasi = "DRAFT";
             });
@@ -683,7 +677,6 @@
             let namaLomba = filterCabang.value ? filterCabang.options[filterCabang.selectedIndex].text : "Seluruh Cabang"; 
             let printWindow = window.open('', '', 'height=800,width=1000');
             
-            // SOLUSI: Meng-escape garis miring (\/) secara native di dalam literal 
             let htmlHTML = `<html><head><title>Cetak Laporan</title><style> body { font-family: 'Arial', sans-serif; padding: 20px; color: #000; } .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 20px; } table { width: 100%; border-collapse: collapse; margin-top: 15px; } th, td { border: 1px solid #000; padding: 10px; text-align: left; font-size: 13px; } th { background-color: #f0f0f0; text-align: center; text-transform: uppercase; } .center { text-align: center; } .right { text-align: right; } .bold { font-weight: bold; } .ttd-area { width: 100%; margin-top: 50px; display: table; } .ttd-box { display: table-cell; width: 33%; text-align: center; } @media print { @page { margin: 1.5cm; } button { display: none; } } </style></head><body> <div class="header"><h1>REKAPITULASI HASIL KEJUARAAN</h1><p><strong>Cabang Lomba:</strong> ${namaLomba}</p></div> <table><thead><tr><th>Peringkat</th><th>No. Undi</th><th>Nama Peserta</th><th>Asal Sekolah</th><th>Total Nilai</th></tr></thead><tbody>`;
             
             dataCetak.forEach(p => { 
@@ -700,7 +693,7 @@
             const idCabang = document.getElementById('filter-cabang-validasi').value; 
             const areaMatriks = document.getElementById('area-matriks');
             const containerValidasiSemua = document.getElementById('container-validasi-semua');
-            window.pesertaSiapValidasi = []; // reset array peserta siap disahkan
+            window.pesertaSiapValidasi = []; 
             
             if (!idCabang) { areaMatriks.style.display = 'none'; return; } 
             
@@ -718,16 +711,17 @@
             juriTugas.forEach((juri, idx) => { 
                 htmlHeader += `<th style="text-align:center;">Juri ${idx + 1} <br><span style="font-size:9px; font-weight:600; text-transform:none;">${juri.Nama_Petugas}</span></th>`; 
             }); 
-            htmlHeader += `<th style="text-align:right;">Validasi Sistem</th>`; 
+            htmlHeader += `<th style="text-align:center;">Total Nilai</th><th style="text-align:right;">Validasi Sistem</th>`; 
             headerRow.innerHTML = htmlHeader;
             
             let htmlBody = "";
             if (pesertaCabang.length === 0) { 
-                htmlBody = `<tr><td colspan="${juriTugas.length + 3}" style="text-align:center; padding: 30px;">Belum ada data peserta.</td></tr>`; 
+                htmlBody = `<tr><td colspan="${juriTugas.length + 4}" style="text-align:center; padding: 30px;">Belum ada data peserta.</td></tr>`; 
             } else {
                 pesertaCabang.forEach(peserta => {
                     let statusSelesai = true; 
                     let statusFinal = false; 
+                    let totalAkumulasi = 0;
                     
                     htmlBody += `<tr><td><span style="font-weight:800; font-size:16px; color:var(--accent);">${peserta.Nomor_Undian}</span></td><td><strong style="color:var(--text-main); display:block;">${peserta.Nama_Peserta}</strong><span style="font-size:12px; color:var(--text-muted);">${peserta.Asal_Sekolah}</span></td>`;
                     
@@ -738,18 +732,23 @@
                         );
                         
                         if (rekamJejak && parseInt(rekamJejak.Total) > 0) {
-                            htmlBody += `<td style="text-align:center;"><div class="status-badge status-done"><i data-lucide="check" style="width:18px;height:18px;"></i></div></td>`;
+                            totalAkumulasi += parseInt(rekamJejak.Total);
+                            htmlBody += `<td style="text-align:center;">
+                                <div style="font-weight:800; font-size:18px; color:var(--success);">${rekamJejak.Total}</div>
+                                <div style="font-size:10px; font-weight:700; color:var(--text-muted);"><i data-lucide="check-circle" style="width:10px;height:10px;display:inline-block;vertical-align:middle;"></i> Masuk</div>
+                            </td>`;
                             if (String(rekamJejak.Status_Validasi).trim().toUpperCase() === "FINAL") statusFinal = true;
                         } else {
-                            htmlBody += `<td style="text-align:center;"><div class="status-badge status-wait"><i data-lucide="clock" style="width:16px;height:16px;"></i></div></td>`;
+                            htmlBody += `<td style="text-align:center;"><div style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; background:#f1f5f9; color:#94a3b8; border:1px dashed #cbd5e1;"><i data-lucide="clock" style="width:14px;height:14px;"></i></div></td>`;
                             statusSelesai = false;
                         }
                     });
                     
-                    // Catat peserta yang nilainya sudah lengkap dari semua juri tapi belum divalidasi final
                     if(statusSelesai && !statusFinal) {
                         window.pesertaSiapValidasi.push(peserta.Nomor_Undian);
                     }
+                    
+                    htmlBody += `<td style="text-align:center;"><strong style="font-size:22px; color:var(--accent);">${totalAkumulasi}</strong></td>`;
                     
                     htmlBody += `<td style="text-align:right;">`;
                     if (statusFinal) {
@@ -764,7 +763,6 @@
             }
             bodyTabel.innerHTML = htmlBody; 
             
-            // Render Tombol Validasi Massal
             if (window.pesertaSiapValidasi.length > 0) {
                 containerValidasiSemua.innerHTML = `<button onclick="tindakValidasiSemua('${idCabang}')" class="btn-action btn-primary" style="margin:0; padding:10px 16px;"><i data-lucide="check-square"></i> Sahkan ${window.pesertaSiapValidasi.length} Peserta Selesai</button>`;
             } else {
@@ -798,7 +796,6 @@
             });
         }
         
-        // PERBAIKAN: Fungsi Tambahan Untuk Validasi Massal
         async function tindakValidasiSemua(idCabang) {
             let list = window.pesertaSiapValidasi || [];
             if(list.length === 0) return;
@@ -806,7 +803,6 @@
             showDialog('confirm', 'Validasi Massal', `Anda yakin ingin mengesahkan <strong>${list.length} peserta</strong> sekaligus? Tindakan ini akan mengunci nilai mereka.`, async function() {
                 showDialog('info', 'Memproses Massal...', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--primary);"></i><p>Mengunci nilai di server pusat...</p>'); 
                 
-                // Susun array payload untuk seluruh peserta yang siap
                 const payloadArray = list.map(noUndian => ({ ID_Cabang: idCabang, Nomor_Undian: noUndian }));
                 const payload = { action: "VALIDASI_OPERATOR", data: payloadArray };
                 
