@@ -16,9 +16,9 @@
         input[type="text"], input[type="number"] { width: 100%; padding: 14px 16px; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 1rem; box-sizing: border-box; margin-bottom: 15px; font-size: 14px; font-weight: 700; color: var(--text-main); transition: all 0.2s ease-out; outline: none; }
         input:focus { background-color: var(--bg-card); border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
         button { background-color: var(--primary); color: white; border: none; padding: 14px 16px; border-radius: 1rem; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
-        button:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        button:active { transform: scale(0.97); }
-        button:disabled { background-color: var(--border-color) !important; color: var(--text-muted) !important; transform: none !important; cursor: not-allowed; box-shadow: none; }
+        button:hover:not(:disabled) { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        button:active:not(:disabled) { transform: scale(0.97); }
+        button:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; pointer-events: none; }
         .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 600px; margin-top: 10px; }
         th, td { padding: 14px; text-align: center; border-bottom: 1px solid var(--border-color); }
@@ -52,6 +52,7 @@
 </head>
 <body>
 
+    <!-- DIALOG KOMPONEN -->
     <div id="custom-dialog" class="dialog-overlay">
         <div id="dialog-content-box" class="dialog-box dialog-confirm">
             <div id="dialog-icon-bg" class="dialog-icon-container"><i id="dialog-icon" data-lucide="info" style="width: 32px; height: 32px;"></i></div>
@@ -61,6 +62,7 @@
         </div>
     </div>
 
+    <!-- LOADING AWAL -->
     <div id="loading-overlay">
         <i data-lucide="loader-2" class="lucide-spin" style="width: 40px; height: 40px; color: var(--primary); margin-bottom: 15px;"></i>
         <h2 style="margin-bottom: 5px;">Menyiapkan Ruang Kerja...</h2>
@@ -69,15 +71,17 @@
 
     <div class="app-container">
         
+        <!-- PANEL LOGIN -->
         <div id="panel-login" class="bento-box hidden" style="max-width: 400px; margin: 10vh auto; text-align: center;">
             <div style="width: 60px; height: 60px; background: #dbeafe; color: #2563eb; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;"><i data-lucide="shield-check" style="width: 30px; height: 30px;"></i></div>
             <h2 style="margin-bottom: 5px;">Masuk ke SPECTRA</h2>
             <p class="desktop-subtitle" style="margin-bottom: 15px;">Sistem Penilaian Evaluasi Cepat Transparan Responsif Akurat</p>
             <p style="margin-bottom: 25px;">Masukkan Kode Akses dari panitia.</p>
             <input type="text" id="kode-akses" placeholder="Contoh: MACAPAT-J1" style="text-align: center; text-transform: uppercase; letter-spacing: 2px;">
-            <button onclick="prosesLogin()" class="flex-center"><i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Mulai Bertugas</button>
+            <button id="btn-login-juri" onclick="prosesLogin()" class="flex-center"><i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Mulai Bertugas</button>
         </div>
 
+        <!-- PANEL JURI -->
         <div id="panel-juri" class="hidden">
             <div class="bento-box" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
@@ -105,6 +109,7 @@
             </div>
         </div>
 
+        <!-- PANEL OPERATOR -->
         <div id="panel-operator" class="hidden">
             <div class="bento-box" style="margin-bottom: 16px; border-left: 6px solid var(--warning); display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
@@ -125,12 +130,14 @@
             </div>
         </div>
 
+        <!-- FOOTER -->
         <div style="text-align: center; padding: 20px; font-size: 11px; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-top: auto;">
             &copy; Tim Kreatif Selogiri
         </div>
 
     </div>
 
+    <!-- ACTION BAR BAWAH -->
     <div id="action-bar" class="sticky-action-bar hidden">
         <div class="action-container-inner">
             <button onclick="simpanDraftManual()" style="background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); flex: 1;">
@@ -142,15 +149,14 @@
         </div>
     </div>
 
+    <!-- LOGIKA JAVASCRIPT -->
     <script>
         // ⚠️ GANTI DENGAN URL API ANDA !!!
         const API_URL = "https://script.google.com/macros/s/AKfycbwk8EcYFqyriFF_V4IoCRpFnDeh5wcdIqE1I-5juRPyHUGE7V7tS2OGQpWrr7Ebyp4Lug/exec"; 
         
         let SPECTRA_DATA = {}; let userAktif = null; let kriteriaLomba = []; let statusTerkunci = false; 
 
-        function closeDialog() {
-            document.getElementById('custom-dialog').classList.remove('active');
-        }
+        function closeDialog() { document.getElementById('custom-dialog').classList.remove('active'); }
 
         function showDialog(type, title, message, onConfirmCallback = null) {
             const overlay = document.getElementById('custom-dialog'); const box = document.getElementById('dialog-content-box');
@@ -187,35 +193,53 @@
                         else if (userAktif.Peran.toUpperCase() === "OPERATOR") siapkanPanelOperator();
                     } else { document.getElementById('panel-login').classList.remove('hidden'); }
                 }
-            } catch (error) { showDialog('error', 'Koneksi Terputus', 'Gagal terhubung ke server.'); }
+            } catch (error) { 
+                document.getElementById('loading-overlay').style.display = 'none';
+                showDialog('error', 'Koneksi Terputus', 'Gagal terhubung ke server. Harap muat ulang halaman.'); 
+            }
             lucide.createIcons(); if(userAktif) sinkronisasiOtomatis();
         };
 
-        // ANIMASI PROSES LOGIN JURI
-        function prosesLogin() {
+        // PERBAIKAN: Animasi Login Juri Setara Admin
+        async function prosesLogin() {
             const inputKode = document.getElementById('kode-akses').value.trim().toUpperCase();
             if (!inputKode) { showDialog('warning', 'Kode Kosong', 'Masukkan kode akses terlebih dahulu!'); return; }
             
-            showDialog('info', 'Memverifikasi...', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--primary);"></i><p>Mencocokkan data petugas...</p>');
+            const btnLogin = document.getElementById('btn-login-juri');
+            const originalHTML = btnLogin.innerHTML;
             
+            // Ubah tombol ke state Loading
+            btnLogin.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 18px; height: 18px;"></i> Memverifikasi...`;
+            btnLogin.disabled = true;
+            lucide.createIcons();
+            
+            // Simulasi pengecekan sesaat untuk transisi halus
             setTimeout(() => {
                 const profil = SPECTRA_DATA.masterAkses.find(a => String(a.Kode_Akses).trim().toUpperCase() === inputKode);
-                if (!profil) { showDialog('error', 'Akses Ditolak', 'Kode akses tidak valid atau tidak terdaftar!'); return; }
+                if (!profil) { 
+                    btnLogin.innerHTML = originalHTML;
+                    btnLogin.disabled = false;
+                    lucide.createIcons();
+                    showDialog('error', 'Akses Ditolak', 'Kode akses tidak valid atau tidak terdaftar!'); 
+                    return; 
+                }
                 
                 userAktif = profil; localStorage.setItem('spectra_session', JSON.stringify(profil));
-                showDialog('success', 'Berhasil Masuk', 'Selamat bertugas, ' + profil.Nama_Petugas + '!');
+                
+                // Ubah tombol ke Sukses
+                btnLogin.style.backgroundColor = 'var(--success)';
+                btnLogin.innerHTML = `<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Akses Diterima`;
+                lucide.createIcons();
                 
                 setTimeout(() => {
-                    closeDialog();
                     document.getElementById('panel-login').classList.add('hidden');
                     if (profil.Peran.toUpperCase() === "JURI") siapkanPanelJuri();
                     else if (profil.Peran.toUpperCase() === "OPERATOR") siapkanPanelOperator();
                     lucide.createIcons();
-                }, 1500);
-            }, 1000);
+                }, 1000);
+            }, 800);
         }
 
-        // ANIMASI PROSES LOGOUT JURI
         function prosesLogout() { 
             showDialog('confirm', 'Konfirmasi Keluar', 'Anda yakin ingin keluar dari sistem? Draft lokal Anda akan tetap aman tersimpan.', function() { 
                 showDialog('info', 'Keluar Sistem', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--danger);"></i><p>Menutup sesi aman Anda...</p>');
@@ -362,6 +386,7 @@
             setTimeout(() => { btn.innerHTML = teksAsli; btn.style.backgroundColor = "var(--input-bg)"; btn.style.borderColor = "var(--border-color)"; lucide.createIcons(); }, 2000);
         }
 
+        // PERBAIKAN: Animasi Proses Tombol Saat Sinkronisasi
         function simpanNilaiLuring() {
             const pesertaTabel = SPECTRA_DATA.masterPeserta.filter(p => p.ID_Cabang === userAktif.Tugas_ID_Cabang); let payloadData = [];
             pesertaTabel.forEach(p => {
@@ -384,25 +409,85 @@
             const finalPayload = { action: "SUBMIT_NILAI", data: payloadData };
 
             const btn = document.getElementById('btn-kirim');
-            btn.innerHTML = `<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Terkirim`; btn.style.backgroundColor = "var(--success)"; btn.disabled = true; lucide.createIcons();
-            localStorage.removeItem('spectra_draft_ui_' + userAktif.Kode_Akses); localStorage.setItem('spectra_pending_submit_' + userAktif.Kode_Akses, JSON.stringify(finalPayload));
+            // Ganti ke State Sinkronisasi Aktif
+            btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 18px; height: 18px;"></i> Menyinkronkan...`; 
+            btn.style.backgroundColor = "var(--warning)"; 
+            btn.style.color = "#000";
+            btn.disabled = true; 
+            lucide.createIcons();
 
-            if (navigator.onLine) { kirimKeServerBackground(finalPayload); } 
-            else { showDialog('warning', 'Sedang Luring', 'Koneksi terputus. Data akan dikirim otomatis di latar belakang saat sinyal kembali.'); window.addEventListener('online', sinkronisasiOtomatis); }
+            localStorage.removeItem('spectra_draft_ui_' + userAktif.Kode_Akses); 
+            localStorage.setItem('spectra_pending_submit_' + userAktif.Kode_Akses, JSON.stringify(finalPayload));
+
+            if (navigator.onLine) { 
+                kirimKeServerBackground(finalPayload); 
+            } else { 
+                btn.innerHTML = `<i data-lucide="wifi-off" style="width: 18px; height: 18px;"></i> Tertunda (Offline)`; 
+                btn.style.backgroundColor = "var(--border-color)";
+                btn.style.color = "var(--text-main)";
+                lucide.createIcons();
+                showDialog('warning', 'Sedang Luring (Offline)', 'Koneksi internet terputus. Jangan tutup halaman ini, data akan dikirim otomatis di latar belakang saat sinyal Anda kembali.'); 
+                window.addEventListener('online', sinkronisasiOtomatis); 
+            }
         }
 
         async function kirimKeServerBackground(payload) {
             try {
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); const result = await response.json();
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                const result = await response.json();
+                const btn = document.getElementById('btn-kirim');
+                
                 if(result.status === "success") {
                     localStorage.removeItem('spectra_pending_submit_' + userAktif.Kode_Akses);
-                    setTimeout(() => { const btn = document.getElementById('btn-kirim'); if(btn && !statusTerkunci) { btn.innerHTML = `<i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i> Update Nilai Server`; btn.disabled = false; btn.style.backgroundColor = "var(--primary)"; lucide.createIcons(); } }, 3000);
-                } else { showDialog('error', 'Gagal Tersimpan', result.message); revertKirimBtn(); }
-            } catch (error) {}
+                    if(btn && !statusTerkunci) { 
+                        // State Sukses
+                        btn.innerHTML = `<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Terkirim ke Server`;
+                        btn.style.backgroundColor = "var(--success)";
+                        btn.style.color = "#fff";
+                        lucide.createIcons();
+                        
+                        setTimeout(() => { 
+                            btn.innerHTML = `<i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i> Update Nilai Server`; 
+                            btn.disabled = false; 
+                            btn.style.backgroundColor = "var(--primary)"; 
+                            lucide.createIcons(); 
+                        }, 3000);
+                    }
+                } else { 
+                    showDialog('error', 'Gagal Tersimpan', result.message); 
+                    revertKirimBtn(); 
+                }
+            } catch (error) {
+                revertKirimBtn();
+                showDialog('error', 'Koneksi Gagal', 'Data masih tersimpan di draft lokal. Harap periksa jaringan Anda dan coba klik "Kirim" lagi.');
+            }
         }
 
-        function revertKirimBtn() { const btn = document.getElementById('btn-kirim'); if(btn && !statusTerkunci) { btn.innerHTML = `<i data-lucide="send" style="width: 18px; height: 18px;"></i> Kirim Ulang Nilai`; btn.disabled = false; btn.style.backgroundColor = "var(--primary)"; lucide.createIcons(); } }
-        function sinkronisasiOtomatis() { const pendingPayload = localStorage.getItem('spectra_pending_submit_' + userAktif.Kode_Akses); if (pendingPayload) { kirimKeServerBackground(JSON.parse(pendingPayload)); window.removeEventListener('online', sinkronisasiOtomatis); } }
+        function revertKirimBtn() { 
+            const btn = document.getElementById('btn-kirim'); 
+            if(btn && !statusTerkunci) { 
+                btn.innerHTML = `<i data-lucide="send" style="width: 18px; height: 18px;"></i> Kirim Ulang Nilai`; 
+                btn.disabled = false; 
+                btn.style.backgroundColor = "var(--primary)"; 
+                btn.style.color = "#fff";
+                lucide.createIcons(); 
+            } 
+        }
+        
+        function sinkronisasiOtomatis() { 
+            const pendingPayload = localStorage.getItem('spectra_pending_submit_' + userAktif.Kode_Akses); 
+            if (pendingPayload) { 
+                const btn = document.getElementById('btn-kirim');
+                if (btn) {
+                    btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 18px; height: 18px;"></i> Sinyal Kembali. Menyinkronkan...`; 
+                    btn.style.backgroundColor = "var(--warning)"; 
+                    btn.style.color = "#000";
+                    lucide.createIcons();
+                }
+                kirimKeServerBackground(JSON.parse(pendingPayload)); 
+                window.removeEventListener('online', sinkronisasiOtomatis); 
+            } 
+        }
     </script>
 </body>
 </html>
