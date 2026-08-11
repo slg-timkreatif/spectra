@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPECTRA Admin - Pusat Komando</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -11,45 +12,57 @@
     <style>
         :root { --bg-body: #f8fafc; --bg-card: #ffffff; --primary: #0f172a; --primary-hover: #1e293b; --accent: #2563eb; --text-main: #1e293b; --text-muted: #64748b; --border-color: #e2e8f0; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
         .mobile-header { display: flex; padding: 15px 20px; background: var(--bg-card); border-bottom: 1px solid var(--border-color); align-items: center; justify-content: space-between; z-index: 900; position: relative; }
         .btn-hamburger { background: transparent; color: var(--text-main); padding: 8px; width: auto; box-shadow: none; border: none; cursor: pointer; border-radius: 8px; }
         .btn-hamburger:hover { background: #f1f5f9; }
+
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); z-index: 998; opacity: 0; pointer-events: none; transition: 0.3s; }
         .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+
         .sidebar { position: fixed; top: 0; left: -100%; height: 100vh; width: 280px; background: var(--bg-card); padding: 24px; display: flex; flex-direction: column; align-items: stretch; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 999; box-shadow: 5px 0 25px rgba(0,0,0,0.1); overflow-y: auto; }
         .sidebar.open { left: 0; }
         .sidebar-header { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
         .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+        
         .nav-btn { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; border: none; background: transparent; color: var(--text-muted); font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s; text-align: left; }
         .nav-btn:hover { background: #f1f5f9; color: var(--text-main); }
         .nav-btn.active { background: var(--primary); color: white; }
+        
         .main-content { flex: 1; padding: 15px; overflow-y: auto; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='40' viewBox='0 0 100 40'%3E%3Cpath d='M0,20 Q25,0 50,20 T100,20' fill='none' stroke='%23cbd5e1' stroke-width='1' stroke-opacity='0.4'/%3E%3C/svg%3E"); }
         .bento-box { background: var(--bg-card); border-radius: 1.5rem; border: 1px solid var(--border-color); padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; }
+        
         h1, h2, h3 { margin-top: 0; font-weight: 800; letter-spacing: -0.02em; }
         p { color: var(--text-muted); font-weight: 500; font-size: 14px; margin-bottom: 0; }
+        
         .summary-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 24px; }
         .stat-card { background: var(--bg-card); border-radius: 1.5rem; padding: 20px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px; }
         .stat-icon { width: 50px; height: 50px; border-radius: 1rem; display: flex; align-items: center; justify-content: center; }
         .stat-val { font-size: 24px; font-weight: 800; margin: 0; line-height: 1; }
         .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        
         .filter-group { display: flex; gap: 15px; margin-bottom: 20px; flex-direction: column; }
         select, input[type="text"] { width: 100%; padding: 14px 16px; background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: 1rem; font-size: 14px; font-weight: 700; color: var(--text-main); outline: none; transition: 0.2s; box-sizing: border-box; }
         select:focus, input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); background: white; }
+        
         .table-wrapper { overflow-x: auto; margin-top: 10px; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 800px; }
         th, td { padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         th { background-color: var(--bg-body); font-weight: 800; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
         th:first-child { border-top-left-radius: 1rem; border-bottom-left-radius: 1rem; }
         th:last-child { border-top-right-radius: 1rem; border-bottom-right-radius: 1rem; }
+        
         .status-badge { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; font-weight: bold; font-size: 14px; }
         .status-wait { background: #f1f5f9; color: #94a3b8; border: 1px dashed #cbd5e1; }
         .status-done { background: #d1fae5; color: var(--success); border: 1px solid #a7f3d0; }
         .badge-text { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; }
         .bg-final { background: #dbeafe; color: var(--accent); }
         .bg-draft { background: #fee2e2; color: var(--danger); }
+        
         .medal-1 { background: #fef08a; color: #854d0e; border: 1px solid #fde047; } 
         .medal-2 { background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; } 
         .medal-3 { background: #fed7aa; color: #9a3412; border: 1px solid #fdba74; } 
+        
         .btn-action { padding: 10px 16px; border-radius: 10px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; width: 100%; margin-bottom: 8px; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); }
@@ -61,19 +74,24 @@
         .btn-print:hover { background: #059669; transform: translateY(-2px); }
         .btn-excel { background: #ecfdf5; color: #059669; border: 1px solid #10b981; }
         .btn-excel:hover { background: #d1fae5; transform: translateY(-2px); }
+        
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(20px); }
+        
         .panel { display: none; animation: fadeIn 0.3s; }
         .panel.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         #loading-overlay { position: fixed; inset: 0; background: rgba(248, 250, 252, 0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; flex-direction: column; }
         .lucide-spin { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+        
         #login-overlay { position: fixed; inset: 0; background: var(--bg-body); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='40' viewBox='0 0 100 40'%3E%3Cpath d='M0,20 Q25,0 50,20 T100,20' fill='none' stroke='%23cbd5e1' stroke-width='1' stroke-opacity='0.4'/%3E%3C/svg%3E"); display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 15px; }
+        
         .dialog-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s ease-out; padding: 15px; }
         .dialog-overlay.active { opacity: 1; pointer-events: auto; }
         .dialog-box { background: var(--bg-card); width: 100%; max-width: 320px; border-radius: 1.5rem; padding: 24px; text-align: center; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); transform: scale(0.95) translateY(15px); transition: all 0.25s; }
@@ -84,8 +102,10 @@
         .dialog-error .dialog-icon-container { background: #fee2e2; color: var(--danger); border-color: #fecaca; }
         .dialog-warning .dialog-icon-container { background: #fef3c7; color: var(--warning); border-color: #fde68a; }
         .dialog-confirm .dialog-icon-container { background: #dbeafe; color: var(--accent); border-color: #bfdbfe; }
+
         .desktop-subtitle { display: none; }
         .mobile-subtitle { display: block; }
+        
         @media (min-width: 768px) {
             body { flex-direction: row; }
             .mobile-header { display: none; }
@@ -104,26 +124,34 @@
 </head>
 <body>
 
+    <!-- DIALOG KUSTOM -->
     <div id="custom-dialog" class="dialog-overlay">
         <div id="dialog-content-box" class="dialog-box dialog-confirm">
-            <div id="dialog-icon-bg" class="dialog-icon-container"><i id="dialog-icon" data-lucide="info" style="width: 32px; height: 32px;"></i></div>
+            <div id="dialog-icon-bg" class="dialog-icon-container">
+                <i id="dialog-icon" data-lucide="info" style="width: 32px; height: 32px;"></i>
+            </div>
             <h3 id="dialog-title" style="margin-bottom: 8px;">Judul</h3>
-            <p id="dialog-msg" style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">Pesan</p>
+            <div id="dialog-msg" style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">Pesan</div>
             <div id="dialog-actions" class="dialog-actions"></div>
         </div>
     </div>
 
-    <!-- Layar Login Admin -->
+    <!-- OVERLAY LOGIN ADMIN -->
     <div id="login-overlay">
         <div class="bento-box" style="width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);">
-            <div style="width: 60px; height: 60px; background: #1e293b; color: white; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;"><i data-lucide="shield-check" style="width: 30px; height: 30px;"></i></div>
+            <div style="width: 60px; height: 60px; background: #1e293b; color: white; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <i data-lucide="shield-check" style="width: 30px; height: 30px;"></i>
+            </div>
             <h2 style="margin-bottom: 5px;">Pusat Komando</h2>
             <p style="margin-bottom: 25px;">Masukkan Kode Akses Administrator.</p>
             <input type="text" id="kode-akses-admin" placeholder="Kode Akses Admin" style="text-align: center; text-transform: uppercase; letter-spacing: 2px;">
-            <button onclick="prosesLoginAdmin()" class="btn-action btn-primary" style="width: 100%; padding: 14px;"><i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Buka Sistem</button>
+            <button onclick="prosesLoginAdmin()" class="btn-action btn-primary" style="width: 100%; padding: 14px;">
+                <i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Buka Sistem
+            </button>
         </div>
     </div>
 
+    <!-- OVERLAY LOADING GLOBAL -->
     <div id="loading-overlay" style="display: none;">
         <i data-lucide="loader-2" class="lucide-spin" style="width: 40px; height: 40px; color: var(--accent); margin-bottom: 15px;"></i>
         <h2 style="margin-bottom: 5px;">Menyiapkan Ruang Kontrol...</h2>
@@ -133,7 +161,9 @@
     <!-- HEADER MOBILE -->
     <div class="mobile-header" id="mobile-header">
         <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="background: var(--primary); color: white; padding: 6px; border-radius: 8px;"><i data-lucide="shield-check" style="width:20px; height:20px;"></i></div>
+            <div style="background: var(--primary); color: white; padding: 6px; border-radius: 8px;">
+                <i data-lucide="shield-check" style="width:20px; height:20px;"></i>
+            </div>
             <h2 style="margin: 0; font-size: 18px; font-weight: 800;">SPECTRA</h2>
         </div>
         <button class="btn-hamburger" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
@@ -142,7 +172,7 @@
     <!-- OVERLAY SIDEBAR -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- Sidebar Admin -->
+    <!-- SIDEBAR ADMIN -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div style="background: var(--primary); color: white; padding: 10px; border-radius: 12px;"><i data-lucide="shield-check"></i></div>
@@ -160,12 +190,14 @@
         
         <div class="sidebar-footer">
             <p id="admin-name-display" style="font-size: 12px; font-weight: bold; margin: 0 0 10px 0; padding: 0 10px;"></p>
-            <button onclick="prosesLogoutAdmin()" class="nav-btn" style="color: var(--danger); width: 100%; justify-content: center; background: #fee2e2;"><i data-lucide="log-out"></i> Keluar</button>
+            <button onclick="prosesLogoutAdmin()" class="nav-btn" style="color: var(--danger); width: 100%; justify-content: center; background: #fee2e2;">
+                <i data-lucide="log-out"></i> Keluar
+            </button>
             <div style="text-align: center; font-size: 10px; font-weight: 800; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 15px;">&copy; Tim Kreatif Selogiri</div>
         </div>
     </div>
 
-    <!-- Area Kerja Utama -->
+    <!-- KONTEN UTAMA -->
     <div class="main-content">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; flex-wrap:wrap; gap:15px;">
             <div>
@@ -177,24 +209,42 @@
                     <span style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Mode Proyektor</span>
                     <label class="switch"><input type="checkbox" id="toggle-autorefresh" onchange="toggleAutoRefresh(this)"><span class="slider"></span></label>
                 </div>
-                <button onclick="tarikDataServer()" class="btn-action btn-outline" style="padding: 10px 16px;"><i data-lucide="refresh-cw" id="icon-refresh"></i> Segarkan Data</button>
+                <button onclick="tarikDataServer()" class="btn-action btn-outline" style="padding: 10px 16px;">
+                    <i data-lucide="refresh-cw" id="icon-refresh"></i> Segarkan Data
+                </button>
             </div>
         </div>
 
-        <!-- PANEL KEJUARAAN -->
+        <!-- PANEL 1: KEJUARAAN -->
         <div id="panel-kejuaraan" class="panel active">
             <div class="summary-grid">
-                <div class="stat-card"><div class="stat-icon" style="background: #e0e7ff; color: #2563eb;"><i data-lucide="users"></i></div><div><p class="stat-label">Total Peserta</p><p class="stat-val" id="stat-total">0</p></div></div>
-                <div class="stat-card"><div class="stat-icon" style="background: #d1fae5; color: #10b981;"><i data-lucide="check-square"></i></div><div><p class="stat-label">Selesai Dinilai</p><p class="stat-val" id="stat-selesai">0</p></div></div>
-                <div class="stat-card"><div class="stat-icon" style="background: #fee2e2; color: #ef4444;"><i data-lucide="clock"></i></div><div><p class="stat-label">Dalam Proses</p><p class="stat-val" id="stat-proses">0</p></div></div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #e0e7ff; color: #2563eb;"><i data-lucide="users"></i></div>
+                    <div><p class="stat-label">Total Peserta</p><p class="stat-val" id="stat-total">0</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #d1fae5; color: #10b981;"><i data-lucide="check-square"></i></div>
+                    <div><p class="stat-label">Selesai Dinilai</p><p class="stat-val" id="stat-selesai">0</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #fee2e2; color: #ef4444;"><i data-lucide="clock"></i></div>
+                    <div><p class="stat-label">Dalam Proses</p><p class="stat-val" id="stat-proses">0</p></div>
+                </div>
             </div>
 
             <div class="bento-box">
                 <h3 style="margin-bottom: 15px; font-size: 16px;">Filter & Urutkan Tabel</h3>
                 <div class="filter-group">
-                    <select id="filter-cabang-kejuaraan" onchange="renderKejuaraan()"><option value="">-- Semua Cabang Lomba --</option></select>
-                    <select id="filter-kategori-kejuaraan" onchange="renderKejuaraan()"><option value="">-- Semua Kategori --</option></select>
-                    <select id="sort-kejuaraan" onchange="renderKejuaraan()" style="background-color: #eff6ff; border-color: #bfdbfe; color: var(--accent);"><option value="peringkat">Urutkan: Peringkat Tertinggi</option><option value="undian">Urutkan: Nomor Undian</option></select>
+                    <select id="filter-cabang-kejuaraan" onchange="renderKejuaraan()">
+                        <option value="">-- Semua Cabang Lomba --</option>
+                    </select>
+                    <select id="filter-kategori-kejuaraan" onchange="renderKejuaraan()">
+                        <option value="">-- Semua Kategori --</option>
+                    </select>
+                    <select id="sort-kejuaraan" onchange="renderKejuaraan()" style="background-color: #eff6ff; border-color: #bfdbfe; color: var(--accent);">
+                        <option value="peringkat">Urutkan: Peringkat Tertinggi</option>
+                        <option value="undian">Urutkan: Nomor Undian</option>
+                    </select>
                 </div>
             </div>
 
@@ -209,212 +259,434 @@
                 </div>
                 <div class="table-wrapper">
                     <table>
-                        <thead><tr><th style="width: 60px; text-align: center;">Peringkat</th><th>No. Undi</th><th>Nama Peserta</th><th>Asal Sekolah</th><th style="text-align: center;">Jumlah Juri</th><th style="text-align: right;">Total Nilai</th><th style="text-align: center;">Status</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px; text-align: center;">Peringkat</th>
+                                <th>No. Undi</th>
+                                <th>Nama Peserta</th>
+                                <th>Asal Sekolah</th>
+                                <th style="text-align: center;">Jumlah Juri</th>
+                                <th style="text-align: right;">Total Nilai</th>
+                                <th style="text-align: center;">Status</th>
+                            </tr>
+                        </thead>
                         <tbody id="tabel-kejuaraan-body"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- PANEL VALIDASI -->
+        <!-- PANEL 2: VALIDASI -->
         <div id="panel-validasi" class="panel">
             <div class="bento-box">
                 <h3 style="margin-bottom: 15px; font-size: 16px;">Pilih Ruang Lomba</h3>
-                <select id="filter-cabang-validasi" onchange="renderMatriksValidasi()"><option value="">-- Silakan Pilih Cabang Lomba --</option></select>
+                <select id="filter-cabang-validasi" onchange="renderMatriksValidasi()">
+                    <option value="">-- Silakan Pilih Cabang Lomba --</option>
+                </select>
             </div>
             <div class="bento-box" id="area-matriks" style="display: none;">
-                <h3 style="margin-bottom: 5px;">Matriks Keterisian</h3><p id="info-jumlah-juri">Menampilkan status penilaian juri.</p>
+                <h3 style="margin-bottom: 5px;">Matriks Keterisian</h3>
+                <p id="info-jumlah-juri">Menampilkan status penilaian juri.</p>
                 <div class="table-wrapper">
-                    <table><thead><tr id="tabel-validasi-header"></tr></thead><tbody id="tabel-validasi-body"></tbody></table>
+                    <table>
+                        <thead><tr id="tabel-validasi-header"></tr></thead>
+                        <tbody id="tabel-validasi-body"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- PANEL DAFTAR AKSES -->
+        <!-- PANEL 3: DAFTAR AKSES -->
         <div id="panel-akses" class="panel">
             <div class="bento-box">
                 <h3 style="margin-bottom: 15px;">Kunci Akses Petugas & Juri</h3>
                 <p style="margin-bottom: 20px;">Gunakan tabel ini jika ada juri yang lupa kode masuk mereka.</p>
                 <input type="text" id="cari-akses" placeholder="Ketik nama juri atau cabang..." onkeyup="renderAkses()" style="max-width: 400px; margin-bottom: 10px;">
                 <div class="table-wrapper">
-                    <table><thead><tr><th>Nama Petugas</th><th>Peran</th><th>Cabang Tugas</th><th>Kode Akses</th></tr></thead><tbody id="tabel-akses-body"></tbody></table>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nama Petugas</th>
+                                <th>Peran</th>
+                                <th>Cabang Tugas</th>
+                                <th>Kode Akses</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabel-akses-body"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- LOGIKA JAVASCRIPT -->
     <script>
         // ⚠️ GANTI DENGAN URL API ANDA !!!
         const API_URL = "https://script.google.com/macros/s/AKfycbwk8EcYFqyriFF_V4IoCRpFnDeh5wcdIqE1I-5juRPyHUGE7V7tS2OGQpWrr7Ebyp4Lug/exec"; 
         
-        let ADMIN_DATA = {}; let kejuaraanAktif = []; let adminAktif = null; let autoRefreshInterval = null;
+        let ADMIN_DATA = {}; 
+        let kejuaraanAktif = []; 
+        let adminAktif = null; 
+        let autoRefreshInterval = null;
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');
             document.getElementById('sidebar-overlay').classList.toggle('open');
         }
 
+        function closeDialog() {
+            document.getElementById('custom-dialog').classList.remove('active');
+        }
+
         function showDialog(type, title, message, onConfirmCallback = null) {
-            const overlay = document.getElementById('custom-dialog'); const box = document.getElementById('dialog-content-box');
-            document.getElementById('dialog-title').innerText = title; document.getElementById('dialog-msg').innerText = message;
+            const overlay = document.getElementById('custom-dialog'); 
+            const box = document.getElementById('dialog-content-box');
+            
+            document.getElementById('dialog-title').innerText = title; 
+            document.getElementById('dialog-msg').innerHTML = message;
             box.className = `dialog-box dialog-${type}`;
-            let iconName = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-triangle' : type === 'warning' ? 'alert-circle' : 'help-circle';
+            
+            let iconName = 'help-circle';
+            if(type === 'success') iconName = 'check-circle';
+            else if(type === 'error') iconName = 'alert-triangle';
+            else if(type === 'warning') iconName = 'alert-circle';
+            else if(type === 'info') iconName = 'info';
+            
             document.getElementById('dialog-icon').setAttribute('data-lucide', iconName);
             const actions = document.getElementById('dialog-actions');
+            
             if (type === 'confirm') {
-                actions.innerHTML = `<button id="btn-dialog-cancel" style="padding:10px; border-radius:10px; background:var(--bg-body); color:var(--text-muted); border:1px solid var(--border-color); flex:1; font-weight:700; cursor:pointer;">Batal</button><button id="btn-dialog-ok" style="padding:10px; border-radius:10px; background:var(--accent); color:white; border:none; flex:1; font-weight:700; cursor:pointer;">Ya, Lanjutkan</button>`;
-                document.getElementById('btn-dialog-cancel').onclick = () => overlay.classList.remove('active');
-                document.getElementById('btn-dialog-ok').onclick = () => { overlay.classList.remove('active'); if(onConfirmCallback) onConfirmCallback(); };
+                actions.innerHTML = `
+                    <button id="btn-dialog-cancel" style="padding:10px; border-radius:10px; background:var(--bg-body); color:var(--text-muted); border:1px solid var(--border-color); flex:1; font-weight:700; cursor:pointer;">Batal</button>
+                    <button id="btn-dialog-ok" style="padding:10px; border-radius:10px; background:var(--accent); color:white; border:none; flex:1; font-weight:700; cursor:pointer;">Ya, Lanjutkan</button>`;
+                document.getElementById('btn-dialog-cancel').onclick = () => closeDialog();
+                document.getElementById('btn-dialog-ok').onclick = () => { closeDialog(); if(onConfirmCallback) onConfirmCallback(); };
+            } else if (type === 'info') {
+                actions.innerHTML = ''; 
             } else {
                 let btnColor = type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--danger)' : 'var(--accent)';
-                actions.innerHTML = `<button id="btn-dialog-ok" style="padding:10px; width:100%; border-radius:10px; background:${btnColor}; color:white; border:none; font-weight:700; cursor:pointer;">Mengerti</button>`;
-                document.getElementById('btn-dialog-ok').onclick = () => overlay.classList.remove('active');
+                actions.innerHTML = `
+                    <button id="btn-dialog-ok" style="padding:10px; width:100%; border-radius:10px; background:${btnColor}; color:white; border:none; font-weight:700; cursor:pointer;">Mengerti</button>`;
+                document.getElementById('btn-dialog-ok').onclick = () => closeDialog();
             }
             lucide.createIcons(); overlay.classList.add('active');
         }
 
         window.onload = async function() {
-            lucide.createIcons(); const sesiAdmin = localStorage.getItem('spectra_admin_session');
+            lucide.createIcons(); 
+            const sesiAdmin = localStorage.getItem('spectra_admin_session');
             if (sesiAdmin) {
-                adminAktif = JSON.parse(sesiAdmin); document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('admin-name-display').innerText = `Sesi Aktif: ${adminAktif.Nama_Petugas}`; await tarikDataServer();
+                adminAktif = JSON.parse(sesiAdmin); 
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('admin-name-display').innerText = `Sesi Aktif: ${adminAktif.Nama_Petugas}`; 
+                await tarikDataServer();
             }
         };
 
         async function prosesLoginAdmin() {
             const inputKode = document.getElementById('kode-akses-admin').value.trim().toUpperCase();
-            if (!inputKode) { showDialog('warning','Kode Kosong','Masukkan kode akses admin!'); return; }
-            document.getElementById('loading-overlay').style.display = 'flex';
+            if (!inputKode) { 
+                showDialog('warning','Kode Kosong','Masukkan kode akses admin!'); 
+                return; 
+            }
+            
+            showDialog('info', 'Memverifikasi Akses', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--accent);"></i><p>Menghubungkan ke server pusat...</p>');
+            
             try {
-                const response = await fetch(API_URL); const hasil = await response.json();
+                const response = await fetch(API_URL); 
+                const hasil = await response.json();
+                
                 if(hasil.status === "success") {
                     ADMIN_DATA = hasil;
                     const profil = ADMIN_DATA.masterAkses.find(a => String(a.Kode_Akses).trim().toUpperCase() === inputKode && String(a.Peran).trim().toUpperCase() === "ADMIN");
-                    if (!profil) { showDialog('error','Ditolak',"Kode akses bukan Administrator."); return; }
-                    adminAktif = profil; localStorage.setItem('spectra_admin_session', JSON.stringify(profil));
-                    document.getElementById('login-overlay').style.display = 'none'; document.getElementById('admin-name-display').innerText = `Sesi Aktif: ${adminAktif.Nama_Petugas}`;
-                    isiDropdown(); renderKejuaraan(); renderAkses();
-                } else { showDialog('error','Error', hasil.message); }
-            } catch (error) { showDialog('error','Gagal Jaringan',"Gagal menghubungi server."); } 
-            finally { document.getElementById('loading-overlay').style.display = 'none'; }
+                    
+                    if (!profil) { 
+                        showDialog('error','Akses Ditolak',"Kode akses tidak terdaftar sebagai Administrator."); 
+                        return; 
+                    }
+                    
+                    adminAktif = profil; 
+                    localStorage.setItem('spectra_admin_session', JSON.stringify(profil));
+                    showDialog('success', 'Akses Diterima', 'Selamat bertugas, ' + adminAktif.Nama_Petugas + '!');
+                    
+                    setTimeout(() => {
+                        closeDialog();
+                        document.getElementById('login-overlay').style.display = 'none'; 
+                        document.getElementById('admin-name-display').innerText = `Sesi Aktif: ${adminAktif.Nama_Petugas}`;
+                        isiDropdown(); 
+                        renderKejuaraan(); 
+                        renderAkses();
+                    }, 1500);
+
+                } else { 
+                    showDialog('error','Error', hasil.message); 
+                }
+            } catch (error) { 
+                showDialog('error','Gagal Jaringan',"Gagal menghubungi server. Periksa internet Anda."); 
+            } 
         }
 
-        function prosesLogoutAdmin() { showDialog('confirm', 'Keluar Sistem', 'Keluar dari panel administrator?', () => { localStorage.removeItem('spectra_admin_session'); window.location.reload(); }); }
+        function prosesLogoutAdmin() { 
+            showDialog('confirm', 'Keluar Sistem', 'Apakah Anda yakin ingin keluar dari panel Administrator?', () => { 
+                showDialog('info', 'Menutup Sesi', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--danger);"></i><p>Menghapus sesi aman Anda...</p>');
+                setTimeout(() => {
+                    localStorage.removeItem('spectra_admin_session'); 
+                    window.location.reload(); 
+                }, 1500);
+            }); 
+        }
 
         function switchPanel(panelName, btnElement) {
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active')); btnElement.classList.add('active');
-            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active')); document.getElementById('panel-' + panelName).classList.add('active');
-            if (panelName === 'kejuaraan') { document.getElementById('header-title').innerText = "Dasbor Kejuaraan"; renderKejuaraan(); }
-            else if (panelName === 'validasi') { document.getElementById('header-title').innerText = "Validasi Akhir"; renderMatriksValidasi(); }
-            else { document.getElementById('header-title').innerText = "Buku Akses Sistem"; renderAkses(); }
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active')); 
+            btnElement.classList.add('active');
             
-            if (window.innerWidth < 768) { toggleSidebar(); }
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active')); 
+            document.getElementById('panel-' + panelName).classList.add('active');
+            
+            if (panelName === 'kejuaraan') { 
+                document.getElementById('header-title').innerText = "Dasbor Kejuaraan"; 
+                renderKejuaraan(); 
+            } else if (panelName === 'validasi') { 
+                document.getElementById('header-title').innerText = "Validasi Akhir"; 
+                renderMatriksValidasi(); 
+            } else { 
+                document.getElementById('header-title').innerText = "Buku Akses Sistem"; 
+                renderAkses(); 
+            }
+            
+            if (window.innerWidth < 768) { 
+                toggleSidebar(); 
+            }
         }
 
         async function tarikDataServer(isAuto = false) {
-            const iconRefresh = document.getElementById('icon-refresh'); if(iconRefresh) iconRefresh.classList.add('lucide-spin');
+            let iconRefresh = document.getElementById('icon-refresh'); 
+            if(iconRefresh) iconRefresh.classList.add('lucide-spin');
+            
             if(!isAuto) document.getElementById('loading-overlay').style.display = 'flex';
+            
             try {
-                const response = await fetch(API_URL); const hasil = await response.json();
+                const response = await fetch(API_URL); 
+                const hasil = await response.json();
+                
                 if(hasil.status === "success") {
-                    ADMIN_DATA = hasil; isiDropdown();
+                    ADMIN_DATA = hasil; 
+                    isiDropdown();
                     if (document.getElementById('panel-kejuaraan').classList.contains('active')) renderKejuaraan();
                     else if (document.getElementById('panel-validasi').classList.contains('active')) renderMatriksValidasi();
                     else renderAkses();
                 }
-            } catch (error) { if(!isAuto) showDialog('error', 'Koneksi Terputus', 'Gagal memuat data.'); } 
-            finally { document.getElementById('loading-overlay').style.display = 'none'; if(iconRefresh) iconRefresh.classList.remove('lucide-spin'); lucide.createIcons(); }
+            } catch (error) { 
+                if(!isAuto) showDialog('error', 'Koneksi Terputus', 'Gagal memuat data.'); 
+            } finally { 
+                document.getElementById('loading-overlay').style.display = 'none'; 
+                
+                // Menangkap kembali elemen DOM (untuk mengatasi issue elemen SVG terganti)
+                iconRefresh = document.getElementById('icon-refresh'); 
+                if(iconRefresh) iconRefresh.classList.remove('lucide-spin'); 
+                
+                lucide.createIcons(); 
+            }
         }
 
-        function toggleAutoRefresh(cb) { if(cb.checked) autoRefreshInterval = setInterval(() => tarikDataServer(true), 30000); else clearInterval(autoRefreshInterval); }
+        function toggleAutoRefresh(cb) { 
+            if(cb.checked) autoRefreshInterval = setInterval(() => tarikDataServer(true), 30000); 
+            else clearInterval(autoRefreshInterval); 
+        }
 
         function isiDropdown() {
-            const selectKls = document.getElementById('filter-cabang-kejuaraan'); const selectVal = document.getElementById('filter-cabang-validasi');
-            const valKls = selectKls.value; const valVal = selectVal.value;
-            let htmlCabang = '<option value="">-- Semua Cabang Lomba --</option>'; let htmlCabangReq = '<option value="">-- Silakan Pilih Cabang Lomba --</option>';
+            const selectKls = document.getElementById('filter-cabang-kejuaraan'); 
+            const selectVal = document.getElementById('filter-cabang-validasi');
+            const valKls = selectKls.value; 
+            const valVal = selectVal.value;
+            
+            let htmlCabang = '<option value="">-- Semua Cabang Lomba --</option>'; 
+            let htmlCabangReq = '<option value="">-- Silakan Pilih Cabang Lomba --</option>';
             let unikKategori = []; 
+            
             ADMIN_DATA.masterCabang.forEach(cabang => {
-                const opt = `<option value="${cabang.ID_Cabang}">${cabang.Nama_Cabang}</option>`; htmlCabang += opt; htmlCabangReq += opt;
-                let kat = (cabang.Kategori || cabang.Kategori_Tersedia || "").trim(); if (kat && !unikKategori.includes(kat)) unikKategori.push(kat);
+                const opt = `<option value="${cabang.ID_Cabang}">${cabang.Nama_Cabang}</option>`; 
+                htmlCabang += opt; 
+                htmlCabangReq += opt;
+                
+                let kat = (cabang.Kategori || cabang.Kategori_Tersedia || "").trim(); 
+                if (kat && !unikKategori.includes(kat)) unikKategori.push(kat);
             });
-            selectKls.innerHTML = htmlCabang; selectVal.innerHTML = htmlCabangReq;
-            if(valKls) selectKls.value = valKls; if(valVal) selectVal.value = valVal;
+            
+            selectKls.innerHTML = htmlCabang; 
+            selectVal.innerHTML = htmlCabangReq;
+            
+            if(valKls) selectKls.value = valKls; 
+            if(valVal) selectVal.value = valVal;
 
-            const selectKategori = document.getElementById('filter-kategori-kejuaraan'); const valKat = selectKategori.value;
+            const selectKategori = document.getElementById('filter-kategori-kejuaraan'); 
+            const valKat = selectKategori.value;
             let htmlKategori = '<option value="">-- Semua Kategori --</option>';
-            unikKategori.sort().forEach(k => { htmlKategori += `<option value="${k}">${k}</option>`; }); selectKategori.innerHTML = htmlKategori;
+            
+            unikKategori.sort().forEach(k => { 
+                htmlKategori += `<option value="${k}">${k}</option>`; 
+            }); 
+            
+            selectKategori.innerHTML = htmlKategori;
             if(valKat && unikKategori.includes(valKat)) selectKategori.value = valKat;
         }
 
         function renderKejuaraan() {
             if(!ADMIN_DATA.masterPeserta) return;
-            const filterCabang = document.getElementById('filter-cabang-kejuaraan').value; const filterKategori = document.getElementById('filter-kategori-kejuaraan').value; const sortType = document.getElementById('sort-kejuaraan').value; 
+            const filterCabang = document.getElementById('filter-cabang-kejuaraan').value; 
+            const filterKategori = document.getElementById('filter-kategori-kejuaraan').value; 
+            const sortType = document.getElementById('sort-kejuaraan').value; 
             
             let rekap = {};
-            ADMIN_DATA.masterPeserta.forEach(p => { rekap[String(p.Nomor_Undian).trim()] = { ...p, totalNilai: 0, jmlJuri: 0, statusValidasi: "FINAL" }; });
+            ADMIN_DATA.masterPeserta.forEach(p => { 
+                rekap[String(p.Nomor_Undian).trim()] = { ...p, totalNilai: 0, jmlJuri: 0, statusValidasi: "FINAL" }; 
+            });
+            
             ADMIN_DATA.logNilai.forEach(log => {
                 let noUndiLog = String(log.Nomor_Undian).trim();
                 let keyTarget = noUndiLog;
-                if (!rekap[keyTarget]) { let matchingKey = Object.keys(rekap).find(k => parseInt(k) === parseInt(noUndiLog)); if (matchingKey) keyTarget = matchingKey; }
+                
+                if (!rekap[keyTarget]) { 
+                    let matchingKey = Object.keys(rekap).find(k => parseInt(k) === parseInt(noUndiLog)); 
+                    if (matchingKey) keyTarget = matchingKey; 
+                }
                 
                 if(rekap[keyTarget]) {
-                    rekap[keyTarget].totalNilai += (parseInt(log.Total) || 0); rekap[keyTarget].jmlJuri++; 
-                    if(String(log.Status_Validasi).trim().toUpperCase() !== "FINAL") rekap[keyTarget].statusValidasi = "DRAFT"; 
+                    rekap[keyTarget].totalNilai += (parseInt(log.Total) || 0); 
+                    rekap[keyTarget].jmlJuri++; 
+                    if(String(log.Status_Validasi).trim().toUpperCase() !== "FINAL") {
+                        rekap[keyTarget].statusValidasi = "DRAFT"; 
+                    }
                 }
             });
 
             let list = Object.values(rekap);
-            if (filterCabang) list = list.filter(p => p.ID_Cabang === filterCabang);
-            if (filterKategori) list = list.filter(p => p.Kategori === filterKategori);
+            if (filterCabang) list = list.filter(p => String(p.ID_Cabang).trim() === String(filterCabang).trim());
+            if (filterKategori) list = list.filter(p => String(p.Kategori).trim() === String(filterKategori).trim());
 
             let countSelesai = list.filter(p => p.statusValidasi === "FINAL").length;
-            document.getElementById('stat-total').innerText = list.length; document.getElementById('stat-selesai').innerText = countSelesai; document.getElementById('stat-proses').innerText = list.length - countSelesai;
+            document.getElementById('stat-total').innerText = list.length; 
+            document.getElementById('stat-selesai').innerText = countSelesai; 
+            document.getElementById('stat-proses').innerText = list.length - countSelesai;
 
-            list.sort((a, b) => b.totalNilai - a.totalNilai); list.forEach((p, idx) => { p.peringkat = idx + 1; });
-            if (sortType === 'undian') { list.sort((a, b) => a.Nomor_Undian.toString().localeCompare(b.Nomor_Undian.toString(), undefined, {numeric: true})); }
+            list.sort((a, b) => b.totalNilai - a.totalNilai); 
+            list.forEach((p, idx) => { p.peringkat = idx + 1; });
             
-            kejuaraanAktif = list; const tbody = document.getElementById('tabel-kejuaraan-body'); let htmlBody = "";
-            if (list.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 40px;">Tidak ada data ditemukan.</td></tr>`; return; }
+            if (sortType === 'undian') { 
+                list.sort((a, b) => a.Nomor_Undian.toString().localeCompare(b.Nomor_Undian.toString(), undefined, {numeric: true})); 
+            }
+            
+            kejuaraanAktif = list; 
+            const tbody = document.getElementById('tabel-kejuaraan-body'); 
+            let htmlBody = "";
+            
+            if (list.length === 0) { 
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 40px;">Tidak ada data ditemukan.</td></tr>`; 
+                return; 
+            }
 
             list.forEach((p) => {
                 let rankVisual = p.peringkat;
-                if (p.peringkat === 1) rankVisual = `<div class="status-badge medal-1">1</div>`; else if (p.peringkat === 2) rankVisual = `<div class="status-badge medal-2">2</div>`; else if (p.peringkat === 3) rankVisual = `<div class="status-badge medal-3">3</div>`;
+                if (p.peringkat === 1) rankVisual = `<div class="status-badge medal-1">1</div>`; 
+                else if (p.peringkat === 2) rankVisual = `<div class="status-badge medal-2">2</div>`; 
+                else if (p.peringkat === 3) rankVisual = `<div class="status-badge medal-3">3</div>`;
+                
                 let statusVisual = p.statusValidasi === "FINAL" ? `<span class="badge-text bg-final">FINAL</span>` : `<span class="badge-text bg-draft">PROSES</span>`;
-                htmlBody += `<tr><td style="text-align: center;">${rankVisual}</td><td><strong style="color:var(--accent); font-size:16px;">${p.Nomor_Undian}</strong></td><td><strong style="color:var(--text-main); display:block;">${p.Nama_Peserta}</strong><span style="font-size:11px; color:var(--text-muted);">${p.Kategori}</span></td><td>${p.Asal_Sekolah}</td><td style="text-align: center; font-weight:700;">${p.jmlJuri}</td><td style="text-align: right; font-weight:800; font-size:18px;">${p.totalNilai}</td><td style="text-align: center;">${statusVisual}</td></tr>`;
+                
+                htmlBody += `
+                    <tr>
+                        <td style="text-align: center;">${rankVisual}</td>
+                        <td><strong style="color:var(--accent); font-size:16px;">${p.Nomor_Undian}</strong></td>
+                        <td><strong style="color:var(--text-main); display:block;">${p.Nama_Peserta}</strong><span style="font-size:11px; color:var(--text-muted);">${p.Kategori}</span></td>
+                        <td>${p.Asal_Sekolah}</td>
+                        <td style="text-align: center; font-weight:700;">${p.jmlJuri}</td>
+                        <td style="text-align: right; font-weight:800; font-size:18px;">${p.totalNilai}</td>
+                        <td style="text-align: center;">${statusVisual}</td>
+                    </tr>`;
             });
             tbody.innerHTML = htmlBody;
+            lucide.createIcons();
         }
 
         function exportKeExcel() {
-            if (kejuaraanAktif.length === 0) { showDialog('warning','Kosong', "Tidak ada data untuk diekspor."); return; }
-            let dataExport = kejuaraanAktif.map(p => ({ "Peringkat": p.peringkat, "Nomor Undian": p.Nomor_Undian, "Nama Peserta": p.Nama_Peserta, "Asal Sekolah": p.Asal_Sekolah, "Kategori": p.Kategori, "Jumlah Juri": p.jmlJuri, "Total Nilai": p.totalNilai, "Status Validasi": p.statusValidasi }));
-            let ws = XLSX.utils.json_to_sheet(dataExport); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Kejuaraan");
-            let filterCabang = document.getElementById('filter-cabang-kejuaraan'); let namaLomba = filterCabang.value ? filterCabang.options[filterCabang.selectedIndex].text : "Seluruh_Cabang";
+            if (kejuaraanAktif.length === 0) { 
+                showDialog('warning','Kosong', "Tidak ada data untuk diekspor."); 
+                return; 
+            }
+            let dataExport = kejuaraanAktif.map(p => ({ 
+                "Peringkat": p.peringkat, 
+                "Nomor Undian": p.Nomor_Undian, 
+                "Nama Peserta": p.Nama_Peserta, 
+                "Asal Sekolah": p.Asal_Sekolah, 
+                "Kategori": p.Kategori, 
+                "Jumlah Juri": p.jmlJuri, 
+                "Total Nilai": p.totalNilai, 
+                "Status Validasi": p.statusValidasi 
+            }));
+            let ws = XLSX.utils.json_to_sheet(dataExport); 
+            let wb = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(wb, ws, "Kejuaraan");
+            
+            let filterCabang = document.getElementById('filter-cabang-kejuaraan'); 
+            let namaLomba = filterCabang.value ? filterCabang.options[filterCabang.selectedIndex].text : "Seluruh_Cabang";
             XLSX.writeFile(wb, `Rekap_Kejuaraan_${namaLomba.replace(/\s+/g, '_')}.xlsx`);
         }
 
         function cetakLaporan(limit) {
-            if (kejuaraanAktif.length === 0) return; let dataCetak = [...kejuaraanAktif];
-            if (limit > 0) { dataCetak.sort((a, b) => a.peringkat - b.peringkat); dataCetak = dataCetak.slice(0, limit); } 
-            let filterCabang = document.getElementById('filter-cabang-kejuaraan'); let namaLomba = filterCabang.value ? filterCabang.options[filterCabang.selectedIndex].text : "Seluruh Cabang"; let printWindow = window.open('', '', 'height=800,width=1000');
+            if (kejuaraanAktif.length === 0) return; 
+            let dataCetak = [...kejuaraanAktif];
+            
+            if (limit > 0) { 
+                dataCetak.sort((a, b) => a.peringkat - b.peringkat); 
+                dataCetak = dataCetak.slice(0, limit); 
+            } 
+            
+            let filterCabang = document.getElementById('filter-cabang-kejuaraan'); 
+            let namaLomba = filterCabang.value ? filterCabang.options[filterCabang.selectedIndex].text : "Seluruh Cabang"; 
+            let printWindow = window.open('', '', 'height=800,width=1000');
+            
             let htmlHTML = `<html><head><title>Cetak Laporan</title><style> body { font-family: 'Arial', sans-serif; padding: 20px; color: #000; } .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 20px; } table { width: 100%; border-collapse: collapse; margin-top: 15px; } th, td { border: 1px solid #000; padding: 10px; text-align: left; font-size: 13px; } th { background-color: #f0f0f0; text-align: center; text-transform: uppercase; } .center { text-align: center; } .right { text-align: right; } .bold { font-weight: bold; } .ttd-area { width: 100%; margin-top: 50px; display: table; } .ttd-box { display: table-cell; width: 33%; text-align: center; } @media print { @page { margin: 1.5cm; } button { display: none; } } </style></head><body> <div class="header"><h1>REKAPITULASI HASIL KEJUARAAN</h1><p><strong>Cabang Lomba:</strong> ${namaLomba}</p></div> <table><thead><tr><th>Peringkat</th><th>No. Undi</th><th>Nama Peserta</th><th>Asal Sekolah</th><th>Total Nilai</th></tr></thead><tbody>`;
-            dataCetak.forEach(p => { htmlHTML += `<tr><td class="center bold">${p.peringkat}</td><td class="center">${p.Nomor_Undian}</td><td>${p.Nama_Peserta}</td><td>${p.Asal_Sekolah}</td><td class="right bold">${p.totalNilai}</td></tr>`; });
-            htmlHTML += `</tbody></table><div class="ttd-area"><div class="ttd-box"><p>Mengetahui,</p><p style="margin-bottom: 70px;">Ketua Panitia</p><p class="bold">_________________________</p></div><div class="ttd-box"></div><div class="ttd-box"><p>Disahkan pada: ..............................</p><p style="margin-bottom: 70px;">Koordinator Dewan Juri</p><p class="bold">_________________________</p></div></div><script>window.onload = function() { window.print(); window.close(); }<\/script></body></html>`;
-            printWindow.document.write(htmlHTML); printWindow.document.close();
+            
+            dataCetak.forEach(p => { 
+                htmlHTML += `<tr><td class="center bold">${p.peringkat}</td><td class="center">${p.Nomor_Undian}</td><td>${p.Nama_Peserta}</td><td>${p.Asal_Sekolah}</td><td class="right bold">${p.totalNilai}</td></tr>`; 
+            });
+            
+            htmlHTML += `</tbody></table><div class="ttd-area"><div class="ttd-box"><p>Mengetahui,</p><p style="margin-bottom: 70px;">Ketua Panitia</p><p class="bold">_________________________</p></div><div class="ttd-box"></div><div class="ttd-box"><p>Disahkan pada: ..............................</p><p style="margin-bottom: 70px;">Koordinator Dewan Juri</p><p class="bold">_________________________</p></div></div><script>window.onload = function() { window.print(); window.close(); };<` + `/script></body></html>`;
+            
+            printWindow.document.write(htmlHTML); 
+            printWindow.document.close();
         }
 
         function renderMatriksValidasi() {
-            const idCabang = document.getElementById('filter-cabang-validasi').value; const areaMatriks = document.getElementById('area-matriks');
-            if (!idCabang) { areaMatriks.style.display = 'none'; return; } areaMatriks.style.display = 'block';
-            const pesertaCabang = ADMIN_DATA.masterPeserta.filter(p => p.ID_Cabang === idCabang); const juriTugas = ADMIN_DATA.masterAkses.filter(a => a.Tugas_ID_Cabang === idCabang && String(a.Peran).trim().toUpperCase() === "JURI"); const logNilaiCabang = ADMIN_DATA.logNilai.filter(log => log.ID_Cabang === idCabang);
-            document.getElementById('info-jumlah-juri').innerText = `Terdapat ${juriTugas.length} juri bertugas.`; const headerRow = document.getElementById('tabel-validasi-header'); const bodyTabel = document.getElementById('tabel-validasi-body');
-            let htmlHeader = `<th style="width: 80px;">No. Undi</th><th>Nama Peserta</th>`; juriTugas.forEach((juri, idx) => { htmlHeader += `<th style="text-align:center;">Juri ${idx + 1} <br><span style="font-size:9px; font-weight:600; text-transform:none;">${juri.Nama_Petugas}</span></th>`; }); htmlHeader += `<th style="text-align:right;">Validasi Sistem</th>`; headerRow.innerHTML = htmlHeader;
+            const idCabang = document.getElementById('filter-cabang-validasi').value; 
+            const areaMatriks = document.getElementById('area-matriks');
+            if (!idCabang) { areaMatriks.style.display = 'none'; return; } 
+            
+            areaMatriks.style.display = 'block';
+            
+            const pesertaCabang = ADMIN_DATA.masterPeserta.filter(p => String(p.ID_Cabang).trim() === String(idCabang).trim()); 
+            const juriTugas = ADMIN_DATA.masterAkses.filter(a => String(a.Tugas_ID_Cabang).trim() === String(idCabang).trim() && String(a.Peran).trim().toUpperCase() === "JURI"); 
+            const logNilaiCabang = ADMIN_DATA.logNilai.filter(log => String(log.ID_Cabang).trim() === String(idCabang).trim());
+            
+            document.getElementById('info-jumlah-juri').innerText = `Terdapat ${juriTugas.length} juri bertugas.`; 
+            const headerRow = document.getElementById('tabel-validasi-header'); 
+            const bodyTabel = document.getElementById('tabel-validasi-body');
+            
+            let htmlHeader = `<th style="width: 80px;">No. Undi</th><th>Nama Peserta</th>`; 
+            juriTugas.forEach((juri, idx) => { 
+                htmlHeader += `<th style="text-align:center;">Juri ${idx + 1} <br><span style="font-size:9px; font-weight:600; text-transform:none;">${juri.Nama_Petugas}</span></th>`; 
+            }); 
+            htmlHeader += `<th style="text-align:right;">Validasi Sistem</th>`; 
+            headerRow.innerHTML = htmlHeader;
             
             let htmlBody = "";
-            if (pesertaCabang.length === 0) { htmlBody = `<tr><td colspan="${juriTugas.length + 3}" style="text-align:center; padding: 30px;">Belum ada data.</td></tr>`; } 
-            else {
+            if (pesertaCabang.length === 0) { 
+                htmlBody = `<tr><td colspan="${juriTugas.length + 3}" style="text-align:center; padding: 30px;">Belum ada data peserta.</td></tr>`; 
+            } else {
                 pesertaCabang.forEach(peserta => {
-                    let statusSelesai = true; let statusFinal = false; 
+                    let statusSelesai = true; 
+                    let statusFinal = false; 
+                    
                     htmlBody += `<tr><td><span style="font-weight:800; font-size:16px; color:var(--accent);">${peserta.Nomor_Undian}</span></td><td><strong style="color:var(--text-main); display:block;">${peserta.Nama_Peserta}</strong><span style="font-size:12px; color:var(--text-muted);">${peserta.Asal_Sekolah}</span></td>`;
                     
                     juriTugas.forEach(juri => {
@@ -433,37 +705,67 @@
                     });
                     
                     htmlBody += `<td style="text-align:right;">`;
-                    if (statusFinal) htmlBody += `<button onclick="tindakValidasi('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'BATAL')" class="btn-action btn-danger"><i data-lucide="unlock" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Batal Sahkan</span></button>`;
-                    else if (statusSelesai) htmlBody += `<button onclick="tindakValidasi('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'SAH')" class="btn-action btn-primary"><i data-lucide="check-square" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Sahkan</span></button>`;
-                    else htmlBody += `<button disabled class="btn-action" style="background:var(--border-color); color:var(--text-muted);"><i data-lucide="minus" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Tunggu Juri</span></button>`;
+                    if (statusFinal) {
+                        htmlBody += `<button onclick="tindakValidasi('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'BATAL')" class="btn-action btn-danger"><i data-lucide="unlock" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Batal Sahkan</span></button>`;
+                    } else if (statusSelesai) {
+                        htmlBody += `<button onclick="tindakValidasi('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'SAH')" class="btn-action btn-primary"><i data-lucide="check-square" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Sahkan</span></button>`;
+                    } else {
+                        htmlBody += `<button disabled class="btn-action" style="background:var(--border-color); color:var(--text-muted);"><i data-lucide="minus" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Tunggu Juri</span></button>`;
+                    }
                     htmlBody += `</td></tr>`;
                 });
             }
-            bodyTabel.innerHTML = htmlBody; lucide.createIcons();
+            bodyTabel.innerHTML = htmlBody; 
+            lucide.createIcons();
         }
 
         async function tindakValidasi(idCabang, noUndian, tipe) {
             let msg = tipe === 'SAH' ? `Kunci nilai untuk Peserta Nomor ${noUndian}?` : `Buka kembali nilai Peserta Nomor ${noUndian} agar juri bisa mengedit?`;
             let aksiServer = tipe === 'SAH' ? "VALIDASI_OPERATOR" : "BATAL_VALIDASI_OPERATOR";
+            
             showDialog('confirm', 'Konfirmasi Aksi', msg, async function() {
-                showDialog('info', 'Memproses...', 'Silakan tunggu...'); document.getElementById('dialog-actions').innerHTML = ''; 
+                showDialog('info', 'Memproses...', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--primary);"></i><p>Menyinkronkan dengan server pusat...</p>'); 
+                
                 const payload = { action: aksiServer, data: [{ ID_Cabang: idCabang, Nomor_Undian: noUndian }] };
                 try {
-                    const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); const result = await response.json();
-                    if(result.status === "success") { closeDialog(); await tarikDataServer(); } else { showDialog('error', 'Gagal', result.message); }
-                } catch (error) { showDialog('error', 'Koneksi Gagal', 'Sistem tidak merespons.'); } 
+                    const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                    const result = await response.json();
+                    
+                    if(result.status === "success") { 
+                        closeDialog(); 
+                        await tarikDataServer(); 
+                    } else { 
+                        showDialog('error', 'Gagal', result.message); 
+                    }
+                } catch (error) { 
+                    showDialog('error', 'Koneksi Gagal', 'Sistem tidak merespons.'); 
+                } 
             });
         }
 
         function renderAkses() {
-            const tbody = document.getElementById('tabel-akses-body'); const keyword = document.getElementById('cari-akses') ? document.getElementById('cari-akses').value.toLowerCase() : "";
-            let listAkses = ADMIN_DATA.masterAkses || []; if(keyword) listAkses = listAkses.filter(a => String(a.Nama_Petugas).toLowerCase().includes(keyword) || (a.Tugas_ID_Cabang||'').toLowerCase().includes(keyword));
+            const tbody = document.getElementById('tabel-akses-body'); 
+            const keyword = document.getElementById('cari-akses') ? document.getElementById('cari-akses').value.toLowerCase() : "";
+            
+            let listAkses = ADMIN_DATA.masterAkses || []; 
+            if(keyword) {
+                listAkses = listAkses.filter(a => String(a.Nama_Petugas).toLowerCase().includes(keyword) || (a.Tugas_ID_Cabang||'').toLowerCase().includes(keyword));
+            }
+            
             let htmlBody = "";
             listAkses.forEach(a => {
                 let badgeColor = String(a.Peran).toUpperCase() === 'ADMIN' ? 'background:#fee2e2; color:#ef4444;' : String(a.Peran).toUpperCase() === 'OPERATOR' ? 'background:#fef3c7; color:#f59e0b;' : 'background:#dbeafe; color:#2563eb;';
-                htmlBody += `<tr><td><strong>${a.Nama_Petugas}</strong></td><td><span style="padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; ${badgeColor}">${a.Peran}</span></td><td>${a.Tugas_ID_Cabang || '-'}</td><td><code style="background:#f1f5f9; padding:4px 8px; border-radius:6px; color:var(--text-main); font-weight:bold;">${a.Kode_Akses}</code></td></tr>`;
+                
+                htmlBody += `
+                <tr>
+                    <td><strong>${a.Nama_Petugas}</strong></td>
+                    <td><span style="padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; ${badgeColor}">${a.Peran}</span></td>
+                    <td>${a.Tugas_ID_Cabang || '-'}</td>
+                    <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:6px; color:var(--text-main); font-weight:bold;">${a.Kode_Akses}</code></td>
+                </tr>`;
             });
             tbody.innerHTML = htmlBody || `<tr><td colspan="4" style="text-align:center; padding:20px;">Data tidak ditemukan.</td></tr>`;
+            lucide.createIcons();
         }
     </script>
 </body>
