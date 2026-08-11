@@ -46,14 +46,8 @@
         .dialog-error .dialog-icon-container { background: #fee2e2; color: var(--danger); border-color: #fecaca; }
         .dialog-warning .dialog-icon-container { background: #fef3c7; color: var(--warning); border-color: #fde68a; }
         .dialog-confirm .dialog-icon-container { background: #dbeafe; color: var(--primary); border-color: #bfdbfe; }
-
-        /* Media Queries untuk Responsivitas */
         .desktop-subtitle { display: none; }
-        @media (min-width: 768px) {
-            body { padding: 30px; }
-            .bento-box { padding: 30px; }
-            .desktop-subtitle { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px; }
-        }
+        @media (min-width: 768px) { body { padding: 30px; } .bento-box { padding: 30px; } .desktop-subtitle { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px; } }
     </style>
 </head>
 <body>
@@ -76,9 +70,7 @@
     <div class="app-container">
         
         <div id="panel-login" class="bento-box hidden" style="max-width: 400px; margin: 10vh auto; text-align: center;">
-            <div style="width: 60px; height: 60px; background: #dbeafe; color: #2563eb; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                <i data-lucide="shield-check" style="width: 30px; height: 30px;"></i>
-            </div>
+            <div style="width: 60px; height: 60px; background: #dbeafe; color: #2563eb; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;"><i data-lucide="shield-check" style="width: 30px; height: 30px;"></i></div>
             <h2 style="margin-bottom: 5px;">Masuk ke SPECTRA</h2>
             <p class="desktop-subtitle" style="margin-bottom: 15px;">Sistem Penilaian Evaluasi Cepat Transparan Responsif Akurat</p>
             <p style="margin-bottom: 25px;">Masukkan Kode Akses dari panitia.</p>
@@ -260,7 +252,8 @@
             let jumlahTerkunci = 0; let arrayPesertaTerkunci = [];
 
             riwayatNilai.forEach(log => {
-                const isLocked = log.Status_Validasi === "FINAL"; if (isLocked) { jumlahTerkunci++; arrayPesertaTerkunci.push(log.Nomor_Undian.toString()); }
+                const isLocked = log.Status_Validasi === "FINAL"; 
+                if (isLocked) { jumlahTerkunci++; arrayPesertaTerkunci.push(log.Nomor_Undian.toString()); }
                 kriteria.forEach((k, index) => {
                     let inputEl = document.querySelector(`.input-nilai.p-${log.Nomor_Undian}[data-aspek="${index}"]`);
                     if (inputEl) {
@@ -293,9 +286,20 @@
         }
 
         function kalkulasiTotal(noUndian, triggerAutoSave = true) {
-            const inputs = document.querySelectorAll(`.input-nilai.p-${noUndian}`); let total = 0;
-            inputs.forEach(input => { let max = parseInt(input.getAttribute('max')); let nilai = parseInt(input.value); if (nilai > max) { input.value = max; nilai = max; } if (!isNaN(nilai)) { total += nilai; } });
-            document.getElementById(`total-${noUndian}`).innerText = total; updateProgressCounter();
+            const inputs = document.querySelectorAll(`.input-nilai.p-${noUndian}`); 
+            let total = 0;
+            inputs.forEach(input => { 
+                let max = parseInt(input.getAttribute('max')); 
+                let nilai = parseInt(input.value); 
+                if (nilai > max) { input.value = max; nilai = max; } 
+                if (!isNaN(nilai)) { total += nilai; } 
+            });
+            
+            // PROTEKSI ANTI-ERROR (Cek apakah elemen ada di layar)
+            const totalElement = document.getElementById(`total-${noUndian}`);
+            if (totalElement) { totalElement.innerText = total; }
+            
+            updateProgressCounter();
             if (triggerAutoSave) simpanDraftOtomatis();
         }
 
@@ -319,14 +323,18 @@
         function simpanNilaiLuring() {
             const pesertaTabel = SPECTRA_DATA.masterPeserta.filter(p => p.ID_Cabang === userAktif.Tugas_ID_Cabang); let payloadData = [];
             pesertaTabel.forEach(p => {
-                let totalNilai = parseInt(document.getElementById(`total-${p.Nomor_Undian}`).innerText);
+                const totalEl = document.getElementById(`total-${p.Nomor_Undian}`);
+                let totalNilai = totalEl ? parseInt(totalEl.innerText) : 0;
+                
                 if (totalNilai > 0) {
                     let nilaiAspek = [];
                     kriteriaLomba.forEach((k, idx) => { let inputEl = document.querySelector(`.input-nilai.p-${p.Nomor_Undian}[data-aspek="${idx}"]`); if (inputEl && !inputEl.hasAttribute('readonly')) nilaiAspek.push(inputEl.value); });
                     if (nilaiAspek.length > 0) {
                         payloadData.push({
                             ID_Cabang: p.ID_Cabang, Kategori: p.Kategori, Nomor_Undian: p.Nomor_Undian, Asal_Sekolah: p.Asal_Sekolah, Nama_Peserta: p.Nama_Peserta, Kode_Akses: userAktif.Kode_Akses,
-                            Aspek_1: nilaiAspek[0]||"", Aspek_2: nilaiAspek[1]||"", Aspek_3: nilaiAspek[2]||"", Aspek_4: nilaiAspek[3]||"", Aspek_5: nilaiAspek[4]||"", Penalti: 0, Total: totalNilai, Catatan_Juri: ""
+                            Aspek_1: nilaiAspek[0]||"", Aspek_2: nilaiAspek[1]||"", Aspek_3: nilaiAspek[2]||"", Aspek_4: nilaiAspek[3]||"", Aspek_5: nilaiAspek[4]||"", 
+                            Aspek_6: nilaiAspek[5]||"", Aspek_7: nilaiAspek[6]||"", Aspek_8: nilaiAspek[7]||"", Aspek_9: nilaiAspek[8]||"", Aspek_10: nilaiAspek[9]||"",
+                            Penalti: 0, Total: totalNilai, Catatan_Juri: ""
                         });
                     }
                 }
@@ -334,6 +342,7 @@
 
             if (payloadData.length === 0) { showDialog('warning', 'Peringatan', 'Tidak ada nilai baru untuk dikirim.'); return; }
             const finalPayload = { action: "SUBMIT_NILAI", data: payloadData };
+
             const btn = document.getElementById('btn-kirim');
             btn.innerHTML = `<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Terkirim`; btn.style.backgroundColor = "var(--success)"; btn.disabled = true; lucide.createIcons();
             localStorage.removeItem('spectra_draft_ui_' + userAktif.Kode_Akses); localStorage.setItem('spectra_pending_submit_' + userAktif.Kode_Akses, JSON.stringify(finalPayload));
