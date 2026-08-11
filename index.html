@@ -21,7 +21,7 @@
         button:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; pointer-events: none; }
         .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 600px; margin-top: 10px; }
-        th, td { padding: 14px; text-align: center; border-bottom: 1px solid var(--border-color); }
+        th, td { padding: 14px; text-align: center; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         th { background-color: var(--bg-body); font-weight: 800; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
         th:first-child { border-top-left-radius: 1rem; border-bottom-left-radius: 1rem; }
         th:last-child { border-top-right-radius: 1rem; border-bottom-right-radius: 1rem; }
@@ -257,6 +257,9 @@
             }); 
         }
 
+        // ==========================================
+        // BAGIAN KHUSUS OPERATOR RUANGAN
+        // ==========================================
         function siapkanPanelOperator() {
             document.getElementById('panel-operator').classList.remove('hidden'); 
             document.getElementById('op-header-event').innerText = SPECTRA_DATA.masterLomba[0].Nama_Event;
@@ -284,11 +287,11 @@
             const headerRow = document.getElementById('op-tabel-header'); 
             const bodyTabel = document.getElementById('op-tabel-body');
             
-            let htmlHeader = `<th style="width: 80px;">No. Undi</th><th>Nama Peserta</th>`; 
+            let htmlHeader = `<th style="width: 80px;">No. Undi</th><th style="text-align:left;">Nama Peserta</th>`; 
             juriTugas.forEach((juri, idx) => { 
-                htmlHeader += `<th style="text-align:center;">Juri ${idx + 1} <br><span style="font-size:9px; font-weight:600; text-transform:none;">${juri.Nama_Petugas}</span></th>`; 
+                htmlHeader += `<th style="text-align:center; min-width:80px;">Juri ${idx + 1} <br><span style="font-size:9px; font-weight:600; text-transform:none;">${juri.Nama_Petugas}</span></th>`; 
             }); 
-            htmlHeader += `<th style="text-align:center;">Total Nilai</th><th style="text-align:right;">Aksi Operator</th>`; 
+            htmlHeader += `<th style="text-align:center; min-width:100px;">Total Nilai</th><th style="text-align:center; width:130px;">Aksi Operator</th>`; 
             headerRow.innerHTML = htmlHeader;
             
             let htmlBody = "";
@@ -300,7 +303,7 @@
                     let statusFinal = false; 
                     let totalAkumulasi = 0;
                     
-                    htmlBody += `<tr><td><span style="font-weight:800; font-size:16px; color:var(--warning);">${peserta.Nomor_Undian}</span></td><td><strong style="color:var(--text-main); display:block;">${peserta.Nama_Peserta}</strong><span style="font-size:12px; color:var(--text-muted);">${peserta.Asal_Sekolah}</span></td>`;
+                    htmlBody += `<tr><td style="text-align:center;"><span style="font-weight:800; font-size:16px; color:var(--warning);">${peserta.Nomor_Undian}</span></td><td style="text-align:left;"><strong style="color:var(--text-main); display:block;">${peserta.Nama_Peserta}</strong><span style="font-size:12px; color:var(--text-muted);">${peserta.Asal_Sekolah}</span></td>`;
                     
                     juriTugas.forEach(juri => {
                         const rekamJejak = logNilaiCabang.find(log => 
@@ -311,14 +314,25 @@
                         if (rekamJejak && parseInt(rekamJejak.Total) > 0) {
                             totalAkumulasi += parseInt(rekamJejak.Total);
                             
-                            htmlBody += `<td style="text-align:center;">
-                                <div style="font-weight:800; font-size:18px; color:var(--success);">${rekamJejak.Total}</div>
-                                <div style="font-size:10px; font-weight:700; color:var(--text-muted);"><i data-lucide="check-circle" style="width:10px;height:10px;display:inline-block;vertical-align:middle;"></i> Masuk</div>
+                            // PERBAIKAN: Flexbox absolut untuk Presisi
+                            htmlBody += `<td style="text-align:center; vertical-align:middle;">
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                                    <div style="font-weight:800; font-size:18px; color:var(--success); line-height:1;">${rekamJejak.Total}</div>
+                                    <div style="display:inline-flex; align-items:center; justify-content:center; gap:4px; font-size:10px; font-weight:800; color:var(--success); background:#d1fae5; padding:4px 8px; border-radius:12px; border:1px solid #a7f3d0; line-height:1;">
+                                        <i data-lucide="check-circle" style="width:12px;height:12px;"></i> MASUK
+                                    </div>
+                                </div>
                             </td>`;
-                            
                             if (String(rekamJejak.Status_Validasi).trim().toUpperCase() === "FINAL") statusFinal = true;
                         } else {
-                            htmlBody += `<td style="text-align:center;"><div style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; background:#f1f5f9; color:#94a3b8; border:1px dashed #cbd5e1;"><i data-lucide="clock" style="width:14px;height:14px;"></i></div></td>`;
+                            htmlBody += `<td style="text-align:center; vertical-align:middle;">
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                                    <div style="font-weight:800; font-size:18px; color:var(--text-muted); line-height:1; opacity:0.5;">-</div>
+                                    <div style="display:inline-flex; align-items:center; justify-content:center; gap:4px; font-size:10px; font-weight:800; color:var(--text-muted); background:#f1f5f9; padding:4px 8px; border-radius:12px; border:1px dashed #cbd5e1; line-height:1;">
+                                        <i data-lucide="clock" style="width:12px;height:12px;"></i> TUNGGU
+                                    </div>
+                                </div>
+                            </td>`;
                             statusSelesai = false;
                         }
                     });
@@ -327,15 +341,15 @@
                         window.pesertaSiapValidasiOp.push(peserta.Nomor_Undian);
                     }
                     
-                    htmlBody += `<td style="text-align:center;"><strong style="font-size:22px; color:var(--primary);">${totalAkumulasi}</strong></td>`;
+                    htmlBody += `<td style="text-align:center; vertical-align:middle;"><strong style="font-size:22px; color:var(--primary);">${totalAkumulasi}</strong></td>`;
                     
-                    htmlBody += `<td style="text-align:right;">`;
+                    htmlBody += `<td style="text-align:center; vertical-align:middle;">`;
                     if (statusFinal) {
-                        htmlBody += `<button onclick="tindakValidasiOperator('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'BATAL')" style="width:auto; padding:8px 12px; background:#fee2e2; color:var(--danger); border:1px solid #fecaca; box-shadow:none;" class="flex-center"><i data-lucide="unlock" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Batal</span></button>`;
+                        htmlBody += `<button onclick="tindakValidasiOperator('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'BATAL')" style="width:auto; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:#fee2e2; color:var(--danger); border:1px solid #fecaca; border-radius:10px; font-weight:700;"><i data-lucide="unlock" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Batal</span></button>`;
                     } else if (statusSelesai) {
-                        htmlBody += `<button onclick="tindakValidasiOperator('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'SAH')" style="width:auto; padding:8px 12px; background:var(--warning); color:#fff; border:none; box-shadow:none;" class="flex-center"><i data-lucide="check-square" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Sahkan</span></button>`;
+                        htmlBody += `<button onclick="tindakValidasiOperator('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'SAH')" style="width:auto; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:var(--warning); color:#fff; border:none; border-radius:10px; font-weight:700;"><i data-lucide="check-square" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Sahkan</span></button>`;
                     } else {
-                        htmlBody += `<button disabled style="width:auto; padding:8px 12px; background:var(--border-color); color:var(--text-muted); border:none; box-shadow:none;" class="flex-center"><i data-lucide="minus" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Tunggu</span></button>`;
+                        htmlBody += `<button disabled style="width:auto; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:var(--border-color); color:var(--text-muted); border:none; border-radius:10px; font-weight:700;"><i data-lucide="minus" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Tunggu</span></button>`;
                     }
                     htmlBody += `</td></tr>`;
                 });
@@ -414,6 +428,9 @@
             });
         }
 
+        // ==========================================
+        // BAGIAN KHUSUS JURI
+        // ==========================================
         function siapkanPanelJuri() {
             document.getElementById('panel-juri').classList.remove('hidden'); document.getElementById('juri-header-event').innerText = SPECTRA_DATA.masterLomba[0].Nama_Event;
             const infoCabang = SPECTRA_DATA.masterCabang.find(c => c.ID_Cabang === userAktif.Tugas_ID_Cabang);
@@ -446,7 +463,7 @@
         function renderTabelJuri(peserta, kriteria, isBlind) {
             const headerRow = document.getElementById('tabel-header-row'); const bodyTabel = document.getElementById('tabel-body');
             let htmlHeader = `<th>No. Undi</th>`;
-            if (!isBlind) htmlHeader += `<th>Peserta</th><th>Sekolah</th>`;
+            if (!isBlind) htmlHeader += `<th style="text-align:left;">Peserta & Sekolah</th>`;
             kriteria.forEach(k => { htmlHeader += `<th>${k.Nama_Aspek} <br><span style="font-weight:600; font-size:10px; opacity:0.7;">(Max: ${k.Nilai_Maks})</span></th>`; });
             htmlHeader += `<th>Total</th>`; headerRow.innerHTML = htmlHeader;
 
@@ -454,7 +471,7 @@
             peserta.forEach(p => {
                 const noUndi = String(p.Nomor_Undian).trim();
                 htmlBody += `<tr><td><span style="font-weight:800; font-size:16px; color:var(--primary);">${noUndi}</span></td>`;
-                if (!isBlind) htmlBody += `<td><strong style="color:var(--text-main);">${p.Nama_Peserta}</strong></td><td>${p.Asal_Sekolah}</td>`;
+                if (!isBlind) htmlBody += `<td style="text-align:left;"><strong style="color:var(--text-main); display:block;">${p.Nama_Peserta}</strong><span style="font-size:12px; color:var(--text-muted);">${p.Asal_Sekolah}</span></td>`;
                 kriteria.forEach((k, index) => { htmlBody += `<td><input type="number" min="0" max="${k.Nilai_Maks}" class="input-nilai p-${noUndi}" data-undi="${noUndi}" data-aspek="${index}" oninput="kalkulasiTotal('${noUndi}')"></td>`; });
                 htmlBody += `<td id="total-${noUndi}" style="font-weight:800; font-size:20px; color:var(--primary);">0</td></tr>`;
             });
