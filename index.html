@@ -143,7 +143,7 @@
     </div>
 
     <script>
-        // ⚠️ GANTI DENGAN URL API ANDA
+        // ⚠️ GANTI DENGAN URL WEB APP ANDA !!!
         const API_URL = "https://script.google.com/macros/s/AKfycbwk8EcYFqyriFF_V4IoCRpFnDeh5wcdIqE1I-5juRPyHUGE7V7tS2OGQpWrr7Ebyp4Lug/exec"; 
         
         let SPECTRA_DATA = {}; let userAktif = null; let kriteriaLomba = []; let statusTerkunci = false; 
@@ -185,7 +185,7 @@
 
         function prosesLogin() {
             const inputKode = document.getElementById('kode-akses').value.trim().toUpperCase();
-            const profil = SPECTRA_DATA.masterAkses.find(a => a.Kode_Akses.toUpperCase() === inputKode);
+            const profil = SPECTRA_DATA.masterAkses.find(a => String(a.Kode_Akses).trim().toUpperCase() === inputKode);
             if (!profil) { showDialog('error', 'Akses Ditolak', 'Kode akses tidak valid!'); return; }
             userAktif = profil; localStorage.setItem('spectra_session', JSON.stringify(profil));
             document.getElementById('panel-login').classList.add('hidden');
@@ -194,7 +194,7 @@
             lucide.createIcons();
         }
 
-        function prosesLogout() { showDialog('confirm', 'Konfirmasi Keluar', 'Keluar dari sistem? Draft lokal Anda akan tetap aman tersimpan.', function() { localStorage.removeItem('spectra_session'); window.location.reload(); }); }
+        function prosesLogout() { showDialog('confirm', 'Konfirmasi Keluar', 'Keluar dari sistem? Draft lokal Anda akan tetap aman.', function() { localStorage.removeItem('spectra_session'); window.location.reload(); }); }
 
         function siapkanPanelOperator() {
             document.getElementById('panel-operator').classList.remove('hidden'); document.getElementById('op-header-event').innerText = SPECTRA_DATA.masterLomba[0].Nama_Event;
@@ -216,7 +216,7 @@
 
             kriteriaLomba = SPECTRA_DATA.masterKriteria.filter(k => k.ID_Cabang === userAktif.Tugas_ID_Cabang);
             const pesertaLomba = SPECTRA_DATA.masterPeserta.filter(p => p.ID_Cabang === userAktif.Tugas_ID_Cabang);
-            const isBlind = SPECTRA_DATA.masterLomba[0].Mode_Blind_Judging.toUpperCase() === "AKTIF";
+            const isBlind = String(SPECTRA_DATA.masterLomba[0].Mode_Blind_Judging).trim().toUpperCase() === "AKTIF";
             renderTabelJuri(pesertaLomba, kriteriaLomba, isBlind);
         }
 
@@ -224,7 +224,11 @@
             if (!userAktif || userAktif.Peran.toUpperCase() !== "JURI") return;
             const pesertaTabel = SPECTRA_DATA.masterPeserta.filter(p => p.ID_Cabang === userAktif.Tugas_ID_Cabang);
             let jumlahDinilai = 0;
-            pesertaTabel.forEach(p => { let totalEl = document.getElementById(`total-${p.Nomor_Undian}`); if (totalEl && parseInt(totalEl.innerText) > 0) jumlahDinilai++; });
+            pesertaTabel.forEach(p => { 
+                const noUndi = String(p.Nomor_Undian).trim();
+                let totalEl = document.getElementById(`total-${noUndi}`); 
+                if (totalEl && parseInt(totalEl.innerText) > 0) jumlahDinilai++; 
+            });
             const badge = document.getElementById('juri-progress-badge');
             badge.innerHTML = `<i data-lucide="check-circle" style="width:14px;height:14px;"></i> ${jumlahDinilai} / ${pesertaTabel.length} Dinilai`;
             if (jumlahDinilai === pesertaTabel.length && pesertaTabel.length > 0) { badge.style.backgroundColor = '#d1fae5'; badge.style.borderColor = '#a7f3d0'; badge.style.color = 'var(--success)'; } 
@@ -241,39 +245,54 @@
 
             let htmlBody = "";
             peserta.forEach(p => {
-                htmlBody += `<tr><td><span style="font-weight:800; font-size:16px; color:var(--primary);">${p.Nomor_Undian}</span></td>`;
+                const noUndi = String(p.Nomor_Undian).trim();
+                htmlBody += `<tr><td><span style="font-weight:800; font-size:16px; color:var(--primary);">${noUndi}</span></td>`;
                 if (!isBlind) htmlBody += `<td><strong style="color:var(--text-main);">${p.Nama_Peserta}</strong></td><td>${p.Asal_Sekolah}</td>`;
-                kriteria.forEach((k, index) => { htmlBody += `<td><input type="number" min="0" max="${k.Nilai_Maks}" class="input-nilai p-${p.Nomor_Undian}" data-undi="${p.Nomor_Undian}" data-aspek="${index}" oninput="kalkulasiTotal('${p.Nomor_Undian}')"></td>`; });
-                htmlBody += `<td id="total-${p.Nomor_Undian}" style="font-weight:800; font-size:20px; color:var(--primary);">0</td></tr>`;
+                kriteria.forEach((k, index) => { htmlBody += `<td><input type="number" min="0" max="${k.Nilai_Maks}" class="input-nilai p-${noUndi}" data-undi="${noUndi}" data-aspek="${index}" oninput="kalkulasiTotal('${noUndi}')"></td>`; });
+                htmlBody += `<td id="total-${noUndi}" style="font-weight:800; font-size:20px; color:var(--primary);">0</td></tr>`;
             });
             bodyTabel.innerHTML = htmlBody;
 
-            const riwayatNilai = SPECTRA_DATA.logNilai.filter(log => log.Kode_Akses === userAktif.Kode_Akses && log.ID_Cabang === userAktif.Tugas_ID_Cabang);
+            // PROTEKSI ANTI ERROR: Deteksi toleransi 01 vs 1 
+            const riwayatNilai = SPECTRA_DATA.logNilai.filter(log => 
+                String(log.Kode_Akses).trim().toUpperCase() === String(userAktif.Kode_Akses).trim().toUpperCase() && 
+                String(log.ID_Cabang).trim().toUpperCase() === String(userAktif.Tugas_ID_Cabang).trim().toUpperCase()
+            );
+            
             let jumlahTerkunci = 0; let arrayPesertaTerkunci = [];
 
             riwayatNilai.forEach(log => {
-                const isLocked = log.Status_Validasi === "FINAL"; 
-                if (isLocked) { jumlahTerkunci++; arrayPesertaTerkunci.push(log.Nomor_Undian.toString()); }
-                kriteria.forEach((k, index) => {
-                    let inputEl = document.querySelector(`.input-nilai.p-${log.Nomor_Undian}[data-aspek="${index}"]`);
-                    if (inputEl) {
-                        inputEl.value = log[`Aspek_${index + 1}`] || "";
-                        if (isLocked) { inputEl.setAttribute('readonly', true); inputEl.style.backgroundColor = "var(--border-color)"; inputEl.style.color = "var(--text-muted)"; inputEl.style.cursor = "not-allowed"; }
-                    }
-                });
-                kalkulasiTotal(log.Nomor_Undian, false);
+                const pesertaCocok = peserta.find(p => String(p.Nomor_Undian).trim() === String(log.Nomor_Undian).trim() || parseInt(p.Nomor_Undian) === parseInt(log.Nomor_Undian));
+                if (pesertaCocok) {
+                    let noUndiDOM = String(pesertaCocok.Nomor_Undian).trim();
+                    const isLocked = String(log.Status_Validasi).trim().toUpperCase() === "FINAL"; 
+                    if (isLocked) { jumlahTerkunci++; arrayPesertaTerkunci.push(noUndiDOM); }
+                    
+                    kriteria.forEach((k, index) => {
+                        let inputEl = document.querySelector(`.input-nilai.p-${noUndiDOM}[data-aspek="${index}"]`);
+                        if (inputEl) {
+                            inputEl.value = log[`Aspek_${index + 1}`] !== undefined ? log[`Aspek_${index + 1}`] : "";
+                            if (isLocked) { inputEl.setAttribute('readonly', true); inputEl.style.backgroundColor = "var(--border-color)"; inputEl.style.color = "var(--text-muted)"; inputEl.style.cursor = "not-allowed"; }
+                        }
+                    });
+                    kalkulasiTotal(noUndiDOM, false);
+                }
             });
 
             const savedDraft = localStorage.getItem('spectra_draft_ui_' + userAktif.Kode_Akses);
             if (savedDraft) {
                 const draftObj = JSON.parse(savedDraft);
-                Object.keys(draftObj).forEach(noUndi => {
-                    if (!arrayPesertaTerkunci.includes(noUndi.toString())) {
-                        Object.keys(draftObj[noUndi]).forEach(aspekIdx => {
-                            let inputEl = document.querySelector(`.input-nilai.p-${noUndi}[data-aspek="${aspekIdx}"]`);
-                            if (inputEl) inputEl.value = draftObj[noUndi][aspekIdx];
-                        });
-                        kalkulasiTotal(noUndi, false);
+                Object.keys(draftObj).forEach(noUndiKey => {
+                    const pesertaCocokDraft = peserta.find(p => String(p.Nomor_Undian).trim() === String(noUndiKey).trim() || parseInt(p.Nomor_Undian) === parseInt(noUndiKey));
+                    if (pesertaCocokDraft) {
+                        let noUndiDOM = String(pesertaCocokDraft.Nomor_Undian).trim();
+                        if (!arrayPesertaTerkunci.includes(noUndiDOM)) {
+                            Object.keys(draftObj[noUndiKey]).forEach(aspekIdx => {
+                                let inputEl = document.querySelector(`.input-nilai.p-${noUndiDOM}[data-aspek="${aspekIdx}"]`);
+                                if (inputEl) inputEl.value = draftObj[noUndiKey][aspekIdx];
+                            });
+                            kalkulasiTotal(noUndiDOM, false);
+                        }
                     }
                 });
             }
@@ -295,7 +314,7 @@
                 if (!isNaN(nilai)) { total += nilai; } 
             });
             
-            // PROTEKSI ANTI-ERROR (Cek apakah elemen ada di layar)
+            // Proteksi aman untuk elemen Total
             const totalElement = document.getElementById(`total-${noUndian}`);
             if (totalElement) { totalElement.innerText = total; }
             
@@ -307,7 +326,7 @@
             if (!userAktif || statusTerkunci) return; let draft = {};
             document.querySelectorAll('.input-nilai').forEach(input => {
                 if (!input.hasAttribute('readonly') && input.value !== "") {
-                    const undi = input.getAttribute('data-undi'); const aspek = input.getAttribute('data-aspek');
+                    const undi = String(input.getAttribute('data-undi')).trim(); const aspek = input.getAttribute('data-aspek');
                     if (!draft[undi]) draft[undi] = {}; draft[undi][aspek] = input.value;
                 }
             });
@@ -323,15 +342,16 @@
         function simpanNilaiLuring() {
             const pesertaTabel = SPECTRA_DATA.masterPeserta.filter(p => p.ID_Cabang === userAktif.Tugas_ID_Cabang); let payloadData = [];
             pesertaTabel.forEach(p => {
-                const totalEl = document.getElementById(`total-${p.Nomor_Undian}`);
+                const noUndi = String(p.Nomor_Undian).trim();
+                const totalEl = document.getElementById(`total-${noUndi}`);
                 let totalNilai = totalEl ? parseInt(totalEl.innerText) : 0;
                 
                 if (totalNilai > 0) {
                     let nilaiAspek = [];
-                    kriteriaLomba.forEach((k, idx) => { let inputEl = document.querySelector(`.input-nilai.p-${p.Nomor_Undian}[data-aspek="${idx}"]`); if (inputEl && !inputEl.hasAttribute('readonly')) nilaiAspek.push(inputEl.value); });
+                    kriteriaLomba.forEach((k, idx) => { let inputEl = document.querySelector(`.input-nilai.p-${noUndi}[data-aspek="${idx}"]`); if (inputEl && !inputEl.hasAttribute('readonly')) nilaiAspek.push(inputEl.value); });
                     if (nilaiAspek.length > 0) {
                         payloadData.push({
-                            ID_Cabang: p.ID_Cabang, Kategori: p.Kategori, Nomor_Undian: p.Nomor_Undian, Asal_Sekolah: p.Asal_Sekolah, Nama_Peserta: p.Nama_Peserta, Kode_Akses: userAktif.Kode_Akses,
+                            ID_Cabang: p.ID_Cabang, Kategori: p.Kategori, Nomor_Undian: noUndi, Asal_Sekolah: p.Asal_Sekolah, Nama_Peserta: p.Nama_Peserta, Kode_Akses: userAktif.Kode_Akses,
                             Aspek_1: nilaiAspek[0]||"", Aspek_2: nilaiAspek[1]||"", Aspek_3: nilaiAspek[2]||"", Aspek_4: nilaiAspek[3]||"", Aspek_5: nilaiAspek[4]||"", 
                             Aspek_6: nilaiAspek[5]||"", Aspek_7: nilaiAspek[6]||"", Aspek_8: nilaiAspek[7]||"", Aspek_9: nilaiAspek[8]||"", Aspek_10: nilaiAspek[9]||"",
                             Penalti: 0, Total: totalNilai, Catatan_Juri: ""
