@@ -52,7 +52,6 @@
 </head>
 <body>
 
-    <!-- DIALOG KOMPONEN -->
     <div id="custom-dialog" class="dialog-overlay">
         <div id="dialog-content-box" class="dialog-box dialog-confirm">
             <div id="dialog-icon-bg" class="dialog-icon-container"><i id="dialog-icon" data-lucide="info" style="width: 32px; height: 32px;"></i></div>
@@ -62,7 +61,6 @@
         </div>
     </div>
 
-    <!-- LOADING AWAL -->
     <div id="loading-overlay">
         <i data-lucide="loader-2" class="lucide-spin" style="width: 40px; height: 40px; color: var(--primary); margin-bottom: 15px;"></i>
         <h2 style="margin-bottom: 5px;">Menyiapkan Ruang Kerja...</h2>
@@ -71,7 +69,6 @@
 
     <div class="app-container">
         
-        <!-- PANEL LOGIN -->
         <div id="panel-login" class="bento-box hidden" style="max-width: 400px; margin: 10vh auto; text-align: center;">
             <div style="width: 60px; height: 60px; background: #dbeafe; color: #2563eb; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;"><i data-lucide="shield-check" style="width: 30px; height: 30px;"></i></div>
             <h2 style="margin-bottom: 5px;">Masuk ke SPECTRA</h2>
@@ -81,7 +78,6 @@
             <button id="btn-login-juri" onclick="prosesLogin()" class="flex-center"><i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Mulai Bertugas</button>
         </div>
 
-        <!-- PANEL JURI -->
         <div id="panel-juri" class="hidden">
             <div class="bento-box" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
@@ -109,7 +105,7 @@
             </div>
         </div>
 
-        <!-- PANEL OPERATOR -->
+        <!-- PANEL OPERATOR YANG DISEMPURNAKAN -->
         <div id="panel-operator" class="hidden">
             <div class="bento-box" style="margin-bottom: 16px; border-left: 6px solid var(--warning); display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
@@ -124,20 +120,36 @@
                     <i data-lucide="log-out" style="width: 16px; height: 16px;"></i> <span class="hidden md:inline">Keluar</span>
                 </button>
             </div>
+            
             <div class="bento-box">
-                <h3 style="margin-bottom: 5px;">Matriks Keterisian Nilai</h3>
-                <p>Silakan pantau melalui Dashboard Admin Pusat.</p>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="margin: 0;">Matriks Keterisian Ruangan</h3>
+                        <p id="op-info-juri" style="margin-top: 5px;">Menampilkan status juri di cabang ini.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="tarikDataServerOperator()" style="width: auto; background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); box-shadow: none; padding: 10px 16px;" class="flex-center">
+                            <i data-lucide="refresh-cw" id="op-icon-refresh" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Segarkan Data</span>
+                        </button>
+                        <div id="op-container-validasi-semua"></div>
+                    </div>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table id="tabel-operator">
+                        <thead><tr id="op-tabel-header"></tr></thead>
+                        <tbody id="op-tabel-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- FOOTER -->
         <div style="text-align: center; padding: 20px; font-size: 11px; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-top: auto;">
             &copy; Tim Kreatif Selogiri
         </div>
 
     </div>
 
-    <!-- ACTION BAR BAWAH -->
     <div id="action-bar" class="sticky-action-bar hidden">
         <div class="action-container-inner">
             <button onclick="simpanDraftManual()" style="background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); flex: 1;">
@@ -149,14 +161,15 @@
         </div>
     </div>
 
-    <!-- LOGIKA JAVASCRIPT -->
     <script>
         // ⚠️ GANTI DENGAN URL API ANDA !!!
         const API_URL = "https://script.google.com/macros/s/AKfycbwk8EcYFqyriFF_V4IoCRpFnDeh5wcdIqE1I-5juRPyHUGE7V7tS2OGQpWrr7Ebyp4Lug/exec"; 
         
         let SPECTRA_DATA = {}; let userAktif = null; let kriteriaLomba = []; let statusTerkunci = false; 
 
-        function closeDialog() { document.getElementById('custom-dialog').classList.remove('active'); }
+        function closeDialog() {
+            document.getElementById('custom-dialog').classList.remove('active');
+        }
 
         function showDialog(type, title, message, onConfirmCallback = null) {
             const overlay = document.getElementById('custom-dialog'); const box = document.getElementById('dialog-content-box');
@@ -195,12 +208,12 @@
                 }
             } catch (error) { 
                 document.getElementById('loading-overlay').style.display = 'none';
-                showDialog('error', 'Koneksi Terputus', 'Gagal terhubung ke server. Harap muat ulang halaman.'); 
+                showDialog('error', 'Koneksi Terputus', 'Gagal terhubung ke server. Harap muat ulang halaman.');
             }
             lucide.createIcons(); if(userAktif) sinkronisasiOtomatis();
         };
 
-        // PERBAIKAN: Animasi Login Juri Setara Admin
+        // ANIMASI PROSES LOGIN JURI/OPERATOR (Meniru fitur di admin)
         async function prosesLogin() {
             const inputKode = document.getElementById('kode-akses').value.trim().toUpperCase();
             if (!inputKode) { showDialog('warning', 'Kode Kosong', 'Masukkan kode akses terlebih dahulu!'); return; }
@@ -213,7 +226,6 @@
             btnLogin.disabled = true;
             lucide.createIcons();
             
-            // Simulasi pengecekan sesaat untuk transisi halus
             setTimeout(() => {
                 const profil = SPECTRA_DATA.masterAkses.find(a => String(a.Kode_Akses).trim().toUpperCase() === inputKode);
                 if (!profil) { 
@@ -249,17 +261,160 @@
             }); 
         }
 
+        // ==========================================
+        // BAGIAN KHUSUS OPERATOR RUANGAN
+        // ==========================================
         function siapkanPanelOperator() {
-            document.getElementById('panel-operator').classList.remove('hidden'); document.getElementById('op-header-event').innerText = SPECTRA_DATA.masterLomba[0].Nama_Event;
+            document.getElementById('panel-operator').classList.remove('hidden'); 
+            document.getElementById('op-header-event').innerText = SPECTRA_DATA.masterLomba[0].Nama_Event;
+            
             const infoCabang = SPECTRA_DATA.masterCabang.find(c => c.ID_Cabang === userAktif.Tugas_ID_Cabang);
-            const warnaAksen = infoCabang.Warna_Aksen || "#f59e0b"; const ikonCabang = infoCabang.Ikon_Cabang || "monitor"; 
+            const warnaAksen = infoCabang.Warna_Aksen || "#f59e0b"; 
+            const ikonCabang = infoCabang.Ikon_Cabang || "monitor"; 
             document.documentElement.style.setProperty('--warning', warnaAksen);
             document.getElementById('op-info-tugas').innerHTML = `<i data-lucide="${ikonCabang}" style="width:16px;height:16px; margin-right:4px; vertical-align:middle;"></i> Monitor ${infoCabang.Nama_Cabang}`;
-            const pesertaLomba = SPECTRA_DATA.masterPeserta.filter(p => p.ID_Cabang === userAktif.Tugas_ID_Cabang);
-            document.getElementById('op-progress-badge').innerHTML = `<i data-lucide="users" style="width:14px;height:14px;"></i> Total: ${pesertaLomba.length} Peserta`;
+            
+            renderTabelOperator();
+        }
+
+        function renderTabelOperator() {
+            const idCabang = userAktif.Tugas_ID_Cabang;
+            const pesertaCabang = SPECTRA_DATA.masterPeserta.filter(p => String(p.ID_Cabang).trim() === String(idCabang).trim()); 
+            const juriTugas = SPECTRA_DATA.masterAkses.filter(a => String(a.Tugas_ID_Cabang).trim() === String(idCabang).trim() && String(a.Peran).trim().toUpperCase() === "JURI"); 
+            const logNilaiCabang = SPECTRA_DATA.logNilai.filter(log => String(log.ID_Cabang).trim() === String(idCabang).trim());
+            
+            document.getElementById('op-progress-badge').innerHTML = `<i data-lucide="users" style="width:14px;height:14px;"></i> Total: ${pesertaCabang.length} Peserta`;
+            document.getElementById('op-info-juri').innerText = `Terdapat ${juriTugas.length} juri bertugas di ruangan ini.`;
+            
+            window.pesertaSiapValidasiOp = [];
+            
+            const headerRow = document.getElementById('op-tabel-header'); 
+            const bodyTabel = document.getElementById('op-tabel-body');
+            
+            let htmlHeader = `<th style="width: 80px;">No. Undi</th><th>Nama Peserta</th>`; 
+            juriTugas.forEach((juri, idx) => { 
+                htmlHeader += `<th style="text-align:center;">Juri ${idx + 1} <br><span style="font-size:9px; font-weight:600; text-transform:none;">${juri.Nama_Petugas}</span></th>`; 
+            }); 
+            htmlHeader += `<th style="text-align:right;">Aksi Operator</th>`; 
+            headerRow.innerHTML = htmlHeader;
+            
+            let htmlBody = "";
+            if (pesertaCabang.length === 0) { 
+                htmlBody = `<tr><td colspan="${juriTugas.length + 3}" style="text-align:center; padding: 30px;">Belum ada data peserta.</td></tr>`; 
+            } else {
+                pesertaCabang.forEach(peserta => {
+                    let statusSelesai = true; 
+                    let statusFinal = false; 
+                    
+                    htmlBody += `<tr><td><span style="font-weight:800; font-size:16px; color:var(--warning);">${peserta.Nomor_Undian}</span></td><td><strong style="color:var(--text-main); display:block;">${peserta.Nama_Peserta}</strong><span style="font-size:12px; color:var(--text-muted);">${peserta.Asal_Sekolah}</span></td>`;
+                    
+                    juriTugas.forEach(juri => {
+                        const rekamJejak = logNilaiCabang.find(log => 
+                            (String(log.Nomor_Undian).trim() === String(peserta.Nomor_Undian).trim() || parseInt(log.Nomor_Undian) === parseInt(peserta.Nomor_Undian)) && 
+                            String(log.Kode_Akses).trim().toUpperCase() === String(juri.Kode_Akses).trim().toUpperCase()
+                        );
+                        
+                        if (rekamJejak && parseInt(rekamJejak.Total) > 0) {
+                            htmlBody += `<td style="text-align:center;"><div style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:10px; background:#d1fae5; color:var(--success); border:1px solid #a7f3d0;"><i data-lucide="check" style="width:18px;height:18px;"></i></div></td>`;
+                            if (String(rekamJejak.Status_Validasi).trim().toUpperCase() === "FINAL") statusFinal = true;
+                        } else {
+                            htmlBody += `<td style="text-align:center;"><div style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:10px; background:#f1f5f9; color:#94a3b8; border:1px dashed #cbd5e1;"><i data-lucide="clock" style="width:16px;height:16px;"></i></div></td>`;
+                            statusSelesai = false;
+                        }
+                    });
+                    
+                    if(statusSelesai && !statusFinal) {
+                        window.pesertaSiapValidasiOp.push(peserta.Nomor_Undian);
+                    }
+                    
+                    htmlBody += `<td style="text-align:right;">`;
+                    if (statusFinal) {
+                        htmlBody += `<button onclick="tindakValidasiOperator('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'BATAL')" style="width:auto; padding:8px 12px; background:#fee2e2; color:var(--danger); border:1px solid #fecaca; box-shadow:none;" class="flex-center"><i data-lucide="unlock" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Batal</span></button>`;
+                    } else if (statusSelesai) {
+                        htmlBody += `<button onclick="tindakValidasiOperator('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'SAH')" style="width:auto; padding:8px 12px; background:var(--warning); color:#fff; border:none; box-shadow:none;" class="flex-center"><i data-lucide="check-square" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Sahkan</span></button>`;
+                    } else {
+                        htmlBody += `<button disabled style="width:auto; padding:8px 12px; background:var(--border-color); color:var(--text-muted); border:none; box-shadow:none;" class="flex-center"><i data-lucide="minus" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Tunggu</span></button>`;
+                    }
+                    htmlBody += `</td></tr>`;
+                });
+            }
+            bodyTabel.innerHTML = htmlBody; 
+            
+            const containerMassal = document.getElementById('op-container-validasi-semua');
+            if (window.pesertaSiapValidasiOp.length > 0) {
+                containerMassal.innerHTML = `<button onclick="tindakValidasiSemuaOp('${idCabang}')" style="width:auto; background:var(--warning); margin:0; padding:10px 16px; box-shadow:none;" class="flex-center"><i data-lucide="check-square" style="width:16px;height:16px;"></i> Sahkan ${window.pesertaSiapValidasiOp.length} Selesai</button>`;
+            } else {
+                containerMassal.innerHTML = '';
+            }
             lucide.createIcons();
         }
 
+        async function tarikDataServerOperator() {
+            let iconRefresh = document.getElementById('op-icon-refresh'); 
+            if(iconRefresh) iconRefresh.classList.add('lucide-spin');
+            
+            try {
+                const response = await fetch(API_URL); 
+                const hasil = await response.json();
+                if(hasil.status === "success") {
+                    SPECTRA_DATA = hasil; 
+                    renderTabelOperator();
+                }
+            } catch (error) { 
+                showDialog('error', 'Koneksi Terputus', 'Gagal memuat data dari server.'); 
+            } finally { 
+                iconRefresh = document.getElementById('op-icon-refresh'); 
+                if(iconRefresh) iconRefresh.classList.remove('lucide-spin'); 
+                lucide.createIcons(); 
+            }
+        }
+
+        async function tindakValidasiOperator(idCabang, noUndian, tipe) {
+            let msg = tipe === 'SAH' ? `Kunci nilai untuk Peserta Nomor ${noUndian}?` : `Buka kembali nilai Peserta Nomor ${noUndian} agar juri bisa merevisi?`;
+            let aksiServer = tipe === 'SAH' ? "VALIDASI_OPERATOR" : "BATAL_VALIDASI_OPERATOR";
+            
+            showDialog('confirm', 'Konfirmasi Aksi', msg, async function() {
+                showDialog('info', 'Memproses...', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--warning);"></i><p>Menyinkronkan dengan server pusat...</p>'); 
+                
+                const payload = { action: aksiServer, data: [{ ID_Cabang: idCabang, Nomor_Undian: noUndian }] };
+                try {
+                    const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                    const result = await response.json();
+                    
+                    if(result.status === "success") { 
+                        closeDialog(); 
+                        await tarikDataServerOperator(); 
+                    } else { showDialog('error', 'Gagal', result.message); }
+                } catch (error) { showDialog('error', 'Koneksi Gagal', 'Sistem tidak merespons.'); } 
+            });
+        }
+        
+        async function tindakValidasiSemuaOp(idCabang) {
+            let list = window.pesertaSiapValidasiOp || [];
+            if(list.length === 0) return;
+            
+            showDialog('confirm', 'Validasi Massal', `Anda yakin ingin mengesahkan <strong>${list.length} peserta</strong> sekaligus di ruangan ini?`, async function() {
+                showDialog('info', 'Memproses Massal...', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--warning);"></i><p>Mengunci nilai di server pusat...</p>'); 
+                
+                const payloadArray = list.map(noUndian => ({ ID_Cabang: idCabang, Nomor_Undian: noUndian }));
+                const payload = { action: "VALIDASI_OPERATOR", data: payloadArray };
+                
+                try {
+                    const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                    const result = await response.json();
+                    
+                    if(result.status === "success") { 
+                        closeDialog(); 
+                        await tarikDataServerOperator(); 
+                        setTimeout(() => showDialog('success', 'Berhasil', `${list.length} peserta berhasil disahkan.`), 500);
+                    } else { showDialog('error', 'Gagal', result.message); }
+                } catch (error) { showDialog('error', 'Koneksi Gagal', 'Sistem tidak merespons.'); } 
+            });
+        }
+
+        // ==========================================
+        // BAGIAN KHUSUS JURI
+        // ==========================================
         function siapkanPanelJuri() {
             document.getElementById('panel-juri').classList.remove('hidden'); document.getElementById('juri-header-event').innerText = SPECTRA_DATA.masterLomba[0].Nama_Event;
             const infoCabang = SPECTRA_DATA.masterCabang.find(c => c.ID_Cabang === userAktif.Tugas_ID_Cabang);
@@ -386,7 +541,6 @@
             setTimeout(() => { btn.innerHTML = teksAsli; btn.style.backgroundColor = "var(--input-bg)"; btn.style.borderColor = "var(--border-color)"; lucide.createIcons(); }, 2000);
         }
 
-        // PERBAIKAN: Animasi Proses Tombol Saat Sinkronisasi
         function simpanNilaiLuring() {
             const pesertaTabel = SPECTRA_DATA.masterPeserta.filter(p => p.ID_Cabang === userAktif.Tugas_ID_Cabang); let payloadData = [];
             pesertaTabel.forEach(p => {
@@ -409,15 +563,14 @@
             const finalPayload = { action: "SUBMIT_NILAI", data: payloadData };
 
             const btn = document.getElementById('btn-kirim');
-            // Ganti ke State Sinkronisasi Aktif
+            // Menampilkan loading UI UX di tombol kirim
             btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 18px; height: 18px;"></i> Menyinkronkan...`; 
             btn.style.backgroundColor = "var(--warning)"; 
             btn.style.color = "#000";
             btn.disabled = true; 
             lucide.createIcons();
 
-            localStorage.removeItem('spectra_draft_ui_' + userAktif.Kode_Akses); 
-            localStorage.setItem('spectra_pending_submit_' + userAktif.Kode_Akses, JSON.stringify(finalPayload));
+            localStorage.removeItem('spectra_draft_ui_' + userAktif.Kode_Akses); localStorage.setItem('spectra_pending_submit_' + userAktif.Kode_Akses, JSON.stringify(finalPayload));
 
             if (navigator.onLine) { 
                 kirimKeServerBackground(finalPayload); 
@@ -433,30 +586,18 @@
 
         async function kirimKeServerBackground(payload) {
             try {
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); 
-                const result = await response.json();
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); const result = await response.json();
                 const btn = document.getElementById('btn-kirim');
-                
                 if(result.status === "success") {
                     localStorage.removeItem('spectra_pending_submit_' + userAktif.Kode_Akses);
                     if(btn && !statusTerkunci) { 
-                        // State Sukses
                         btn.innerHTML = `<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Terkirim ke Server`;
                         btn.style.backgroundColor = "var(--success)";
                         btn.style.color = "#fff";
                         lucide.createIcons();
-                        
-                        setTimeout(() => { 
-                            btn.innerHTML = `<i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i> Update Nilai Server`; 
-                            btn.disabled = false; 
-                            btn.style.backgroundColor = "var(--primary)"; 
-                            lucide.createIcons(); 
-                        }, 3000);
+                        setTimeout(() => { btn.innerHTML = `<i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i> Update Nilai Server`; btn.disabled = false; btn.style.backgroundColor = "var(--primary)"; lucide.createIcons(); }, 3000); 
                     }
-                } else { 
-                    showDialog('error', 'Gagal Tersimpan', result.message); 
-                    revertKirimBtn(); 
-                }
+                } else { showDialog('error', 'Gagal Tersimpan', result.message); revertKirimBtn(); }
             } catch (error) {
                 revertKirimBtn();
                 showDialog('error', 'Koneksi Gagal', 'Data masih tersimpan di draft lokal. Harap periksa jaringan Anda dan coba klik "Kirim" lagi.');
@@ -473,7 +614,7 @@
                 lucide.createIcons(); 
             } 
         }
-        
+
         function sinkronisasiOtomatis() { 
             const pendingPayload = localStorage.getItem('spectra_pending_submit_' + userAktif.Kode_Akses); 
             if (pendingPayload) { 
@@ -484,8 +625,7 @@
                     btn.style.color = "#000";
                     lucide.createIcons();
                 }
-                kirimKeServerBackground(JSON.parse(pendingPayload)); 
-                window.removeEventListener('online', sinkronisasiOtomatis); 
+                kirimKeServerBackground(JSON.parse(pendingPayload)); window.removeEventListener('online', sinkronisasiOtomatis); 
             } 
         }
     </script>
