@@ -8,10 +8,10 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root { --bg-dark: #0f172a; --bg-card: #1e293b; --accent: #3b82f6; --accent-glow: rgba(59, 130, 246, 0.5); --text-main: #f8fafc; --text-muted: #94a3b8; --border-color: #334155; --gold: #fbbf24; --silver: #cbd5e1; --bronze: #b45309; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-dark); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-dark); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-y: hidden; }
         body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 70%); z-index: -1; pointer-events: none; }
-        .container { width: 100%; max-width: 1200px; position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 95vh; }
-        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 15px; }
+        .container { width: 100%; max-width: 1200px; position: relative; z-index: 1; display: flex; flex-direction: column; height: 95vh; }
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 15px; flex-shrink: 0; }
         .header-title { margin: 0; font-size: 32px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 20px var(--accent-glow); display: flex; align-items: center; gap: 12px; }
         .header-subtitle { color: var(--accent); font-weight: 700; font-size: 16px; letter-spacing: 3px; }
         .desktop-subtitle { display: none; }
@@ -19,13 +19,16 @@
         .live-indicator { display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 8px 16px; border-radius: 50px; color: #10b981; font-weight: 800; font-size: 14px; letter-spacing: 1px; }
         .pulse-dot { width: 10px; height: 10px; background-color: #10b981; border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-        .filter-bar { display: flex; gap: 15px; margin-bottom: 25px; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); padding: 15px; border-radius: 1rem; border: 1px solid var(--border-color); flex-wrap: wrap; }
+        .filter-bar { display: flex; gap: 15px; margin-bottom: 20px; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); padding: 15px; border-radius: 1rem; border: 1px solid var(--border-color); flex-wrap: wrap; flex-shrink: 0; }
         select { flex: 1; padding: 14px 20px; background-color: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 12px; font-size: 16px; font-weight: 700; color: var(--text-main); outline: none; cursor: pointer; transition: 0.3s; appearance: none; min-width: 250px; }
         select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-glow); }
-        .table-container { background: var(--bg-card); border-radius: 1.5rem; border: 1px solid var(--border-color); overflow-x: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.4); -webkit-overflow-scrolling: touch; }
+        .table-container { background: var(--bg-card); border-radius: 1.5rem; border: 1px solid var(--border-color); overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; flex: 1; position: relative; }
+        .table-scroll { flex: 1; overflow-y: auto; overflow-x: auto; scroll-behavior: smooth; }
+        .table-scroll::-webkit-scrollbar { display: none; }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        thead { position: sticky; top: 0; z-index: 10; }
         th, td { padding: 20px 24px; text-align: left; border-bottom: 1px solid var(--border-color); }
-        th { background-color: rgba(15, 23, 42, 0.5); font-weight: 800; font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        th { background-color: rgba(15, 23, 42, 0.95); backdrop-filter: blur(5px); font-weight: 800; font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--border-color); }
         tbody tr { transition: all 0.3s ease; } tbody tr:hover { background-color: rgba(59, 130, 246, 0.05); }
         .rank-box { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-weight: 900; font-size: 20px; margin: auto; }
         .rank-1 { background: linear-gradient(135deg, #fde047, #f59e0b); color: #78350f; box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
@@ -36,7 +39,7 @@
         .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: 1px; }
         .bg-final { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
         .bg-draft { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px dashed rgba(245, 158, 11, 0.3); }
-        #loader { display: flex; align-items: center; justify-content: center; padding: 40px; gap: 15px; color: var(--accent); font-weight: bold; font-size: 18px; }
+        #loader { display: flex; align-items: center; justify-content: center; padding: 40px; gap: 15px; color: var(--accent); font-weight: bold; font-size: 18px; position: absolute; inset: 0; background: var(--bg-card); z-index: 50; }
         .lucide-spin { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
@@ -59,79 +62,184 @@
         </div>
 
         <div class="table-container">
-            <table>
-                <thead><tr><th style="text-align: center; width: 80px;">Pos</th><th style="width: 100px;">No. Undi</th><th>Peserta & Sekolah</th><th style="text-align: center;">Progres Juri</th><th style="text-align: right;">Total Nilai</th><th style="text-align: center;">Status</th></tr></thead>
-                <tbody id="livescore-body"></tbody>
-            </table>
-            <div id="loader"><i data-lucide="loader-2" class="lucide-spin"></i> Menyinkronkan data klasemen terbaru...</div>
+            <div id="loader"><i data-lucide="loader-2" class="lucide-spin"></i> Menyinkronkan klasemen terbaru...</div>
+            <div class="table-scroll" id="scroll-area">
+                <table>
+                    <thead><tr><th style="text-align: center; width: 80px;">Pos</th><th style="width: 100px;">No. Undi</th><th>Peserta & Sekolah</th><th style="text-align: center;">Progres Juri</th><th style="text-align: right;">Total Nilai</th><th style="text-align: center;">Status</th></tr></thead>
+                    <tbody id="livescore-body"></tbody>
+                </table>
+            </div>
         </div>
 
-        <div style="text-align: center; padding: 20px; font-size: 11px; font-weight: 800; color: var(--border-color); letter-spacing: 1px; text-transform: uppercase; margin-top: auto; opacity: 0.5;">
+        <!-- COPYRIGHT FOOTER -->
+        <div style="text-align: center; padding: 15px 0 0 0; font-size: 11px; font-weight: 800; color: var(--border-color); letter-spacing: 1px; text-transform: uppercase; flex-shrink: 0; opacity: 0.5;">
             &copy; Tim Kreatif Selogiri
         </div>
     </div>
 
     <script>
-        // ⚠️ GANTI DENGAN URL API ANDA
+        // ⚠️ GANTI DENGAN URL API ANDA !!!
         const API_URL = "https://script.google.com/macros/s/AKfycbwk8EcYFqyriFF_V4IoCRpFnDeh5wcdIqE1I-5juRPyHUGE7V7tS2OGQpWrr7Ebyp4Lug/exec"; 
-        let SPECTRA_DATA = {}; const REFRESH_RATE = 15000; 
+        let SPECTRA_DATA = {}; 
+        const REFRESH_RATE = 15000; 
+        
+        let autoScrollInterval; 
+        let isScrollingDown = true;
+        let isPaused = false; // Penanda untuk jeda scroll
 
         window.onload = async function() {
-            lucide.createIcons(); await tarikDataServer(); setInterval(tarikDataServerLatarBelakang, REFRESH_RATE);
+            lucide.createIcons(); 
+            await tarikDataServer(); 
+            setInterval(tarikDataServerLatarBelakang, REFRESH_RATE); 
+            startAutoScroll();
         };
+
+        function startAutoScroll() {
+            const area = document.getElementById('scroll-area');
+            autoScrollInterval = setInterval(() => {
+                // Jangan scroll jika sedang dijeda atau tabel tidak lebih besar dari layar
+                if (isPaused || area.scrollHeight <= area.clientHeight) return; 
+                
+                if (isScrollingDown) {
+                    area.scrollTop += 1;
+                    if (Math.ceil(area.scrollTop + area.clientHeight) >= area.scrollHeight) {
+                        isPaused = true; 
+                        setTimeout(() => { isScrollingDown = false; isPaused = false; }, 2000);
+                    }
+                } else {
+                    area.scrollTop -= 1;
+                    if (area.scrollTop <= 0) { 
+                        isPaused = true; 
+                        setTimeout(() => { isScrollingDown = true; isPaused = false; }, 2000); 
+                    }
+                }
+            }, 30); 
+        }
 
         async function tarikDataServer() {
             document.getElementById('loader').style.display = 'flex';
             try {
-                const response = await fetch(API_URL); const hasil = await response.json();
-                if(hasil.status === "success") { SPECTRA_DATA = hasil; document.getElementById('event-name').innerText = SPECTRA_DATA.masterLomba[0].Nama_Event; isiDropdown(); renderLivescore(); }
-            } catch (error) {} finally { document.getElementById('loader').style.display = 'none'; }
+                const response = await fetch(API_URL); 
+                const hasil = await response.json();
+                if(hasil.status === "success") { 
+                    SPECTRA_DATA = hasil; 
+                    document.getElementById('event-name').innerText = SPECTRA_DATA.masterLomba[0].Nama_Event; 
+                    isiDropdown(); 
+                    renderLivescore(); 
+                }
+            } catch (error) {} finally { 
+                document.getElementById('loader').style.display = 'none'; 
+            }
         }
 
         async function tarikDataServerLatarBelakang() {
             try {
-                const response = await fetch(API_URL); const hasil = await response.json();
-                if(hasil.status === "success") { SPECTRA_DATA = hasil; renderLivescore(); }
+                const response = await fetch(API_URL); 
+                const hasil = await response.json();
+                if(hasil.status === "success") { 
+                    SPECTRA_DATA = hasil; 
+                    renderLivescore(); 
+                }
             } catch (error) {}
         }
 
         function isiDropdown() {
-            const selectCabang = document.getElementById('filter-cabang'); const selectKategori = document.getElementById('filter-kategori');
-            const valCabang = selectCabang.value; const valKat = selectKategori.value;
-            let htmlCabang = '<option value="">-- Tampilkan Seluruh Cabang --</option>'; let unikKategori = []; 
+            const selectCabang = document.getElementById('filter-cabang'); 
+            const selectKategori = document.getElementById('filter-kategori');
+            const valCabang = selectCabang.value; 
+            const valKat = selectKategori.value;
+            
+            let htmlCabang = '<option value="">-- Tampilkan Seluruh Cabang --</option>'; 
+            let unikKategori = []; 
+            
             SPECTRA_DATA.masterCabang.forEach(cabang => {
                 htmlCabang += `<option value="${cabang.ID_Cabang}">${cabang.Nama_Cabang}</option>`;
-                let kat = (cabang.Kategori || cabang.Kategori_Tersedia || "").trim(); if (kat && !unikKategori.includes(kat)) unikKategori.push(kat);
+                let kat = (cabang.Kategori || cabang.Kategori_Tersedia || "").trim(); 
+                if (kat && !unikKategori.includes(kat)) unikKategori.push(kat);
             });
-            selectCabang.innerHTML = htmlCabang; if(valCabang) selectCabang.value = valCabang;
+            
+            selectCabang.innerHTML = htmlCabang; 
+            if(valCabang) selectCabang.value = valCabang;
+            
             let htmlKategori = '<option value="">-- Semua Kategori --</option>';
             unikKategori.sort().forEach(k => { htmlKategori += `<option value="${k}">${k}</option>`; });
-            selectKategori.innerHTML = htmlKategori; if(valKat && unikKategori.includes(valKat)) selectKategori.value = valKat;
+            
+            selectKategori.innerHTML = htmlKategori; 
+            if(valKat && unikKategori.includes(valKat)) selectKategori.value = valKat;
         }
 
         function renderLivescore() {
             if(!SPECTRA_DATA.masterPeserta) return;
-            const filterCabang = document.getElementById('filter-cabang').value; const filterKategori = document.getElementById('filter-kategori').value;
+            const filterCabang = document.getElementById('filter-cabang').value; 
+            const filterKategori = document.getElementById('filter-kategori').value;
+            
             let rekap = {};
-            SPECTRA_DATA.masterPeserta.forEach(p => { rekap[p.Nomor_Undian] = { ...p, totalNilai: 0, jmlJuri: 0, statusValidasi: "FINAL" }; });
+            SPECTRA_DATA.masterPeserta.forEach(p => { 
+                rekap[String(p.Nomor_Undian).trim()] = { ...p, totalNilai: 0, jmlJuri: 0, statusValidasi: "FINAL" }; 
+            });
+            
             SPECTRA_DATA.logNilai.forEach(log => {
-                if(rekap[log.Nomor_Undian]) { rekap[log.Nomor_Undian].totalNilai += (parseInt(log.Total) || 0); rekap[log.Nomor_Undian].jmlJuri++; if(log.Status_Validasi !== "FINAL") rekap[log.Nomor_Undian].statusValidasi = "PROSES"; }
+                let noUndiLog = String(log.Nomor_Undian).trim();
+                let keyTarget = noUndiLog;
+                if (!rekap[keyTarget]) { 
+                    let matchingKey = Object.keys(rekap).find(k => parseInt(k) === parseInt(noUndiLog)); 
+                    if (matchingKey) keyTarget = matchingKey; 
+                }
+                
+                if(rekap[keyTarget]) { 
+                    rekap[keyTarget].totalNilai += (parseInt(log.Total) || 0); 
+                    rekap[keyTarget].jmlJuri++; 
+                    if(String(log.Status_Validasi).trim().toUpperCase() !== "FINAL") {
+                        rekap[keyTarget].statusValidasi = "PROSES"; 
+                    }
+                }
             });
 
             let list = Object.values(rekap);
-            if (filterCabang) list = list.filter(p => p.ID_Cabang === filterCabang); if (filterKategori) list = list.filter(p => p.Kategori === filterKategori);
+            
+            // PERBAIKAN: Jika belum dinilai (0 Juri), statusnya harus LIVE/PROSES
+            list.forEach(p => {
+                if (p.jmlJuri === 0) p.statusValidasi = "PROSES";
+            });
+
+            if (filterCabang) list = list.filter(p => String(p.ID_Cabang).trim() === String(filterCabang).trim()); 
+            if (filterKategori) list = list.filter(p => String(p.Kategori).trim() === String(filterKategori).trim());
+            
             list.sort((a, b) => b.totalNilai - a.totalNilai);
-            const tbody = document.getElementById('livescore-body'); let htmlBody = "";
-            if (list.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--text-muted); font-size:18px;">Menunggu peserta...</td></tr>`; return; }
+            
+            const tbody = document.getElementById('livescore-body'); 
+            let htmlBody = "";
+            
+            if (list.length === 0) { 
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--text-muted); font-size:18px;">Menunggu peserta...</td></tr>`; 
+                return; 
+            }
 
             list.forEach((p, idx) => {
-                let rank = idx + 1; let rankVisual = `<div class="rank-box rank-other">${rank}</div>`;
-                if (rank === 1) rankVisual = `<div class="rank-box rank-1">1</div>`; else if (rank === 2) rankVisual = `<div class="rank-box rank-2">2</div>`; else if (rank === 3) rankVisual = `<div class="rank-box rank-3">3</div>`;
-                let statusVisual = p.statusValidasi === "FINAL" ? `<span class="status-badge bg-final"><i data-lucide="lock" style="width:12px;height:12px;display:inline-block;vertical-align:text-bottom;"></i> SAH</span>` : `<span class="status-badge bg-draft"><i data-lucide="refresh-cw" class="lucide-spin" style="width:12px;height:12px;display:inline-block;vertical-align:text-bottom;"></i> LIVE</span>`;
-                let infoCabangStr = SPECTRA_DATA.masterCabang.find(c=>c.ID_Cabang===p.ID_Cabang)?.Nama_Cabang || '';
-                htmlBody += `<tr><td style="text-align: center;">${rankVisual}</td><td><strong style="color:var(--text-main); font-size:22px;">${p.Nomor_Undian}</strong></td><td><strong style="color:var(--text-main); display:block; font-size: 18px; margin-bottom:4px;">${p.Nama_Peserta}</strong><span style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">${p.Kategori} - ${infoCabangStr} • ${p.Asal_Sekolah}</span></td><td style="text-align: center;"><div style="background:var(--bg-dark); border:1px solid var(--border-color); padding:8px 16px; border-radius:50px; display:inline-block; font-weight:800; color:var(--text-muted);"><i data-lucide="user-check" style="width:16px;height:16px;vertical-align:text-bottom;margin-right:4px;color:var(--accent);"></i> ${p.jmlJuri} Juri</div></td><td class="score-box">${p.totalNilai}</td><td style="text-align: center;">${statusVisual}</td></tr>`;
+                let rank = idx + 1; 
+                let rankVisual = `<div class="rank-box rank-other">${rank}</div>`;
+                if (rank === 1) rankVisual = `<div class="rank-box rank-1">1</div>`; 
+                else if (rank === 2) rankVisual = `<div class="rank-box rank-2">2</div>`; 
+                else if (rank === 3) rankVisual = `<div class="rank-box rank-3">3</div>`;
+                
+                let statusVisual = p.statusValidasi === "FINAL" ? 
+                    `<span class="status-badge bg-final"><i data-lucide="lock" style="width:12px;height:12px;display:inline-block;vertical-align:text-bottom;"></i> SAH</span>` : 
+                    `<span class="status-badge bg-draft"><i data-lucide="refresh-cw" class="lucide-spin" style="width:12px;height:12px;display:inline-block;vertical-align:text-bottom;"></i> LIVE</span>`;
+                
+                let infoCabangStr = SPECTRA_DATA.masterCabang.find(c => String(c.ID_Cabang).trim() === String(p.ID_Cabang).trim())?.Nama_Cabang || '';
+                
+                htmlBody += `
+                <tr>
+                    <td style="text-align: center;">${rankVisual}</td>
+                    <td><strong style="color:var(--text-main); font-size:22px;">${p.Nomor_Undian}</strong></td>
+                    <td><strong style="color:var(--text-main); display:block; font-size: 18px; margin-bottom:4px;">${p.Nama_Peserta}</strong><span style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">${p.Kategori} - ${infoCabangStr} • ${p.Asal_Sekolah}</span></td>
+                    <td style="text-align: center;"><div style="background:var(--bg-dark); border:1px solid var(--border-color); padding:8px 16px; border-radius:50px; display:inline-block; font-weight:800; color:var(--text-muted);"><i data-lucide="user-check" style="width:16px;height:16px;vertical-align:text-bottom;margin-right:4px;color:var(--accent);"></i> ${p.jmlJuri} Juri</div></td>
+                    <td class="score-box">${p.totalNilai}</td>
+                    <td style="text-align: center;">${statusVisual}</td>
+                </tr>`;
             });
-            tbody.innerHTML = htmlBody; lucide.createIcons();
+            tbody.innerHTML = htmlBody; 
+            lucide.createIcons();
         }
     </script>
 </body>
