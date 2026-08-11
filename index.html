@@ -56,7 +56,7 @@
         <div id="dialog-content-box" class="dialog-box dialog-confirm">
             <div id="dialog-icon-bg" class="dialog-icon-container"><i id="dialog-icon" data-lucide="info" style="width: 32px; height: 32px;"></i></div>
             <h3 id="dialog-title" style="margin-bottom: 8px;">Judul</h3>
-            <p id="dialog-msg" style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">Pesan</p>
+            <div id="dialog-msg" style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">Pesan</div>
             <div id="dialog-actions" class="dialog-actions"></div>
         </div>
     </div>
@@ -143,26 +143,34 @@
     </div>
 
     <script>
-        // ⚠️ GANTI DENGAN URL WEB APP ANDA !!!
+        // ⚠️ GANTI DENGAN URL API ANDA !!!
         const API_URL = "https://script.google.com/macros/s/AKfycbwk8EcYFqyriFF_V4IoCRpFnDeh5wcdIqE1I-5juRPyHUGE7V7tS2OGQpWrr7Ebyp4Lug/exec"; 
         
         let SPECTRA_DATA = {}; let userAktif = null; let kriteriaLomba = []; let statusTerkunci = false; 
 
+        function closeDialog() {
+            document.getElementById('custom-dialog').classList.remove('active');
+        }
+
         function showDialog(type, title, message, onConfirmCallback = null) {
             const overlay = document.getElementById('custom-dialog'); const box = document.getElementById('dialog-content-box');
-            document.getElementById('dialog-title').innerText = title; document.getElementById('dialog-msg').innerText = message;
+            document.getElementById('dialog-title').innerText = title; 
+            document.getElementById('dialog-msg').innerHTML = message;
             box.className = `dialog-box dialog-${type}`;
-            let iconName = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-triangle' : type === 'warning' ? 'alert-circle' : 'help-circle';
+            let iconName = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-triangle' : type === 'warning' ? 'alert-circle' : (type === 'info' ? 'info' : 'help-circle');
             document.getElementById('dialog-icon').setAttribute('data-lucide', iconName);
             const actions = document.getElementById('dialog-actions');
+            
             if (type === 'confirm') {
                 actions.innerHTML = `<button id="btn-dialog-cancel" style="background: var(--input-bg); color: var(--text-muted); border: 1px solid var(--border-color); box-shadow: none;">Batal</button><button id="btn-dialog-ok" style="background: var(--primary);">Ya, Lanjutkan</button>`;
-                document.getElementById('btn-dialog-cancel').onclick = () => overlay.classList.remove('active');
-                document.getElementById('btn-dialog-ok').onclick = () => { overlay.classList.remove('active'); if(onConfirmCallback) onConfirmCallback(); };
+                document.getElementById('btn-dialog-cancel').onclick = () => closeDialog();
+                document.getElementById('btn-dialog-ok').onclick = () => { closeDialog(); if(onConfirmCallback) onConfirmCallback(); };
+            } else if (type === 'info') {
+                actions.innerHTML = ''; 
             } else {
                 let btnColor = type === 'success' ? "var(--success)" : type === 'error' ? "var(--danger)" : "var(--primary)";
                 actions.innerHTML = `<button id="btn-dialog-ok" style="background: ${btnColor};">Mengerti</button>`;
-                document.getElementById('btn-dialog-ok').onclick = () => overlay.classList.remove('active');
+                document.getElementById('btn-dialog-ok').onclick = () => closeDialog();
             }
             lucide.createIcons(); overlay.classList.add('active');
         }
@@ -183,18 +191,39 @@
             lucide.createIcons(); if(userAktif) sinkronisasiOtomatis();
         };
 
+        // ANIMASI PROSES LOGIN JURI
         function prosesLogin() {
             const inputKode = document.getElementById('kode-akses').value.trim().toUpperCase();
-            const profil = SPECTRA_DATA.masterAkses.find(a => String(a.Kode_Akses).trim().toUpperCase() === inputKode);
-            if (!profil) { showDialog('error', 'Akses Ditolak', 'Kode akses tidak valid!'); return; }
-            userAktif = profil; localStorage.setItem('spectra_session', JSON.stringify(profil));
-            document.getElementById('panel-login').classList.add('hidden');
-            if (profil.Peran.toUpperCase() === "JURI") siapkanPanelJuri();
-            else if (profil.Peran.toUpperCase() === "OPERATOR") siapkanPanelOperator();
-            lucide.createIcons();
+            if (!inputKode) { showDialog('warning', 'Kode Kosong', 'Masukkan kode akses terlebih dahulu!'); return; }
+            
+            showDialog('info', 'Memverifikasi...', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--primary);"></i><p>Mencocokkan data petugas...</p>');
+            
+            setTimeout(() => {
+                const profil = SPECTRA_DATA.masterAkses.find(a => String(a.Kode_Akses).trim().toUpperCase() === inputKode);
+                if (!profil) { showDialog('error', 'Akses Ditolak', 'Kode akses tidak valid atau tidak terdaftar!'); return; }
+                
+                userAktif = profil; localStorage.setItem('spectra_session', JSON.stringify(profil));
+                showDialog('success', 'Berhasil Masuk', 'Selamat bertugas, ' + profil.Nama_Petugas + '!');
+                
+                setTimeout(() => {
+                    closeDialog();
+                    document.getElementById('panel-login').classList.add('hidden');
+                    if (profil.Peran.toUpperCase() === "JURI") siapkanPanelJuri();
+                    else if (profil.Peran.toUpperCase() === "OPERATOR") siapkanPanelOperator();
+                    lucide.createIcons();
+                }, 1500);
+            }, 1000);
         }
 
-        function prosesLogout() { showDialog('confirm', 'Konfirmasi Keluar', 'Keluar dari sistem? Draft lokal Anda akan tetap aman.', function() { localStorage.removeItem('spectra_session'); window.location.reload(); }); }
+        // ANIMASI PROSES LOGOUT JURI
+        function prosesLogout() { 
+            showDialog('confirm', 'Konfirmasi Keluar', 'Anda yakin ingin keluar dari sistem? Draft lokal Anda akan tetap aman tersimpan.', function() { 
+                showDialog('info', 'Keluar Sistem', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--danger);"></i><p>Menutup sesi aman Anda...</p>');
+                setTimeout(() => {
+                    localStorage.removeItem('spectra_session'); window.location.reload(); 
+                }, 1200);
+            }); 
+        }
 
         function siapkanPanelOperator() {
             document.getElementById('panel-operator').classList.remove('hidden'); document.getElementById('op-header-event').innerText = SPECTRA_DATA.masterLomba[0].Nama_Event;
@@ -253,7 +282,6 @@
             });
             bodyTabel.innerHTML = htmlBody;
 
-            // PROTEKSI ANTI ERROR: Deteksi toleransi 01 vs 1 
             const riwayatNilai = SPECTRA_DATA.logNilai.filter(log => 
                 String(log.Kode_Akses).trim().toUpperCase() === String(userAktif.Kode_Akses).trim().toUpperCase() && 
                 String(log.ID_Cabang).trim().toUpperCase() === String(userAktif.Tugas_ID_Cabang).trim().toUpperCase()
@@ -308,18 +336,13 @@
             const inputs = document.querySelectorAll(`.input-nilai.p-${noUndian}`); 
             let total = 0;
             inputs.forEach(input => { 
-                let max = parseInt(input.getAttribute('max')); 
-                let nilai = parseInt(input.value); 
+                let max = parseInt(input.getAttribute('max')); let nilai = parseInt(input.value); 
                 if (nilai > max) { input.value = max; nilai = max; } 
                 if (!isNaN(nilai)) { total += nilai; } 
             });
-            
-            // Proteksi aman untuk elemen Total
             const totalElement = document.getElementById(`total-${noUndian}`);
             if (totalElement) { totalElement.innerText = total; }
-            
-            updateProgressCounter();
-            if (triggerAutoSave) simpanDraftOtomatis();
+            updateProgressCounter(); if (triggerAutoSave) simpanDraftOtomatis();
         }
 
         function simpanDraftOtomatis() {
@@ -342,10 +365,7 @@
         function simpanNilaiLuring() {
             const pesertaTabel = SPECTRA_DATA.masterPeserta.filter(p => p.ID_Cabang === userAktif.Tugas_ID_Cabang); let payloadData = [];
             pesertaTabel.forEach(p => {
-                const noUndi = String(p.Nomor_Undian).trim();
-                const totalEl = document.getElementById(`total-${noUndi}`);
-                let totalNilai = totalEl ? parseInt(totalEl.innerText) : 0;
-                
+                const noUndi = String(p.Nomor_Undian).trim(); const totalEl = document.getElementById(`total-${noUndi}`); let totalNilai = totalEl ? parseInt(totalEl.innerText) : 0;
                 if (totalNilai > 0) {
                     let nilaiAspek = [];
                     kriteriaLomba.forEach((k, idx) => { let inputEl = document.querySelector(`.input-nilai.p-${noUndi}[data-aspek="${idx}"]`); if (inputEl && !inputEl.hasAttribute('readonly')) nilaiAspek.push(inputEl.value); });
@@ -381,15 +401,8 @@
             } catch (error) {}
         }
 
-        function revertKirimBtn() {
-            const btn = document.getElementById('btn-kirim');
-            if(btn && !statusTerkunci) { btn.innerHTML = `<i data-lucide="send" style="width: 18px; height: 18px;"></i> Kirim Ulang Nilai`; btn.disabled = false; btn.style.backgroundColor = "var(--primary)"; lucide.createIcons(); }
-        }
-
-        function sinkronisasiOtomatis() {
-            const pendingPayload = localStorage.getItem('spectra_pending_submit_' + userAktif.Kode_Akses);
-            if (pendingPayload) { kirimKeServerBackground(JSON.parse(pendingPayload)); window.removeEventListener('online', sinkronisasiOtomatis); }
-        }
+        function revertKirimBtn() { const btn = document.getElementById('btn-kirim'); if(btn && !statusTerkunci) { btn.innerHTML = `<i data-lucide="send" style="width: 18px; height: 18px;"></i> Kirim Ulang Nilai`; btn.disabled = false; btn.style.backgroundColor = "var(--primary)"; lucide.createIcons(); } }
+        function sinkronisasiOtomatis() { const pendingPayload = localStorage.getItem('spectra_pending_submit_' + userAktif.Kode_Akses); if (pendingPayload) { kirimKeServerBackground(JSON.parse(pendingPayload)); window.removeEventListener('online', sinkronisasiOtomatis); } }
     </script>
 </body>
 </html>
