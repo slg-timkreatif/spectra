@@ -254,7 +254,8 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h3 style="margin: 0; margin-bottom: 10px;">Rekapitulasi Nilai Akhir</h3>
                     <div style="display: flex; flex-wrap: wrap; gap: 10px; width: 100%; justify-content: flex-start; @media(min-width: 768px) { width: auto; justify-content: flex-end; }">
-                        <button onclick="exportKeExcel()" class="btn-action btn-excel"><i data-lucide="file-spreadsheet"></i> Export XLSX</button>
+                        <button onclick="exportKeExcel()" class="btn-action btn-excel"><i data-lucide="file-spreadsheet"></i> Export Cabang</button>
+                        <button onclick="exportRekapPusat()" class="btn-action" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a;"><i data-lucide="layout-dashboard"></i> Rekap Pusat (XLSX)</button>
                         <button onclick="cetakLaporan(3)" class="btn-action btn-print"><i data-lucide="printer"></i> Cetak 3 Besar</button>
                         <button onclick="cetakLaporan(0)" class="btn-action btn-outline"><i data-lucide="list"></i> Cetak Semua</button>
                     </div>
@@ -663,6 +664,77 @@
             let namaLomba = filterCabang.value ? filterCabang.options[filterCabang.selectedIndex].text : "Seluruh_Cabang";
             XLSX.writeFile(wb, `Rekap_Kejuaraan_${namaLomba.replace(/\s+/g, '_')}.xlsx`);
         }
+        
+        // FITUR BARU: Export Excel Sapu Jagat (Rekap Pusat Seluruh Cabang)
+        function exportRekapPusat() {
+            if (!ADMIN_DATA.masterPeserta || ADMIN_DATA.masterPeserta.length === 0) { 
+                showDialog('warning','Kosong', "Tidak ada data untuk diekspor."); 
+                return; 
+            }
+            
+            showDialog('info', 'Memproses...', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--primary);"></i><p>Menyusun Rekapitulasi Pusat...</p>');
+
+            setTimeout(() => {
+                try {
+                    let rekap = {};
+                    ADMIN_DATA.masterPeserta.forEach(p => { 
+                        let keyTarget = String(p.Nomor_Undian).trim() + "_" + String(p.ID_Cabang).trim();
+                        rekap[keyTarget] = { ...p, totalNilai: 0 }; 
+                    });
+                    
+                    ADMIN_DATA.logNilai.forEach(log => {
+                        let keyTarget = String(log.Nomor_Undian).trim() + "_" + String(log.ID_Cabang).trim();
+                        if(rekap[keyTarget]) {
+                            rekap[keyTarget].totalNilai += (parseInt(log.Total) || 0); 
+                        }
+                    });
+
+                    let allPesertaRekap = Object.values(rekap);
+                    
+                    ADMIN_DATA.masterCabang.forEach(c => {
+                        let listCabang = allPesertaRekap.filter(p => p.ID_Cabang === c.ID_Cabang);
+                        listCabang.sort((a, b) => b.totalNilai - a.totalNilai);
+                        listCabang.forEach((p, idx) => { p.peringkat = idx + 1; });
+                    });
+
+                    let rekapSekolah = {};
+                    allPesertaRekap.forEach(p => {
+                        let sekolah = String(p.Asal_Sekolah).trim();
+                        if(!rekapSekolah[sekolah]) {
+                            rekapSekolah[sekolah] = { "Nomor Undian": new Set(), "Nama Sekolah": sekolah };
+                            ADMIN_DATA.masterCabang.forEach(c => {
+                                rekapSekolah[sekolah][c.Nama_Cabang] = "";
+                                rekapSekolah[sekolah]['Juara ' + c.Nama_Cabang] = "";
+                            });
+                        }
+                        rekapSekolah[sekolah]["Nomor Undian"].add(p.Nomor_Undian);
+                        let namaCabang = ADMIN_DATA.masterCabang.find(c => c.ID_Cabang === p.ID_Cabang)?.Nama_Cabang || p.ID_Cabang;
+                        rekapSekolah[sekolah][namaCabang] = p.totalNilai || 0;
+                        if(p.totalNilai > 0) rekapSekolah[sekolah]['Juara ' + namaCabang] = p.peringkat;
+                    });
+
+                    let dataExport = Object.values(rekapSekolah).map(s => {
+                        let row = { "Nomor Undian": Array.from(s["Nomor Undian"]).join(", "), "Nama Sekolah": s["Nama Sekolah"] };
+                        ADMIN_DATA.masterCabang.forEach(c => {
+                            row[c.Nama_Cabang] = s[c.Nama_Cabang];
+                            row['Juara ' + c.Nama_Cabang] = s['Juara ' + c.Nama_Cabang];
+                        });
+                        return row;
+                    });
+
+                    dataExport.sort((a, b) => a["Nama Sekolah"].localeCompare(b["Nama Sekolah"]));
+
+                    let ws = XLSX.utils.json_to_sheet(dataExport); 
+                    let wb = XLSX.utils.book_new(); 
+                    XLSX.utils.book_append_sheet(wb, ws, "Rekap Pusat");
+                    XLSX.writeFile(wb, `Rekap_Pusat_Seluruh_Cabang_SPECTRA.xlsx`);
+                    
+                    closeDialog();
+                } catch(e) {
+                    showDialog('error', 'Gagal', 'Terjadi kesalahan saat mengekspor data.');
+                }
+            }, 800);
+        }
 
         function cetakLaporan(limit) {
             if (kejuaraanAktif.length === 0) return; 
@@ -707,11 +779,11 @@
             const headerRow = document.getElementById('tabel-validasi-header'); 
             const bodyTabel = document.getElementById('tabel-validasi-body');
             
-            let htmlHeader = `<th style="width: 80px;">No. Undi</th><th>Nama Peserta</th>`; 
+            let htmlHeader = `<th style="width: 80px;">No. Undi</th><th style="text-align:left;">Nama Peserta</th>`; 
             juriTugas.forEach((juri, idx) => { 
-                htmlHeader += `<th style="text-align:center;">Juri ${idx + 1} <br><span style="font-size:9px; font-weight:600; text-transform:none;">${juri.Nama_Petugas}</span></th>`; 
+                htmlHeader += `<th style="text-align:center; min-width:80px;">Juri ${idx + 1} <br><span style="font-size:9px; font-weight:600; text-transform:none;">${juri.Nama_Petugas}</span></th>`; 
             }); 
-            htmlHeader += `<th style="text-align:center;">Total Nilai</th><th style="text-align:right;">Validasi Sistem</th>`; 
+            htmlHeader += `<th style="text-align:center; min-width:100px;">Total Nilai</th><th style="text-align:center; width:130px;">Validasi Sistem</th>`; 
             headerRow.innerHTML = htmlHeader;
             
             let htmlBody = "";
@@ -723,7 +795,7 @@
                     let statusFinal = false; 
                     let totalAkumulasi = 0;
                     
-                    htmlBody += `<tr><td><span style="font-weight:800; font-size:16px; color:var(--accent);">${peserta.Nomor_Undian}</span></td><td><strong style="color:var(--text-main); display:block;">${peserta.Nama_Peserta}</strong><span style="font-size:12px; color:var(--text-muted);">${peserta.Asal_Sekolah}</span></td>`;
+                    htmlBody += `<tr><td style="text-align:center;"><span style="font-weight:800; font-size:16px; color:var(--accent);">${peserta.Nomor_Undian}</span></td><td style="text-align:left;"><strong style="color:var(--text-main); display:block;">${peserta.Nama_Peserta}</strong><span style="font-size:12px; color:var(--text-muted);">${peserta.Asal_Sekolah}</span></td>`;
                     
                     juriTugas.forEach(juri => {
                         const rekamJejak = logNilaiCabang.find(log => 
@@ -733,13 +805,24 @@
                         
                         if (rekamJejak && parseInt(rekamJejak.Total) > 0) {
                             totalAkumulasi += parseInt(rekamJejak.Total);
-                            htmlBody += `<td style="text-align:center;">
-                                <div style="font-weight:800; font-size:18px; color:var(--success);">${rekamJejak.Total}</div>
-                                <div style="font-size:10px; font-weight:700; color:var(--text-muted);"><i data-lucide="check-circle" style="width:10px;height:10px;display:inline-block;vertical-align:middle;"></i> Masuk</div>
+                            htmlBody += `<td style="text-align:center; vertical-align:middle;">
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                                    <div style="font-weight:800; font-size:18px; color:var(--success); line-height:1;">${rekamJejak.Total}</div>
+                                    <div style="display:inline-flex; align-items:center; justify-content:center; gap:4px; font-size:10px; font-weight:800; color:var(--success); background:#d1fae5; padding:4px 8px; border-radius:12px; border:1px solid #a7f3d0; line-height:1;">
+                                        <i data-lucide="check-circle" style="width:12px;height:12px;"></i> MASUK
+                                    </div>
+                                </div>
                             </td>`;
                             if (String(rekamJejak.Status_Validasi).trim().toUpperCase() === "FINAL") statusFinal = true;
                         } else {
-                            htmlBody += `<td style="text-align:center;"><div style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; background:#f1f5f9; color:#94a3b8; border:1px dashed #cbd5e1;"><i data-lucide="clock" style="width:14px;height:14px;"></i></div></td>`;
+                            htmlBody += `<td style="text-align:center; vertical-align:middle;">
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                                    <div style="font-weight:800; font-size:18px; color:var(--text-muted); line-height:1; opacity:0.5;">-</div>
+                                    <div style="display:inline-flex; align-items:center; justify-content:center; gap:4px; font-size:10px; font-weight:800; color:var(--text-muted); background:#f1f5f9; padding:4px 8px; border-radius:12px; border:1px dashed #cbd5e1; line-height:1;">
+                                        <i data-lucide="clock" style="width:12px;height:12px;"></i> TUNGGU
+                                    </div>
+                                </div>
+                            </td>`;
                             statusSelesai = false;
                         }
                     });
@@ -748,15 +831,15 @@
                         window.pesertaSiapValidasi.push(peserta.Nomor_Undian);
                     }
                     
-                    htmlBody += `<td style="text-align:center;"><strong style="font-size:22px; color:var(--accent);">${totalAkumulasi}</strong></td>`;
+                    htmlBody += `<td style="text-align:center; vertical-align:middle;"><strong style="font-size:22px; color:var(--accent);">${totalAkumulasi}</strong></td>`;
                     
-                    htmlBody += `<td style="text-align:right;">`;
+                    htmlBody += `<td style="text-align:center; vertical-align:middle;">`;
                     if (statusFinal) {
-                        htmlBody += `<button onclick="tindakValidasi('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'BATAL')" class="btn-action btn-danger"><i data-lucide="unlock" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Batal Sahkan</span></button>`;
+                        htmlBody += `<button onclick="tindakValidasi('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'BATAL')" style="width:auto; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:#fee2e2; color:var(--danger); border:1px solid #fecaca; border-radius:10px; font-weight:700;"><i data-lucide="unlock" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Batal</span></button>`;
                     } else if (statusSelesai) {
-                        htmlBody += `<button onclick="tindakValidasi('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'SAH')" class="btn-action btn-primary"><i data-lucide="check-square" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Sahkan</span></button>`;
+                        htmlBody += `<button onclick="tindakValidasi('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'SAH')" style="width:auto; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-weight:700;"><i data-lucide="check-square" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Sahkan</span></button>`;
                     } else {
-                        htmlBody += `<button disabled class="btn-action" style="background:var(--border-color); color:var(--text-muted);"><i data-lucide="minus" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Tunggu Juri</span></button>`;
+                        htmlBody += `<button disabled style="width:auto; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:var(--border-color); color:var(--text-muted); border:none; border-radius:10px; font-weight:700;"><i data-lucide="minus" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Tunggu</span></button>`;
                     }
                     htmlBody += `</td></tr>`;
                 });
