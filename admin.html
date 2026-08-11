@@ -64,16 +64,18 @@
         .medal-3 { background: #fed7aa; color: #9a3412; border: 1px solid #fdba74; } 
         
         .btn-action { padding: 10px 16px; border-radius: 10px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; width: 100%; margin-bottom: 8px; }
+        .btn-action:disabled { opacity: 0.65; cursor: not-allowed; transform: none !important; }
+        
         .btn-primary { background: var(--accent); color: white; }
-        .btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); }
+        .btn-primary:hover:not(:disabled) { background: #1d4ed8; transform: translateY(-2px); }
         .btn-danger { background: #fee2e2; color: var(--danger); border: 1px solid #fecaca; }
-        .btn-danger:hover { background: #fca5a5; transform: translateY(-2px); }
+        .btn-danger:hover:not(:disabled) { background: #fca5a5; transform: translateY(-2px); }
         .btn-outline { background: white; border: 1px solid var(--border-color); color: var(--text-main); }
-        .btn-outline:hover { background: #f1f5f9; transform: translateY(-2px); }
+        .btn-outline:hover:not(:disabled) { background: #f1f5f9; transform: translateY(-2px); }
         .btn-print { background: #10b981; color: white; }
-        .btn-print:hover { background: #059669; transform: translateY(-2px); }
+        .btn-print:hover:not(:disabled) { background: #059669; transform: translateY(-2px); }
         .btn-excel { background: #ecfdf5; color: #059669; border: 1px solid #10b981; }
-        .btn-excel:hover { background: #d1fae5; transform: translateY(-2px); }
+        .btn-excel:hover:not(:disabled) { background: #d1fae5; transform: translateY(-2px); }
         
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -145,7 +147,7 @@
             <h2 style="margin-bottom: 5px;">Pusat Komando</h2>
             <p style="margin-bottom: 25px;">Masukkan Kode Akses Administrator.</p>
             <input type="text" id="kode-akses-admin" placeholder="Kode Akses Admin" style="text-align: center; text-transform: uppercase; letter-spacing: 2px;">
-            <button onclick="prosesLoginAdmin()" class="btn-action btn-primary" style="width: 100%; padding: 14px;">
+            <button id="btn-login-admin" onclick="prosesLoginAdmin()" class="btn-action btn-primary" style="width: 100%; padding: 14px;">
                 <i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Buka Sistem
             </button>
         </div>
@@ -284,9 +286,16 @@
                     <option value="">-- Silakan Pilih Cabang Lomba --</option>
                 </select>
             </div>
+            
             <div class="bento-box" id="area-matriks" style="display: none;">
-                <h3 style="margin-bottom: 5px;">Matriks Keterisian</h3>
-                <p id="info-jumlah-juri">Menampilkan status penilaian juri.</p>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="margin-bottom: 5px; margin-top:0;">Matriks Keterisian</h3>
+                        <p id="info-jumlah-juri" style="margin:0;">Menampilkan status penilaian juri.</p>
+                    </div>
+                    <!-- Wadah Tombol Validasi Massal -->
+                    <div id="container-validasi-semua"></div>
+                </div>
                 <div class="table-wrapper">
                     <table>
                         <thead><tr id="tabel-validasi-header"></tr></thead>
@@ -383,6 +392,7 @@
             }
         };
 
+        // PERBAIKAN: Animasi Loading Proses Login UX
         async function prosesLoginAdmin() {
             const inputKode = document.getElementById('kode-akses-admin').value.trim().toUpperCase();
             if (!inputKode) { 
@@ -390,7 +400,13 @@
                 return; 
             }
             
-            showDialog('info', 'Memverifikasi Akses', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--accent);"></i><p>Menghubungkan ke server pusat...</p>');
+            const btnLogin = document.getElementById('btn-login-admin');
+            const originalBtnHTML = btnLogin.innerHTML;
+            
+            // Ubah tombol ke state Loading
+            btnLogin.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 18px; height: 18px;"></i> Memverifikasi...`;
+            btnLogin.disabled = true;
+            lucide.createIcons();
             
             try {
                 const response = await fetch(API_URL); 
@@ -401,27 +417,43 @@
                     const profil = ADMIN_DATA.masterAkses.find(a => String(a.Kode_Akses).trim().toUpperCase() === inputKode && String(a.Peran).trim().toUpperCase() === "ADMIN");
                     
                     if (!profil) { 
+                        // Kembalikan tombol jika gagal
+                        btnLogin.innerHTML = originalBtnHTML;
+                        btnLogin.disabled = false;
+                        lucide.createIcons();
                         showDialog('error','Akses Ditolak',"Kode akses tidak terdaftar sebagai Administrator."); 
                         return; 
                     }
                     
                     adminAktif = profil; 
                     localStorage.setItem('spectra_admin_session', JSON.stringify(profil));
-                    showDialog('success', 'Akses Diterima', 'Selamat bertugas, ' + adminAktif.Nama_Petugas + '!');
+                    
+                    // Ubah tombol ke state Sukses Hijau
+                    btnLogin.style.backgroundColor = 'var(--success)';
+                    btnLogin.style.borderColor = 'var(--success)';
+                    btnLogin.innerHTML = `<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Akses Diterima`;
+                    btnLogin.disabled = false;
+                    btnLogin.style.pointerEvents = 'none'; // cegah double click
+                    lucide.createIcons();
                     
                     setTimeout(() => {
-                        closeDialog();
                         document.getElementById('login-overlay').style.display = 'none'; 
                         document.getElementById('admin-name-display').innerText = `Sesi Aktif: ${adminAktif.Nama_Petugas}`;
                         isiDropdown(); 
                         renderKejuaraan(); 
                         renderAkses();
-                    }, 1500);
+                    }, 1200);
 
                 } else { 
+                    btnLogin.innerHTML = originalBtnHTML;
+                    btnLogin.disabled = false;
+                    lucide.createIcons();
                     showDialog('error','Error', hasil.message); 
                 }
             } catch (error) { 
+                btnLogin.innerHTML = originalBtnHTML;
+                btnLogin.disabled = false;
+                lucide.createIcons();
                 showDialog('error','Gagal Jaringan',"Gagal menghubungi server. Periksa internet Anda."); 
             } 
         }
@@ -481,7 +513,7 @@
             } finally { 
                 document.getElementById('loading-overlay').style.display = 'none'; 
                 
-                // Menangkap kembali elemen DOM (untuk mengatasi issue elemen SVG terganti)
+                // Refresh icon handling fix
                 iconRefresh = document.getElementById('icon-refresh'); 
                 if(iconRefresh) iconRefresh.classList.remove('lucide-spin'); 
                 
@@ -660,6 +692,9 @@
         function renderMatriksValidasi() {
             const idCabang = document.getElementById('filter-cabang-validasi').value; 
             const areaMatriks = document.getElementById('area-matriks');
+            const containerValidasiSemua = document.getElementById('container-validasi-semua');
+            window.pesertaSiapValidasi = []; // reset array peserta siap disahkan
+            
             if (!idCabang) { areaMatriks.style.display = 'none'; return; } 
             
             areaMatriks.style.display = 'block';
@@ -704,6 +739,11 @@
                         }
                     });
                     
+                    // Catat peserta yang nilainya sudah lengkap dari semua juri tapi belum divalidasi final
+                    if(statusSelesai && !statusFinal) {
+                        window.pesertaSiapValidasi.push(peserta.Nomor_Undian);
+                    }
+                    
                     htmlBody += `<td style="text-align:right;">`;
                     if (statusFinal) {
                         htmlBody += `<button onclick="tindakValidasi('${peserta.ID_Cabang}', '${peserta.Nomor_Undian}', 'BATAL')" class="btn-action btn-danger"><i data-lucide="unlock" style="width:16px;height:16px;"></i> <span class="hidden md:inline">Batal Sahkan</span></button>`;
@@ -716,6 +756,14 @@
                 });
             }
             bodyTabel.innerHTML = htmlBody; 
+            
+            // Render Tombol Validasi Massal
+            if (window.pesertaSiapValidasi.length > 0) {
+                containerValidasiSemua.innerHTML = `<button onclick="tindakValidasiSemua('${idCabang}')" class="btn-action btn-primary" style="margin:0; padding:10px 16px;"><i data-lucide="check-square"></i> Sahkan ${window.pesertaSiapValidasi.length} Peserta Selesai</button>`;
+            } else {
+                containerValidasiSemua.innerHTML = '';
+            }
+            
             lucide.createIcons();
         }
 
@@ -739,6 +787,35 @@
                     }
                 } catch (error) { 
                     showDialog('error', 'Koneksi Gagal', 'Sistem tidak merespons.'); 
+                } 
+            });
+        }
+        
+        // PERBAIKAN: Fungsi Tambahan Untuk Validasi Massal
+        async function tindakValidasiSemua(idCabang) {
+            let list = window.pesertaSiapValidasi || [];
+            if(list.length === 0) return;
+            
+            showDialog('confirm', 'Validasi Massal', `Anda yakin ingin mengesahkan <strong>${list.length} peserta</strong> sekaligus? Tindakan ini akan mengunci nilai mereka.`, async function() {
+                showDialog('info', 'Memproses Massal...', '<i data-lucide="loader-2" class="lucide-spin" style="margin:15px auto; display:block; width:36px; height:36px; color:var(--primary);"></i><p>Mengunci nilai di server pusat...</p>'); 
+                
+                // Susun array payload untuk seluruh peserta yang siap
+                const payloadArray = list.map(noUndian => ({ ID_Cabang: idCabang, Nomor_Undian: noUndian }));
+                const payload = { action: "VALIDASI_OPERATOR", data: payloadArray };
+                
+                try {
+                    const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                    const result = await response.json();
+                    
+                    if(result.status === "success") { 
+                        closeDialog(); 
+                        await tarikDataServer(); 
+                        setTimeout(() => showDialog('success', 'Berhasil', `${list.length} peserta berhasil disahkan.`), 500);
+                    } else { 
+                        showDialog('error', 'Gagal', result.message); 
+                    }
+                } catch (error) { 
+                    showDialog('error', 'Koneksi Gagal', 'Sistem tidak merespons. Periksa internet Anda.'); 
                 } 
             });
         }
