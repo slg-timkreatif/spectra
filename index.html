@@ -105,7 +105,6 @@
             </div>
         </div>
 
-        <!-- PANEL OPERATOR YANG DISEMPURNAKAN -->
         <div id="panel-operator" class="hidden">
             <div class="bento-box" style="margin-bottom: 16px; border-left: 6px solid var(--warning); display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
@@ -213,7 +212,6 @@
             lucide.createIcons(); if(userAktif) sinkronisasiOtomatis();
         };
 
-        // ANIMASI PROSES LOGIN JURI/OPERATOR (Meniru fitur di admin)
         async function prosesLogin() {
             const inputKode = document.getElementById('kode-akses').value.trim().toUpperCase();
             if (!inputKode) { showDialog('warning', 'Kode Kosong', 'Masukkan kode akses terlebih dahulu!'); return; }
@@ -221,7 +219,6 @@
             const btnLogin = document.getElementById('btn-login-juri');
             const originalHTML = btnLogin.innerHTML;
             
-            // Ubah tombol ke state Loading
             btnLogin.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 18px; height: 18px;"></i> Memverifikasi...`;
             btnLogin.disabled = true;
             lucide.createIcons();
@@ -238,7 +235,6 @@
                 
                 userAktif = profil; localStorage.setItem('spectra_session', JSON.stringify(profil));
                 
-                // Ubah tombol ke Sukses
                 btnLogin.style.backgroundColor = 'var(--success)';
                 btnLogin.innerHTML = `<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Akses Diterima`;
                 lucide.createIcons();
@@ -261,9 +257,6 @@
             }); 
         }
 
-        // ==========================================
-        // BAGIAN KHUSUS OPERATOR RUANGAN
-        // ==========================================
         function siapkanPanelOperator() {
             document.getElementById('panel-operator').classList.remove('hidden'); 
             document.getElementById('op-header-event').innerText = SPECTRA_DATA.masterLomba[0].Nama_Event;
@@ -295,16 +288,17 @@
             juriTugas.forEach((juri, idx) => { 
                 htmlHeader += `<th style="text-align:center;">Juri ${idx + 1} <br><span style="font-size:9px; font-weight:600; text-transform:none;">${juri.Nama_Petugas}</span></th>`; 
             }); 
-            htmlHeader += `<th style="text-align:right;">Aksi Operator</th>`; 
+            htmlHeader += `<th style="text-align:center;">Total Nilai</th><th style="text-align:right;">Aksi Operator</th>`; 
             headerRow.innerHTML = htmlHeader;
             
             let htmlBody = "";
             if (pesertaCabang.length === 0) { 
-                htmlBody = `<tr><td colspan="${juriTugas.length + 3}" style="text-align:center; padding: 30px;">Belum ada data peserta.</td></tr>`; 
+                htmlBody = `<tr><td colspan="${juriTugas.length + 4}" style="text-align:center; padding: 30px;">Belum ada data peserta.</td></tr>`; 
             } else {
                 pesertaCabang.forEach(peserta => {
                     let statusSelesai = true; 
                     let statusFinal = false; 
+                    let totalAkumulasi = 0;
                     
                     htmlBody += `<tr><td><span style="font-weight:800; font-size:16px; color:var(--warning);">${peserta.Nomor_Undian}</span></td><td><strong style="color:var(--text-main); display:block;">${peserta.Nama_Peserta}</strong><span style="font-size:12px; color:var(--text-muted);">${peserta.Asal_Sekolah}</span></td>`;
                     
@@ -315,10 +309,16 @@
                         );
                         
                         if (rekamJejak && parseInt(rekamJejak.Total) > 0) {
-                            htmlBody += `<td style="text-align:center;"><div style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:10px; background:#d1fae5; color:var(--success); border:1px solid #a7f3d0;"><i data-lucide="check" style="width:18px;height:18px;"></i></div></td>`;
+                            totalAkumulasi += parseInt(rekamJejak.Total);
+                            
+                            htmlBody += `<td style="text-align:center;">
+                                <div style="font-weight:800; font-size:18px; color:var(--success);">${rekamJejak.Total}</div>
+                                <div style="font-size:10px; font-weight:700; color:var(--text-muted);"><i data-lucide="check-circle" style="width:10px;height:10px;display:inline-block;vertical-align:middle;"></i> Masuk</div>
+                            </td>`;
+                            
                             if (String(rekamJejak.Status_Validasi).trim().toUpperCase() === "FINAL") statusFinal = true;
                         } else {
-                            htmlBody += `<td style="text-align:center;"><div style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:10px; background:#f1f5f9; color:#94a3b8; border:1px dashed #cbd5e1;"><i data-lucide="clock" style="width:16px;height:16px;"></i></div></td>`;
+                            htmlBody += `<td style="text-align:center;"><div style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; background:#f1f5f9; color:#94a3b8; border:1px dashed #cbd5e1;"><i data-lucide="clock" style="width:14px;height:14px;"></i></div></td>`;
                             statusSelesai = false;
                         }
                     });
@@ -326,6 +326,8 @@
                     if(statusSelesai && !statusFinal) {
                         window.pesertaSiapValidasiOp.push(peserta.Nomor_Undian);
                     }
+                    
+                    htmlBody += `<td style="text-align:center;"><strong style="font-size:22px; color:var(--primary);">${totalAkumulasi}</strong></td>`;
                     
                     htmlBody += `<td style="text-align:right;">`;
                     if (statusFinal) {
@@ -412,9 +414,6 @@
             });
         }
 
-        // ==========================================
-        // BAGIAN KHUSUS JURI
-        // ==========================================
         function siapkanPanelJuri() {
             document.getElementById('panel-juri').classList.remove('hidden'); document.getElementById('juri-header-event').innerText = SPECTRA_DATA.masterLomba[0].Nama_Event;
             const infoCabang = SPECTRA_DATA.masterCabang.find(c => c.ID_Cabang === userAktif.Tugas_ID_Cabang);
@@ -563,7 +562,6 @@
             const finalPayload = { action: "SUBMIT_NILAI", data: payloadData };
 
             const btn = document.getElementById('btn-kirim');
-            // Menampilkan loading UI UX di tombol kirim
             btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 18px; height: 18px;"></i> Menyinkronkan...`; 
             btn.style.backgroundColor = "var(--warning)"; 
             btn.style.color = "#000";
