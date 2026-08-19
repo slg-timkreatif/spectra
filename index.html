@@ -52,6 +52,7 @@
 </head>
 <body>
 
+    <!-- DIALOG KOMPONEN -->
     <div id="custom-dialog" class="dialog-overlay">
         <div id="dialog-content-box" class="dialog-box dialog-confirm">
             <div id="dialog-icon-bg" class="dialog-icon-container"><i id="dialog-icon" data-lucide="info" style="width: 32px; height: 32px;"></i></div>
@@ -61,6 +62,7 @@
         </div>
     </div>
 
+    <!-- LOADING AWAL -->
     <div id="loading-overlay">
         <i data-lucide="loader-2" class="lucide-spin" style="width: 40px; height: 40px; color: var(--primary); margin-bottom: 15px;"></i>
         <h2 style="margin-bottom: 5px;">Menyiapkan Ruang Kerja...</h2>
@@ -69,6 +71,7 @@
 
     <div class="app-container">
         
+        <!-- PANEL LOGIN -->
         <div id="panel-login" class="bento-box hidden" style="max-width: 400px; margin: 10vh auto; text-align: center;">
             <div style="width: 60px; height: 60px; background: #dbeafe; color: #2563eb; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;"><i data-lucide="shield-check" style="width: 30px; height: 30px;"></i></div>
             <h2 style="margin-bottom: 5px;">Masuk ke SPECTRA</h2>
@@ -78,6 +81,7 @@
             <button id="btn-login-juri" onclick="prosesLogin()" class="flex-center"><i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Mulai Bertugas</button>
         </div>
 
+        <!-- PANEL JURI -->
         <div id="panel-juri" class="hidden">
             <div class="bento-box" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
@@ -105,6 +109,7 @@
             </div>
         </div>
 
+        <!-- PANEL OPERATOR YANG DISEMPURNAKAN -->
         <div id="panel-operator" class="hidden">
             <div class="bento-box" style="margin-bottom: 16px; border-left: 6px solid var(--warning); display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
@@ -143,12 +148,14 @@
             </div>
         </div>
 
+        <!-- FOOTER -->
         <div style="text-align: center; padding: 20px; font-size: 11px; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-top: auto;">
             &copy; Tim Kreatif Selogiri
         </div>
 
     </div>
 
+    <!-- ACTION BAR BAWAH KHUSUS JURI -->
     <div id="action-bar" class="sticky-action-bar hidden">
         <div class="action-container-inner">
             <button onclick="simpanDraftManual()" style="background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); flex: 1;">
@@ -160,6 +167,7 @@
         </div>
     </div>
 
+    <!-- LOGIKA JAVASCRIPT -->
     <script>
         // ⚠️ GANTI DENGAN URL API ANDA !!!
         const API_URL = "https://script.google.com/macros/s/AKfycbwk8EcYFqyriFF_V4IoCRpFnDeh5wcdIqE1I-5juRPyHUGE7V7tS2OGQpWrr7Ebyp4Lug/exec"; 
@@ -314,7 +322,6 @@
                         if (rekamJejak && parseInt(rekamJejak.Total) > 0) {
                             totalAkumulasi += parseInt(rekamJejak.Total);
                             
-                            // PERBAIKAN: Flexbox absolut untuk Presisi
                             htmlBody += `<td style="text-align:center; vertical-align:middle;">
                                 <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
                                     <div style="font-weight:800; font-size:18px; color:var(--success); line-height:1;">${rekamJejak.Total}</div>
