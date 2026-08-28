@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPECTRA — Ruang Juri</title>
+<link rel="stylesheet" href="spectra-theme.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="spectra-ui.js"></script>
+<script>initTheme('light')</script>
+<style>
+  main{max-width:680px;margin:0 auto;padding:0 1rem 130px}
+  .pNav{display:flex;align-items:center;gap:.7rem}
+  .pNav .tengah{flex:1;text-align:center}
+  .pNav .tengah h3{font-size:1.08rem}
+  .statusline{text-align:center;font-size:.8rem;margin-top:.7rem;color:var(--text-2);min-height:1.2em}
+  .spin{animation:putar 1s linear infinite}@keyframes putar{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header class="topbar"><div class="topbar-in">
+  <div class="brand">
+    <div class="brand-logo"><i data-lucide="zap"></i></div>
+    <div><b id="hEvent">SPECTRA</b><small id="hCabang"></small></div>
+  </div>
+  <div class="topbar-actions">
+    <span id="conn"></span>
+    <span class="badge proc tnum" id="hProg">0/0</span>
+    <button class="btn btn-ghost btn-icon" onclick="toggleTheme()" title="Ganti tema"><i id="icTheme" data-lucide="moon"></i></button>
+    <button class="btn btn-ghost btn-icon" onclick="keluarSpectra()" title="Keluar"><i data-lucide="log-out"></i></button>
+  </div>
+</div></header>
+
+<div class="warnbar" id="banner" hidden>
+  <span style="display:flex;gap:.5rem;align-items:center"><i data-lucide="alert-triangle"></i><span id="bannerTxt"></span></span>
+  <button class="btn btn-warn" onclick="kirimSemua()"><i data-lucide="cloud-upload"></i> Kirim Sekarang</button>
+</div>
+
+<main>
+  <div class="chips" id="chips"></div>
+
+  <div class="card" id="formCard" hidden style="margin-top:.8rem">
+    <div class="card-head pNav">
+      <button class="btn btn-ghost btn-icon" id="btnPrev" onclick="pilihDelta(-1)"><i data-lucide="chevron-left"></i></button>
+      <div class="tengah">
+        <h3 id="pNama"></h3>
+        <span class="muted small" id="pAsal"></span><br>
+        <span class="badge proc" id="pKategori" style="margin-top:.3rem"></span>
+      </div>
+      <button class="btn btn-ghost btn-icon" id="btnNext" onclick="pilihDelta(1)"><i data-lucide="chevron-right"></i></button>
+    </div>
+
+    <div id="aspekList"></div>
+
+    <label class="field"><span>Catatan juri</span>
+      <textarea class="input" id="inCatatan" rows="2" placeholder="Opsional..."></textarea>
+    </label>
+    <div class="statusline" id="statusLine"></div>
+  </div>
+
+  <div class="card empty" id="emptyCard" hidden>
+    <i data-lucide="swipe"></i>
+    <p>Pilih nomor undian di atas untuk mulai menilai.</p>
+  </div>
+
+  <div class="card" id="fatal" hidden>
+    <p id="fatalTxt" class="muted"></p>
+    <button class="btn btn-primary btn-block" onclick="location.href='spectra-login.html'">Ke Halaman Login</button>
+  </div>
+</main>
+
+<!-- Zona jempol: selalu terlihat tanpa scroll -->
+<div class="bottombar" id="bottombar" hidden>
+  <div class="bottombar-in">
+    <label class="field" style="margin:0;flex:0 0 92px"><span>Penalti</span>
+      <input class="input input-num" id="inPenalti" type="number" inputmode="decimal" min="0" step="0.5" value="0">
+    </label>
+    <div class="totalbox" style="flex:0 0 108px"><small>TOTAL</small><b id="totPrev">0</b></div>
+    <button class="btn btn-primary" style="flex:1" id="btnKirim" onclick="kirimIni()">
+      <i data-lucide="cloud-upload"></i><span id="btnTxt">Kirim Nilai</span>
+    </button>
+  </div>
+</div>
+
+<script>
+const sesi = bacaSesi();
+const DRAFT_KEY = sesi && sesi.petugas_id ? 'spectra_draft_' + sesi.petugas_id : null;
+
+let kriteria = [], peserta = [], pesertaMap = {};
+let drafts = {}, synced = new Set(), selectedId = null, blind = false;
+
+const muatDraft   = () => { try { drafts = JSON.parse(localStorage.getItem(DRAFT_KEY)) || {}; } catch (e) { drafts = {}; } };
+const simpanDraft = () => localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+const adaIsi = d => d && d.rincian && Object.values(d.rincian).some(v => v !== '' && v != null);
+const statusOf = id => synced.has(id) ? 'ok' : (adaIsi(drafts[id]) ? 'warn' : '');
+const daftarKotor = () => peserta.filter(p => adaIsi(drafts[p.id]) && !synced.has(p.id)).map(p => p.id);
+const fatal = m => { document.getElementById('fatal').hidden = false; document.getElementById('fatalTxt').textContent = m; };
+
+(async function boot() {
+  if (!sesi) { location.href = 'spectra-login.html'; return; }
+  if (sesi.peran !== 'JURI') return fatal('Halaman ini khusus JURI. Sesi Anda: ' + sesi.peran + '.');
+  if (!sesi.petugas_id) return fatal('Format sesi lama. Keluar lalu masuk kembali di halaman login.');
+
+  document.getElementById('hEvent').textContent = sesi.nama_event;
+  document.getElementById('hCabang').textContent = sesi.nama_cabang || '';
+  document.getElementById('icTheme').setAttribute('data-lucide', themeIcon());
+  initConn('conn');
+  muatDraft();
+
+  try {
+    const client = await sb();
+    const [cRes, kRes, pRes, mRes] = await Promise.all([
+      client.from('spectra_cabang').select('blind_judging').eq('id', sesi.cabang_id).maybeSingle(),
+      client.from('spectra_kriteria').select('*').eq('cabang_id', sesi.cabang_id).order('urutan'),
+      client.from('spectra_peserta').select('*, spectra_kategori(nama_kategori)')
+        .eq('cabang_id', sesi.cabang_id).eq('is_active', true).order('sort_key'),
+      client.rpc('spectra_get_my_nilai', { p_kode_akses: sesi.kode_akses })
+    ]);
+    if (kRes.error) throw kRes.error;
+    if (pRes.error) throw pRes.error;
+
+    blind = cRes.data && cRes.data.blind_judging === true;
+    kriteria = kRes.data || [];
+    peserta = pRes.data || [];
+    pesertaMap = Object.fromEntries(peserta.map(p => [p.id, p]));
+
+    (Array.isArray(mRes.data) ? mRes.data : []).forEach(r => {
+      synced.add(r.peserta_id);
+      if (!drafts[r.peserta_id])
+        drafts[r.peserta_id] = { rincian: r.rincian || {}, penalti: r.penalti || 0, catatan: r.catatan || '' };
+    });
+
+    if (peserta.length) pilih(peserta[0].id);
+    renderChips(); updateProg();
+  } catch (e) { fatal('Gagal memuat data: ' + e.message); }
+})();
+
+function renderChips() {
+  const box = document.getElementById('chips');
+  box.innerHTML = '';
+  peserta.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'chip ' + statusOf(p.id) + (p.id === selectedId ? ' active' : '');
+    b.textContent = p.nomor_undian;
+    b.onclick = () => pilih(p.id);
+    box.appendChild(b);
+  });
+}
+
+function pilih(id) {
+  selectedId = id;
+  const p = pesertaMap[id], idx = peserta.findIndex(x => x.id === id);
+  document.getElementById('formCard').hidden = false;
+  document.getElementById('emptyCard').hidden = true;
+  document.getElementById('bottombar').hidden = false;
+  document.getElementById('btnPrev').disabled = idx <= 0;
+  document.getElementById('btnNext').disabled = idx >= peserta.length - 1;
+
+  document.getElementById('pNama').textContent = blind ? ('Peserta Nomor ' + p.nomor_undian) : p.nama_peserta;
+  document.getElementById('pAsal').textContent = blind ? '' : (p.asal_instansi || '');
+  document.getElementById('pKategori').textContent = (p.spectra_kategori && p.spectra_kategori.nama_kategori) || 'Umum';
+
+  const d = drafts[id] || { rincian: {}, penalti: 0, catatan: '' };
+  const list = document.getElementById('aspekList');
+  list.innerHTML = '';
+  kriteria.forEach((k, i) => {
+    const lab = document.createElement('label');
+    lab.className = 'field';
+    lab.innerHTML = '<span>' + (i + 1) + '. ' + k.nama_aspek + ' • maks ' + k.nilai_maks + '</span>';
+    const inp = document.createElement('input');
+    inp.className = 'input input-num';
+    inp.type = 'number'; inp.inputMode = 'decimal';
+    inp.min = 0; inp.max = k.nilai_maks; inp.step = 0.5;
+    inp.value = (d.rincian && d.rincian[k.nama_aspek] != null) ? d.rincian[k.nama_aspek] : '';
+    inp.oninput = e => ubahAspek(k, e.target);
+    lab.appendChild(inp);
+    list.appendChild(lab);
+  });
+
+  document.getElementById('inPenalti').value = d.penalti || 0;
+  document.getElementById('inCatatan').value = d.catatan || '';
+  document.getElementById('inPenalti').oninput = e => setDraft(id, x => x.penalti = Number(e.target.value) || 0);
+  document.getElementById('inCatatan').oninput = e => setDraft(id, x => x.catatan = e.target.value);
+
+  resetBtnKirim(); updateTotal(); updateStatusLine(); renderChips();
+}
+
+function pilihDelta(d) {
+  const idx = peserta.findIndex(x => x.id === selectedId);
+  const t = peserta[idx + d];
+  if (t) pilih(t.id);
+}
+
+function ubahAspek(k, el) {
+  let v = el.value;
+  if (v !== '') {
+    v = Number(v);
+    if (v > Number(k.nilai_maks)) { v = Number(k.nilai_maks); el.value = v; }
+    if (v < 0) { v = 0; el.value = 0; }
+  }
+  setDraft(selectedId, x => {
+    x.rincian = x.rincian || {};
+    if (v === '') delete x.rincian[k.nama_aspek]; else x.rincian[k.nama_aspek] = v;
+  });
+}
+
+function setDraft(id, fn) {
+  if (!drafts[id]) drafts[id] = { rincian: {}, penalti: 0, catatan: '' };
+  fn(drafts[id]);
+  simpanDraft();
+  synced.delete(id);
+  updateTotal(); renderChips(); updateProg(); updateBanner(); updateStatusLine();
+}
+
+const hitungTotal = d => !d ? 0 :
+  Object.values(d.rincian || {}).reduce((a, v) => a + (Number(v) || 0), 0) - (Number(d.penalti) || 0);
+const updateTotal = () => document.getElementById('totPrev').textContent = hitungTotal(drafts[selectedId]);
+const updateProg = () => {
+  const n = peserta.filter(p => synced.has(p.id) || adaIsi(drafts[p.id])).length;
+  document.getElementById('hProg').textContent = n + '/' + peserta.length;
+};
+function updateStatusLine() {
+  const el = document.getElementById('statusLine');
+  if (synced.has(selectedId)) el.textContent = '✅ Nilai peserta ini sudah tersimpan di server.';
+  else if (adaIsi(drafts[selectedId])) el.textContent = '🟡 Draft lokal — belum terkirim ke server.';
+  else el.textContent = '';
+}
+function updateBanner() {
+  const n = daftarKotor().length;
+  document.getElementById('banner').hidden = n === 0;
+  document.getElementById('bannerTxt').textContent = n + ' nilai belum terkirim';
+}
+function resetBtnKirim() {
+  const b = document.getElementById('btnKirim');
+  b.disabled = false;
+  b.innerHTML = '<i data-lucide="cloud-upload"></i><span id="btnTxt">Kirim Nilai</span>';
+  icons();
+}
+
+async function kirim(list) {
+  if (!list.length) return true;
+  const items = list.map(id => ({
+    peserta_id: id, rincian: drafts[id].rincian || {},
+    penalti: Number(drafts[id].penalti) || 0, catatan: drafts[id].catatan || ''
+  }));
+  const { data, error } = await (await sb()).rpc('spectra_submit_nilai', {
+    p_kode_akses: sesi.kode_akses, p_items: items
+  });
+  if (error || (data && data.error)) return false;
+  list.forEach(id => synced.add(id));
+  renderChips(); updateBanner(); updateProg(); updateStatusLine();
+  return true;
+}
+
+async function kirimIni() {
+  const b = document.getElementById('btnKirim');
+  b.disabled = true;
+  b.innerHTML = '<i data-lucide="loader-2" class="spin"></i><span>Mengirim...</span>'; icons();
+  const ok = await kirim([selectedId]);
+  if (!ok) { resetBtnKirim(); toast('Gagal kirim. Cek koneksi, lalu coba lagi.', 'err'); return; }
+
+  // Umpan balik sukses lalu AUTO-ADVANCE ke peserta berikutnya
+  b.innerHTML = '<i data-lucide="check-circle-2"></i><span>Terkirim</span>'; icons();
+  setTimeout(() => {
+    const idx = peserta.findIndex(x => x.id === selectedId);
+    if (idx < peserta.length - 1) pilih(peserta[idx + 1].id);
+    else { resetBtnKirim(); toast('Semua peserta telah dinilai. Terima kasih! 🎉', 'ok'); }
+  }, 900);
+}
+
+async function kirimSemua() {
+  const list = daftarKotor();
+  if (!list.length) { updateBanner(); return; }
+  toast('Mengirim ' + list.length + ' nilai...', 'warn');
+  const ok = await kirim(list);
+  toast(ok ? 'Semua nilai terkirim.' : 'Sebagian gagal — coba lagi saat sinyal membaik.', ok ? 'ok' : 'err');
+}
+
+window.addEventListener('online', () => { initConn('conn'); kirimSemua(); });
+window.addEventListener('offline', () => initConn('conn'));
+</script>
+</body>
+</html>
