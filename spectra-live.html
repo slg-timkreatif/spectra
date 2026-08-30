@@ -4,24 +4,37 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LIVESCORE — SPECTRA</title>
-<link rel="stylesheet" href="spectra-theme.css">
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="spectra-ui.js"></script>
-<script>initTheme('dark', true)</script> <!-- gelap terkunci untuk proyektor -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link rel="stylesheet" href="spectra-theme.css?v=2">
+<script src="vendor/supabase.min.js"></script>
+<script src="vendor/lucide.min.js"></script>
+<script src="spectra-ui.js?v=2"></script>
+<script>initTheme('dark', true)</script>
 <style>
   body{font-size:18px}
-  .live{display:flex;gap:.45rem;align-items:center;color:#f87171;font-weight:800;font-size:.9rem}
+  .live{display:flex;align-items:center;gap:.5rem;font-weight:800;color:#f87171;font-size:.95rem}
   .dot{width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pul 1.2s infinite}
-  @keyframes pul{50%{opacity:.25}}
-  table{min-width:680px}
-  td{padding:1rem}
-  .pos{font-size:1.5rem;font-weight:900;width:64px}
-  tr.r1{background:linear-gradient(90deg,rgba(245,158,11,.16),transparent)}
-  tr.r2{background:linear-gradient(90deg,rgba(148,163,184,.14),transparent)}
-  tr.r3{background:linear-gradient(90deg,rgba(180,83,9,.14),transparent)}
-  .stamp{color:var(--text-2);font-size:.82rem;margin:.7rem 0}
+  @keyframes pul{0%,100%{opacity:1}50%{opacity:.25}}
+  main{max-width:1060px;margin:0 auto;padding:1.2rem 1rem}
+  .filters{display:flex;gap:.7rem;flex-wrap:wrap;margin-bottom:.9rem}
+  table{min-width:720px}
+  td{padding:1rem 1.1rem}
+  .pos{font-size:1.45rem;font-weight:900;width:64px}
+  .bx-name{font-size:1.15rem;font-weight:700}
+  .bx-num{font-size:1.7rem;font-weight:900;color:var(--ok-text)}
+  tr.r1 td{background:linear-gradient(90deg,rgba(245,158,11,.16),transparent)}
+  tr.r2 td{background:linear-gradient(90deg,rgba(148,163,184,.14),transparent)}
+  tr.r3 td{background:linear-gradient(90deg,rgba(180,83,9,.14),transparent)}
+  .stamp{color:var(--text-3);font-size:.8rem;margin-bottom:.6rem}
+  .liveCard{display:flex;align-items:center;gap:.9rem;background:var(--surface);border:1px solid var(--border);
+            border-radius:14px;padding:.85rem 1rem;margin-bottom:.6rem}
+  .liveCard .lcPos{font-size:1.3rem;font-weight:900;width:44px}
+  .liveCard .lcMid{flex:1}
+  .liveCard .lcTot{font-size:1.35rem;font-weight:900;color:var(--ok-text)}
+  .liveCard.r1{border-color:rgba(245,158,11,.5)}
+  @media(max-width:640px){ .table-wrap{display:none} }
+  @media(min-width:641px){ #cards{display:none} }
   footer{text-align:center;color:var(--text-3);font-size:.75rem;padding:1.6rem}
-  .btn.on{border-color:var(--primary);color:var(--primary-text)}
 </style>
 </head>
 <body>
@@ -33,36 +46,34 @@
   </div>
   <div class="topbar-actions">
     <span class="live" id="liveBadge"><span class="dot"></span> LIVE</span>
-    <button class="btn btn-ghost btn-icon" id="btnRot" onclick="toggleRot()" title="Rotasi cabang otomatis"><i data-lucide="rotate-cw"></i></button>
-    <button class="btn btn-ghost btn-icon" id="btnLive" onclick="toggleLive()" title="Jeda/lanjutkan"><i data-lucide="pause"></i></button>
+    <button class="btn btn-ghost btn-icon" id="btnLive" onclick="toggleLive()" title="Jeda/Lanjutkan">⏸</button>
     <button class="btn btn-ghost btn-icon" onclick="muat()" title="Segarkan"><i data-lucide="refresh-cw"></i></button>
-    <button class="btn btn-ghost btn-icon" onclick="layarPenuh()" title="Mode proyektor"><i data-lucide="maximize"></i></button>
+    <button class="btn btn-ghost btn-icon" onclick="layarPenuh()" title="Mode Proyektor"><i data-lucide="maximize"></i></button>
   </div>
 </div></header>
 
-<main class="container" style="padding-top:1.1rem">
-  <div class="toolbar" style="display:flex;gap:.7rem;flex-wrap:wrap">
+<main>
+  <div class="filters">
     <select class="input" id="fCabang" onchange="render()" style="width:auto"></select>
     <select class="input" id="fKategori" onchange="render()" style="width:auto"></select>
   </div>
   <div class="stamp" id="stamp"></div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Pos</th><th>No. Undi</th><th>Peserta & Instansi</th><th>Juri</th><th>Total Nilai</th><th>Status</th></tr></thead>
-      <tbody id="tb"></tbody>
-    </table>
-  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Pos</th><th>No. Undi</th><th>Peserta & Instansi</th><th>Juri</th><th>Total Nilai</th><th>Status</th></tr></thead>
+    <tbody id="tb"></tbody>
+  </table></div>
+  <div id="cards"></div>
   <div class="empty" id="empty" hidden>
     <i data-lucide="monitor"></i>
-    <p>Belum ada nilai FINAL yang disahkan.<br>Klasemen muncul otomatis saat operator mengesahkan nilai.</p>
+    <p>Belum ada nilai FINAL yang disahkan untuk tampilan ini.<br>Klasemen muncul otomatis saat operator mengesahkan nilai.</p>
   </div>
 </main>
-<footer>© Tim Kreatif Selogiri — hanya menampilkan nilai yang sudah disahkan (FINAL).</footer>
+
+<footer>© Tim Kreatif Selogiri — Hanya menampilkan nilai yang sudah disahkan operator (FINAL).</footer>
 
 <script>
-let EVENT = null, CABANG = [], KATEGORI = [], NILAI = [];
-let liveOn = true, timer = null, rotOn = false, rotIdx = 0, rotTimer = null;
-const INTERVAL = 20;
+const INTERVAL_DETIK = 20;
+let EVENT = null, CABANG = [], KATEGORI = [], NILAI = [], liveOn = true, timer = null;
 const slugParam = new URLSearchParams(location.search).get('e');
 
 async function muat() {
@@ -112,43 +123,43 @@ function render() {
   const rows = Object.values(agg).sort((a, b) => (b.total - a.total) ||
     String(a.p.sort_key || '').localeCompare(String(b.p.sort_key || '')));
 
-  document.getElementById('tb').innerHTML = rows.map((r, i) => {
+  const rowHtml = (r, i, mode) => {
     const med = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+    if (mode === 'card')
+      return '<div class="liveCard ' + (i < 3 ? 'r' + (i + 1) : '') + '"><div class="lcPos">' + med + '</div>' +
+        '<div class="lcMid"><div class="bx-name">' + r.p.nama_peserta + '</div>' +
+        '<div class="muted small">' + (r.p.asal_instansi || '') + ' • No. ' + r.p.nomor_undian + '</div></div>' +
+        '<div class="lcTot tnum">' + fmtN(r.total) + '</div></div>';
     return '<tr class="' + (i < 3 ? 'r' + (i + 1) : '') + '"><td class="pos">' + med + '</td>' +
-      '<td class="tnum" style="font-size:1.1rem;font-weight:700">' + r.p.nomor_undian + '</td>' +
-      '<td><div class="bx-name">' + r.p.nama_peserta + '</div><div class="muted" style="font-size:.85rem">' + (r.p.asal_instansi || '') + '</div></td>' +
-      '<td class="tnum">' + r.juri + '</td><td class="bx-num" style="color:var(--primary-text)">' + r.total + '</td>' +
+      '<td class="tnum">' + r.p.nomor_undian + '</td>' +
+      '<td><div class="bx-name">' + r.p.nama_peserta + '</div><div class="muted small">' + (r.p.asal_instansi || '') + '</div></td>' +
+      '<td class="tnum">' + r.juri + ' juri</td><td class="bx-num">' + fmtN(r.total) + '</td>' +
       '<td><span class="badge ok">FINAL</span></td></tr>';
-  }).join('');
+  };
+
+  document.getElementById('tb').innerHTML = rows.map((r, i) => rowHtml(r, i, 'row')).join('');
+  document.getElementById('cards').innerHTML = rows.map((r, i) => rowHtml(r, i, 'card')).join('');
   document.getElementById('empty').hidden = rows.length > 0;
   document.getElementById('stamp').textContent = '🕐 Sinkron ' + new Date().toLocaleTimeString('id-ID') +
-    ' • metode TOTAL • update tiap ' + INTERVAL + ' dtk' + (rotOn ? ' • rotasi cabang AKTIF' : '');
+    ' • metode TOTAL • update tiap ' + INTERVAL_DETIK + ' dtk';
+  icons();
 }
 
 function toggleLive() {
   liveOn = !liveOn;
-  document.getElementById('btnLive').innerHTML = '<i data-lucide="' + (liveOn ? 'pause' : 'play') + '"></i>';
+  document.getElementById('btnLive').textContent = liveOn ? '⏸' : '▶';
   document.getElementById('liveBadge').style.opacity = liveOn ? 1 : .3;
-  aturTimer(); icons();
+  aturTimer();
 }
-function aturTimer() { clearInterval(timer); if (liveOn) timer = setInterval(muat, INTERVAL * 1000); }
-
-function toggleRot() {
-  rotOn = !rotOn;
-  document.getElementById('btnRot').classList.toggle('on', rotOn);
-  clearInterval(rotTimer);
-  if (rotOn) rotTimer = setInterval(() => {
-    rotIdx = (rotIdx + 1) % (CABANG.length + 1);
-    document.getElementById('fCabang').value = rotIdx === 0 ? '' : CABANG[rotIdx - 1].id;
-    render();
-  }, 12000);
-  render();
+function aturTimer() {
+  clearInterval(timer);
+  timer = setInterval(() => { if (liveOn && !document.hidden) muat(); }, INTERVAL_DETIK * 1000);
 }
+document.addEventListener('visibilitychange', () => { if (!document.hidden && liveOn) muat(); });
 function layarPenuh() {
   if (document.fullscreenElement) document.exitFullscreen();
   else document.documentElement.requestFullscreen();
 }
-
 muat().then(aturTimer);
 </script>
 </body>
