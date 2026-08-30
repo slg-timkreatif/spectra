@@ -1,5 +1,5 @@
 /* =========================================================================
-   SPECTRA UI CORE v2 — klien, sesi, tema, toast, modal, lucide
+   SPECTRA UI CORE v3 — vendor-first, fallback CDN
    ========================================================================= */
 const SPECTRA_URL = 'https://qdgtfhknuvncbzsbcbwo.supabase.co';
 const SPECTRA_KEY = 'sb_publishable_dYm2x9Juh6lHFRMgGsXB7g_eP557huM';
@@ -8,13 +8,17 @@ const SESI_KEY = 'spectra_sesi';
 let _sb = null;
 async function sb() {
   if (!_sb) {
-    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
-    _sb = createClient(SPECTRA_URL, SPECTRA_KEY);
+    if (window.supabase && window.supabase.createClient) {
+      _sb = window.supabase.createClient(SPECTRA_URL, SPECTRA_KEY); // vendor lokal
+    } else {
+      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
+      _sb = createClient(SPECTRA_URL, SPECTRA_KEY);                 // fallback CDN
+    }
   }
   return _sb;
 }
 
-/* ---------- Tema: light default, dark opsional; 'lock' untuk halaman broadcast ---------- */
+/* ---------- Tema ---------- */
 function initTheme(defaultT, lock) {
   let t = defaultT || 'light';
   if (!lock) t = localStorage.getItem('spectra_theme') || t;
@@ -24,12 +28,9 @@ function toggleTheme() {
   const cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', cur);
   localStorage.setItem('spectra_theme', cur);
-  icons();
-  return cur;
+  icons(); return cur;
 }
-function themeIcon() {
-  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'sun' : 'moon';
-}
+function themeIcon() { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'sun' : 'moon'; }
 
 /* ---------- Sesi ---------- */
 const bacaSesi = () => { try { return JSON.parse(localStorage.getItem(SESI_KEY)); } catch (e) { return null; } };
@@ -48,11 +49,10 @@ function toast(msg, tipe) {
   clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 3200);
 }
 
-/* ---------- Modal konfirmasi ---------- */
+/* ---------- Modal ---------- */
 function spectraConfirm({ judul, pesan, teksYa = 'Ya, lanjutkan', bahaya = false }) {
   return new Promise(res => {
-    const m = document.createElement('div');
-    m.id = 'spectraModal';
+    const m = document.createElement('div'); m.id = 'spectraModal';
     m.innerHTML = '<div class="card"><h4><i data-lucide="' + (bahaya ? 'alert-triangle' : 'help-circle') + '"></i>' + judul +
       '</h4><p>' + pesan + '</p><div class="modal-actions"><button class="btn btn-ghost" id="mBatal">Batal</button>' +
       '<button class="btn ' + (bahaya ? 'btn-danger' : 'btn-primary') + '" id="mYa">' + teksYa + '</button></div></div>';
@@ -65,7 +65,7 @@ function spectraConfirm({ judul, pesan, teksYa = 'Ya, lanjutkan', bahaya = false
   });
 }
 
-/* ---------- Indikator koneksi ---------- */
+/* ---------- Koneksi ---------- */
 function initConn(elId) {
   const el = document.getElementById(elId);
   if (!el) return;
@@ -78,6 +78,7 @@ function initConn(elId) {
   window.addEventListener('online', set); window.addEventListener('offline', set); set();
 }
 
-/* ---------- Lucide ---------- */
+/* ---------- Lucide & util ---------- */
 function icons() { if (window.lucide) lucide.createIcons(); }
+const fmtN = n => { const x = Math.round((Number(n) || 0) * 100) / 100; return x % 1 === 0 ? String(x) : x.toFixed(2); };
 document.addEventListener('DOMContentLoaded', icons);
