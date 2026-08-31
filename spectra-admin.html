@@ -4,17 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SPECTRA — Pusat Komando</title>
-<link rel="stylesheet" href="spectra-theme.css">
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="spectra-ui.js"></script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link rel="stylesheet" href="spectra-theme.css?v=2">
+<script src="vendor/supabase.min.js"></script>
+<script src="vendor/lucide.min.js"></script>
+<script>if(!window.lucide) document.write('<script src="https://unpkg.com/lucide@latest"><\/script>')</script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script>if(!window.XLSX) document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
+<script src="spectra-ui.js?v=2"></script>
 <script>initTheme('light')</script>
 <style>
   .shell-main{padding-bottom:96px}
   @media(min-width:901px){.shell-main{padding-bottom:2rem}}
 
-  /* ---------- SIDEBAR PRESISI ---------- */
-  .sidenav{display:flex;flex-direction:column}
+  /* ---------- SIDEBAR PRESISI (desktop saja; HP pakai bottom-nav) ---------- */
+  @media(min-width:901px){ .sidenav{display:flex;flex-direction:column} }
   .sidebrand{display:flex;gap:.65rem;align-items:center;padding:.2rem .6rem 1.1rem;
              border-bottom:1px solid var(--border);margin-bottom:.7rem}
   .sidebrand .brand-logo{width:40px;height:40px;border-radius:12px}
@@ -31,6 +35,7 @@
   .navitem.on{background:var(--primary-soft);color:var(--primary-text)}
   .navitem.on .lucide{color:var(--primary-text)}
   .side-bottom{margin-top:auto;padding-top:.9rem;border-top:1px solid var(--border)}
+  .bottomnav button{font-size:.68rem}
 
   /* ---------- Komponen halaman ---------- */
   .progrow{margin-bottom:.85rem}
@@ -313,7 +318,7 @@ function renderDasbor() {
     else { st = 'PROSES'; cls = 'proc'; nPr++; }
     return '<tr><td>' + (i + 1) + '</td><td>' + r.p.nomor_undian + '</td><td><b>' + r.p.nama_peserta + '</b></td><td>' +
       (r.p.asal_instansi || '-') + '</td><td class="small muted">' + cabangById(r.p.cabang_id).nama_cabang + '</td>' +
-      '<td class="tnum">' + (r.m ? r.m.juri : 0) + '</td><td class="tnum"><b>' + (r.m ? r.m.total : 0) + '</b></td>' +
+      '<td class="tnum">' + (r.m ? r.m.juri : 0) + '</td><td class="tnum"><b>' + fmtN(r.m ? r.m.total : 0) + '</b></td>' +
       '<td><span class="badge ' + cls + '">' + st + '</span></td></tr>';
   }).join('');
   el('stP').textContent = (DATA.peserta || []).length;
@@ -404,7 +409,7 @@ async function jalankanImport() {
 function renderMatriks() {
   const fc = el('fMCabang').value || (DATA.cabang[0] || {}).id;
   el('fMCabang').value = fc;
-  const juri = (DATA.petugas || []).filter(p => p.peran === 'JURI' && p.cabang_id === fc);
+  const juri = (DATA.petugas || []).filter(p => p.peran === 'JURI' && p.cabang_id === fc && p.is_active);
   const ps = (DATA.peserta || []).filter(p => p.cabang_id === fc);
   const byP = {};
   (DATA.nilai || []).filter(n => n.cabang_id === fc).forEach(n => { (byP[n.peserta_id] = byP[n.peserta_id] || {})[n.petugas_id] = n; });
@@ -416,8 +421,8 @@ function renderMatriks() {
     const allF = rws.length > 0 && rws.every(r => r.status === 'FINAL');
     return '<tr><td><b>' + p.nomor_undian + '. ' + p.nama_peserta + '</b></td>' + juri.map(j => {
       const v = nm[j.id];
-      return '<td>' + (v ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + ' tnum">' + v.total + '</span>' : '<span class="mcell none">–</span>') + '</td>';
-    }).join('') + '<td class="tnum"><b>' + tot + '</b></td><td><span class="badge ' + (allF ? 'ok' : rws.length ? 'proc' : 'none') + '">' +
+      return '<td>' + (v ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + ' tnum">' + fmtN(v.total) + '</span>' : '<span class="mcell none">–</span>') + '</td>';
+    }).join('') + '<td class="tnum"><b>' + fmtN(tot) + '</b></td><td><span class="badge ' + (allF ? 'ok' : rws.length ? 'proc' : 'none') + '">' +
       (allF ? 'FINAL' : rws.length ? 'PROSES' : 'BELUM') + '</span></td></tr>';
   }).join('');
   el('matriksTable').innerHTML = html + '</tbody>';
@@ -441,7 +446,7 @@ function renderLaporan() {
   el('tbLaporan').innerHTML = rows.length ? rows.map(r =>
     '<tr><td><b>' + r.label_juara + '</b><br><small class="muted">' + (r.nama_cabang || '') + (r.nama_kategori ? ' • ' + r.nama_kategori : '') + '</small></td>' +
     '<td>' + r.nomor_undian + '</td><td>' + r.nama_peserta + '</td><td>' + (r.asal_instansi || '-') + '</td>' +
-    '<td class="tnum">' + r.jumlah_juri + '</td><td class="tnum"><b>' + r.total_nilai + '</b></td><td>' + (r.kandidat_kabupaten ? '🚀' : '') + '</td></tr>').join('')
+    '<td class="tnum">' + r.jumlah_juri + '</td><td class="tnum"><b>' + fmtN(r.total_nilai) + '</b></td><td>' + (r.kandidat_kabupaten ? '🚀' : '') + '</td></tr>').join('')
     : '<tr><td colspan="7" class="muted">Belum ada nilai FINAL yang disahkan.</td></tr>';
   el('lapNote').textContent = LAP === 'kabupaten' ? 'Kandidat Kabupaten = otomatis Juara 1 tiap cabang & kategori.'
     : 'Peringkat dari nilai FINAL, metode TOTAL (jumlah semua juri).';
@@ -476,10 +481,12 @@ function excelSemuaNilai() {
   toast('Semua nilai diunduh.', 'ok');
 }
 
-/* ================= AKSES (CRUD petugas) ================= */
+/* ================= AKSES (CRUD petugas, termasuk NONAKTIF) ================= */
 function renderAkses() {
   el('tbAkses').innerHTML = (DATA.petugas || []).map(p =>
-    '<tr><td><b>' + p.nama_petugas + '</b></td><td><span class="badge ' + (p.peran === 'ADMIN' ? 'warn' : p.peran === 'OPERATOR' ? 'proc' : 'ok') + '">' + p.peran +
+    '<tr' + (p.is_active ? '' : ' style="opacity:.55"') + '><td><b>' + p.nama_petugas + '</b>' +
+    (p.is_active ? '' : ' <span class="badge danger">NONAKTIF</span>') +
+    '</td><td><span class="badge ' + (p.peran === 'ADMIN' ? 'warn' : p.peran === 'OPERATOR' ? 'proc' : 'ok') + '">' + p.peran +
     '</span></td><td class="small muted">' + (cabangById(p.cabang_id).nama_cabang || 'Semua Cabang') + '</td><td><b>' + p.kode_akses + '</b></td>' +
     '<td><div class="actCell">' +
     '<button class="btn btn-ghost btn-icon" title="Edit" onclick="openPetugas(\'UPDATE\',\'' + p.id + '\')"><i data-lucide="pencil"></i></button>' +
