@@ -4,15 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SPECTRA — Ruang Juri</title>
-<link rel="stylesheet" href="spectra-theme.css">
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="spectra-ui.js"></script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link rel="stylesheet" href="spectra-theme.css?v=2">
+<script src="vendor/supabase.min.js"></script>
+<script src="vendor/lucide.min.js"></script>
+<script>if(!window.lucide) document.write('<script src="https://unpkg.com/lucide@latest"><\/script>')</script>
+<script src="spectra-ui.js?v=2"></script>
 <script>initTheme('light')</script>
 <style>
   main{max-width:680px;margin:0 auto;padding:0 1rem 130px}
   .pNav{display:flex;align-items:center;gap:.7rem}
   .pNav .tengah{flex:1;text-align:center}
   .pNav .tengah h3{font-size:1.08rem}
+  .pNav .btn-icon{width:44px;height:44px}
+  #aspekList .field>span{font-size:.9rem;font-weight:700}
   .statusline{text-align:center;font-size:.8rem;margin-top:.7rem;color:var(--text-2);min-height:1.2em}
   .spin{animation:putar 1s linear infinite}@keyframes putar{to{transform:rotate(360deg)}}
 </style>
@@ -42,13 +47,14 @@
 
   <div class="card" id="formCard" hidden style="margin-top:.8rem">
     <div class="card-head pNav">
-      <button class="btn btn-ghost btn-icon" id="btnPrev" onclick="pilihDelta(-1)"><i data-lucide="chevron-left"></i></button>
+      <button class="btn btn-ghost btn-icon" id="btnPrev" onclick="pilihDelta(-1)" title="Sebelumnya"><i data-lucide="chevron-left"></i></button>
       <div class="tengah">
         <h3 id="pNama"></h3>
         <span class="muted small" id="pAsal"></span><br>
-        <span class="badge proc" id="pKategori" style="margin-top:.3rem"></span>
+        <span class="badge proc" id="pKategori" style="margin-top:.3rem"></span><br>
+        <span class="muted small" id="pIdx"></span>
       </div>
-      <button class="btn btn-ghost btn-icon" id="btnNext" onclick="pilihDelta(1)"><i data-lucide="chevron-right"></i></button>
+      <button class="btn btn-ghost btn-icon" id="btnNext" onclick="pilihDelta(1)" title="Berikutnya"><i data-lucide="chevron-right"></i></button>
     </div>
 
     <div id="aspekList"></div>
@@ -156,6 +162,7 @@ function pilih(id) {
   document.getElementById('bottombar').hidden = false;
   document.getElementById('btnPrev').disabled = idx <= 0;
   document.getElementById('btnNext').disabled = idx >= peserta.length - 1;
+  document.getElementById('pIdx').textContent = 'Peserta ' + (idx + 1) + '/' + peserta.length;
 
   document.getElementById('pNama').textContent = blind ? ('Peserta Nomor ' + p.nomor_undian) : p.nama_peserta;
   document.getElementById('pAsal').textContent = blind ? '' : (p.asal_instansi || '');
@@ -184,6 +191,9 @@ function pilih(id) {
   document.getElementById('inCatatan').oninput = e => setDraft(id, x => x.catatan = e.target.value);
 
   resetBtnKirim(); updateTotal(); updateStatusLine(); renderChips();
+
+  const act = document.querySelector('.chip.active');
+  if (act) act.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
 }
 
 function pilihDelta(d) {
@@ -192,12 +202,12 @@ function pilihDelta(d) {
   if (t) pilih(t.id);
 }
 
-function ubahAspek(k, el) {
-  let v = el.value;
+function ubahAspek(k, elInp) {
+  let v = elInp.value;
   if (v !== '') {
     v = Number(v);
-    if (v > Number(k.nilai_maks)) { v = Number(k.nilai_maks); el.value = v; }
-    if (v < 0) { v = 0; el.value = 0; }
+    if (v > Number(k.nilai_maks)) { v = Number(k.nilai_maks); elInp.value = v; }
+    if (v < 0) { v = 0; elInp.value = 0; }
   }
   setDraft(selectedId, x => {
     x.rincian = x.rincian || {};
@@ -215,16 +225,16 @@ function setDraft(id, fn) {
 
 const hitungTotal = d => !d ? 0 :
   Object.values(d.rincian || {}).reduce((a, v) => a + (Number(v) || 0), 0) - (Number(d.penalti) || 0);
-const updateTotal = () => document.getElementById('totPrev').textContent = hitungTotal(drafts[selectedId]);
+const updateTotal = () => document.getElementById('totPrev').textContent = fmtN(hitungTotal(drafts[selectedId]));
 const updateProg = () => {
   const n = peserta.filter(p => synced.has(p.id) || adaIsi(drafts[p.id])).length;
   document.getElementById('hProg').textContent = n + '/' + peserta.length;
 };
 function updateStatusLine() {
-  const el = document.getElementById('statusLine');
-  if (synced.has(selectedId)) el.textContent = '✅ Nilai peserta ini sudah tersimpan di server.';
-  else if (adaIsi(drafts[selectedId])) el.textContent = '🟡 Draft lokal — belum terkirim ke server.';
-  else el.textContent = '';
+  const elS = document.getElementById('statusLine');
+  if (synced.has(selectedId)) elS.textContent = '✅ Nilai peserta ini sudah tersimpan di server.';
+  else if (adaIsi(drafts[selectedId])) elS.textContent = '🟡 Draft lokal — belum terkirim ke server.';
+  else elS.textContent = '';
 }
 function updateBanner() {
   const n = daftarKotor().length;
@@ -260,7 +270,7 @@ async function kirimIni() {
   const ok = await kirim([selectedId]);
   if (!ok) { resetBtnKirim(); toast('Gagal kirim. Cek koneksi, lalu coba lagi.', 'err'); return; }
 
-  // Umpan balik sukses lalu AUTO-ADVANCE ke peserta berikutnya
+  if (navigator.vibrate) navigator.vibrate(60);
   b.innerHTML = '<i data-lucide="check-circle-2"></i><span>Terkirim</span>'; icons();
   setTimeout(() => {
     const idx = peserta.findIndex(x => x.id === selectedId);
