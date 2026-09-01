@@ -4,22 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SPECTRA — Pabrik Event</title>
-<link rel="stylesheet" href="spectra-theme.css">
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="spectra-ui.js"></script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link rel="stylesheet" href="spectra-theme.css?v=2">
+<script src="vendor/supabase.min.js"></script>
+<script src="vendor/lucide.min.js"></script>
+<script>if(!window.lucide) document.write('<script src="https://unpkg.com/lucide@latest"><\/script>')</script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script>if(!window.XLSX) document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
+<script src="spectra-ui.js?v=2"></script>
 <script>initTheme('light')</script>
 <style>
   main{max-width:880px;margin:0 auto;padding:1rem 1rem 7rem}
-
-  /* Kartu 1 & 2 berdampingan di layar lebar */
   .duo{display:grid;grid-template-columns:1fr;gap:1rem;margin-bottom:1rem}
   @media(min-width:900px){.duo{grid-template-columns:1.15fr .85fr}}
-
-  /* Baris cabang: Kode | Nama | Juri | Hapus — grid = tidak bisa melipat sendiri */
   .frow{display:grid;grid-template-columns:minmax(100px,1fr) minmax(150px,2fr) 92px 44px;
         gap:.6rem;align-items:end;margin-bottom:.8rem}
-  /* Baris aspek: Nama | Maks | Hapus */
   .krow{display:grid;grid-template-columns:minmax(120px,1fr) 100px 44px;
         gap:.6rem;align-items:end;margin-bottom:.6rem}
   .frow .field,.krow .field{margin-bottom:0}
@@ -29,21 +28,18 @@
     .frow .wide{grid-column:1/-1}
     .krow{grid-template-columns:1fr 84px 40px}
   }
-
-  /* CTA sticky — selalu terlihat tanpa scroll */
   .cta{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;
        background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);
-       border-top:1px solid var(--border);padding:.7rem 1rem calc(.7rem + env(safe-area-inset-bottom)))}
-  .cta .btn{max-width:880px;width:100%}
-
+       border-top:1px solid var(--border);padding:.7rem 1rem calc(.7rem + env(safe-area-inset-bottom))}
+  .cta-in{display:flex;gap:.6rem;max-width:880px;width:100%}
   .tag{display:inline-flex;align-items:center;gap:.45rem;background:var(--info-soft);color:var(--info-text);
        border:1px solid color-mix(in srgb,var(--info) 40%,transparent);border-radius:99px;
        padding:.3rem .85rem;font-size:.8rem;font-weight:700;margin:.15rem}
   .tag button{border:none;background:none;color:inherit;cursor:pointer;font-size:.95rem}
-
   .okBox{background:var(--success-soft);border:1px solid color-mix(in srgb,var(--success) 45%,transparent);
          border-radius:var(--r);padding:1rem;margin-bottom:1rem}
   .cabCard{margin-bottom:.9rem}
+  .spin{animation:putar 1s linear infinite}@keyframes putar{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -61,7 +57,6 @@
 
 <main>
   <div class="duo">
-    <!-- ============ 1. INFORMASI EVENT ============ -->
     <div class="card">
       <div class="card-head"><h3><i data-lucide="calendar-days"></i> 1. Informasi Event</h3></div>
       <label class="field"><span>Nama event</span>
@@ -74,21 +69,21 @@
       </div>
       <label class="field"><span>Lokasi</span>
         <input class="input" id="inLokasi" placeholder="Contoh: SD Negeri Singodutan"></label>
-      <p class="muted small">Kode menjadi awalan semua kode akses, mis. <b>FTBI27-AKSARA-J1</b>.</p>
+      <p class="muted small">Kode menjadi awalan semua kode akses, mis. <b>FTBI27-AKSARA-PA-J1</b>.</p>
     </div>
 
-    <!-- ============ 2. KATEGORI ============ -->
     <div class="card">
       <div class="card-head"><h3><i data-lucide="tags"></i> 2. Kategori Lomba</h3></div>
-      <div class="krow" style="grid-template-columns:1fr auto">
-        <input class="input" id="inKat" placeholder="Umum / Putra / Putri / Kelas 1-2">
-        <button class="btn btn-ghost" onclick="tambahKategori()"><i data-lucide="plus"></i> Tambah</button>
+      <div class="krow" style="grid-template-columns:1fr 90px auto">
+        <input class="input" id="inKat" placeholder="Nama (Putra / Putri)">
+        <input class="input" id="inKatKode" placeholder="PA" maxlength="4" style="text-transform:uppercase">
+        <button class="btn btn-ghost" onclick="tambahKategori()"><i data-lucide="plus"></i></button>
       </div>
+      <p class="muted small" style="margin-bottom:.5rem">Kode singkat dipakai pada kode akses juri (PA/PI).</p>
       <div id="katChips"></div>
     </div>
   </div>
 
-  <!-- ============ 3. CABANG & ASPEK ============ -->
   <div class="card">
     <div class="card-head"><h3><i data-lucide="layers"></i> 3. Cabang & Aspek Penilaian</h3></div>
     <label class="field" style="margin-bottom:.9rem">
@@ -101,7 +96,6 @@
     <button class="btn btn-ghost" onclick="tambahCabang()"><i data-lucide="plus"></i> Tambah Cabang</button>
   </div>
 
-  <!-- ============ HASIL ============ -->
   <div id="hasil" hidden>
     <div class="okBox">
       <h3 style="margin-bottom:.4rem">✅ Event Berhasil Dibuat!</h3>
@@ -115,7 +109,7 @@
     <div class="card">
       <div class="card-head"><h3><i data-lucide="key-round"></i> Kode Akses yang Digenerate</h3></div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Kode Akses</th><th>Nama Petugas</th><th>Peran</th><th>Cabang</th></tr></thead>
+        <thead><tr><th>Kode Akses</th><th>Nama Petugas</th><th>Peran</th><th>Tugas</th></tr></thead>
         <tbody id="tbKode"></tbody>
       </table></div>
     </div>
@@ -127,12 +121,12 @@
   </div>
 </main>
 
-<!-- CTA sticky -->
-<div class="cta">
-  <button class="btn btn-primary btn-lg" id="btnBuat" onclick="buatEvent()">
+<div class="cta"><div class="cta-in">
+  <button class="btn btn-ghost" onclick="location.href='spectra-admin.html'"><i data-lucide="x"></i> Batal</button>
+  <button class="btn btn-primary btn-lg" style="flex:1" id="btnBuat" onclick="buatEvent()">
     <i data-lucide="rocket"></i><span>Buat Event & Generate Kode Akses</span>
   </button>
-</div>
+</div></div>
 
 <script>
 const sesi = bacaSesi();
@@ -153,24 +147,25 @@ const fatal = m => { document.getElementById('fatal').hidden = false; document.g
   } catch (e) { fatal('Gagal memuat data: ' + e.message); }
 })();
 
-/* ---------------- KATEGORI ---------------- */
 function tambahKategori() {
-  const val = document.getElementById('inKat').value.trim();
-  if (!val) return;
-  if (!kategoriList.includes(val)) kategoriList.push(val);
+  const nama = document.getElementById('inKat').value.trim();
+  let kode = document.getElementById('inKatKode').value.trim().toUpperCase();
+  if (!nama) return;
+  if (!kode) kode = 'K' + (kategoriList.length + 1);
+  if (!kategoriList.find(x => x.nama === nama)) kategoriList.push({ nama, kode });
   document.getElementById('inKat').value = '';
+  document.getElementById('inKatKode').value = '';
   renderKat();
 }
-function hapusKategori(v) { kategoriList = kategoriList.filter(x => x !== v); renderKat(); }
+function hapusKategori(nama) { kategoriList = kategoriList.filter(x => x.nama !== nama); renderKat(); }
 function renderKat() {
   document.getElementById('katChips').innerHTML = kategoriList.map(k =>
-    '<span class="tag">' + k + '<button onclick="hapusKategori(\'' + k.replace(/'/g, "\\'") + '\')">×</button></span>').join('') ||
+    '<span class="tag">' + k.nama + ' (' + k.kode + ')<button onclick="hapusKategori(\'' + k.nama.replace(/'/g, "\\'") + '\')">×</button></span>').join('') ||
     '<span class="muted small">Belum ada kategori — semua peserta satu kelompok.</span>';
 }
 
-/* ---------------- CABANG & KRITERIA (grid) ---------------- */
 function tambahCabang() {
-  cabangList.push({ kode: '', nama: '', juri: 2, kriteria: [{ nama: 'Skor', maks: 100 }] });
+  cabangList.push({ kode: '', nama: '', juri: 2, pisah: false, kriteria: [{ nama: 'Skor', maks: 100 }] });
   renderCabang();
 }
 function hapusCabang(i) { cabangList.splice(i, 1); renderCabang(); }
@@ -191,6 +186,9 @@ function renderCabang() {
           [1,2,3,4,5].map(n => '<option ' + (c.juri === n ? 'selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
         '<button class="btn btn-danger btn-icon" title="Hapus cabang" onclick="hapusCabang(' + ci + ')"><i data-lucide="trash-2"></i></button>' +
       '</div>' +
+      '<label class="field" style="margin:.2rem 0 .7rem"><span style="display:flex;gap:.5rem;align-items:center">' +
+        '<input type="checkbox" style="width:auto" ' + (c.pisah ? 'checked' : '') + ' onchange="cabangList[' + ci + '].pisah=this.checked">' +
+        'Pisahkan juri per kategori (Putra & Putri punya juri sendiri)</span></label>' +
       '<div id="kb' + ci + '"></div>' +
       '<button class="btn btn-ghost" onclick="tambahKriteria(' + ci + ')"><i data-lucide="plus"></i> Tambah Aspek</button>';
     box.appendChild(card);
@@ -211,9 +209,9 @@ function renderCabang() {
 
 function cloneStruktur(on) {
   if (!on || !DATA) return;
-  kategoriList = (DATA.kategori || []).map(k => k.nama_kategori);
+  kategoriList = (DATA.kategori || []).map(k => ({ nama: k.nama_kategori, kode: k.kode_kategori || '' }));
   cabangList = (DATA.cabang || []).map(c => ({
-    kode: c.kode_cabang, nama: c.nama_cabang, juri: 2,
+    kode: c.kode_cabang, nama: c.nama_cabang, juri: 2, pisah: false,
     kriteria: (DATA.kriteria || []).filter(k => k.cabang_id === c.id)
       .map(k => ({ nama: k.nama_aspek, maks: Number(k.nilai_maks) }))
   }));
@@ -222,7 +220,6 @@ function cloneStruktur(on) {
   toast('Struktur event saat ini disalin.', 'ok');
 }
 
-/* ---------------- BUAT EVENT ---------------- */
 async function buatEvent() {
   const nama = document.getElementById('inNama').value.trim();
   const kode = document.getElementById('inKode').value.trim().toUpperCase();
@@ -230,12 +227,15 @@ async function buatEvent() {
 
   const cabang = cabangList
     .map(c => ({ kode: c.kode.trim().toUpperCase(), nama: c.nama.trim(), juri: c.juri,
+      pisah_kategori: c.pisah === true,
       kriteria: c.kriteria.filter(k => k.nama.trim()).map(k => ({ nama: k.nama.trim(), maks: Number(k.maks) || 100 })) }))
     .filter(c => c.kode && c.nama);
   if (!cabang.length) return toast('Minimal satu cabang dengan kode & nama.', 'err');
   if (cabang.some(c => !c.kriteria.length)) return toast('Setiap cabang minimal 1 aspek penilaian.', 'err');
-  const kodeDup = cabang.map(c => c.kode).filter((v, i, a) => a.indexOf(v) !== i);
-  if (kodeDup.length) return toast('Kode cabang duplikat: ' + kodeDup[0], 'err');
+  if (cabang.some(c => c.pisah_kategori) && !kategoriList.length)
+    return toast('"Pisahkan juri per kategori" membutuhkan minimal 1 kategori.', 'err');
+  const dup = cabang.map(c => c.kode).filter((v, i, a) => a.indexOf(v) !== i);
+  if (dup.length) return toast('Kode cabang duplikat: ' + dup[0], 'err');
 
   const btn = document.getElementById('btnBuat');
   btn.disabled = true;
@@ -284,13 +284,10 @@ async function aktifkan() {
 
 function unduhKode() {
   if (!HASIL) return;
-  const rows = (HASIL.codes || []).map(c => ({ 'Kode Akses': c.kode, 'Nama Petugas': c.nama, Peran: c.peran, Cabang: c.cabang || '-' }));
+  const rows = (HASIL.codes || []).map(c => ({ 'Kode Akses': c.kode, 'Nama Petugas': c.nama, Peran: c.peran, Tugas: c.cabang || '-' }));
   const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Kode Akses');
-  XLSX.writeFile(wb, 'kode_akses_' + (HASIL.slug || 'event') + '.xlsx');
+  XLSX.writeFile({ SheetNames: ['Kode'], Sheets: { Kode: ws } }, 'kode_akses_' + (HASIL.slug || 'event') + '.xlsx');
 }
 </script>
-<style>.spin{animation:putar 1s linear infinite}@keyframes putar{to{transform:rotate(360deg)}}</style>
 </body>
 </html>
