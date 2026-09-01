@@ -17,17 +17,13 @@
   .shell-main{padding-bottom:96px}
   @media(min-width:901px){.shell-main{padding-bottom:2rem}}
   @media(min-width:901px){ .sidenav{display:flex;flex-direction:column} }
-  .sidebrand{display:flex;gap:.65rem;align-items:center;padding:.2rem .6rem 1.1rem;
-             border-bottom:1px solid var(--border);margin-bottom:.7rem}
+  .sidebrand{display:flex;gap:.65rem;align-items:center;padding:.2rem .6rem 1.1rem;border-bottom:1px solid var(--border);margin-bottom:.7rem}
   .sidebrand .brand-logo{width:40px;height:40px;border-radius:12px}
   .sidebrand .brand-logo .lucide{width:22px;height:22px}
   .sidebrand b{display:block;font-size:.98rem;line-height:1.2;letter-spacing:.3px}
   .sidebrand small{display:block;color:var(--text-3);font-size:.68rem;margin-top:.12rem}
-  .navlabel{font-size:.62rem;letter-spacing:1.6px;color:var(--text-3);font-weight:700;
-            padding:.9rem .85rem .35rem;text-transform:uppercase}
-  .navitem{display:flex;gap:.7rem;align-items:center;padding:.66rem .85rem;border-radius:10px;
-           color:var(--text-2);font-size:.88rem;font-weight:600;cursor:pointer;margin-bottom:.15rem;
-           border:none;background:none;width:100%;text-align:left;font-family:var(--font);transition:var(--trans)}
+  .navlabel{font-size:.62rem;letter-spacing:1.6px;color:var(--text-3);font-weight:700;padding:.9rem .85rem .35rem;text-transform:uppercase}
+  .navitem{display:flex;gap:.7rem;align-items:center;padding:.66rem .85rem;border-radius:10px;color:var(--text-2);font-size:.88rem;font-weight:600;cursor:pointer;margin-bottom:.15rem;border:none;background:none;width:100%;text-align:left;font-family:var(--font);transition:var(--trans)}
   .navitem .lucide{width:19px;height:19px;flex:none}
   .navitem:hover{background:var(--surface-2);color:var(--text)}
   .navitem.on{background:var(--primary-soft);color:var(--primary-text)}
@@ -40,22 +36,19 @@
   .toolbar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:.9rem}
   .toolbar .input-wrap{flex:1;min-width:170px}
   .dangerCard{border-color:color-mix(in srgb,var(--danger) 45%,transparent)}
-  .ovl{position:fixed;inset:0;background:rgba(4,8,16,.55);backdrop-filter:blur(4px);display:grid;
-       place-items:center;z-index:90;padding:1rem;overflow-y:auto}
+  .ovl{position:fixed;inset:0;background:rgba(4,8,16,.55);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:90;padding:1rem;overflow-y:auto}
   .ovl .card{max-width:520px;width:100%}
   .actCell{display:flex;gap:.35rem;justify-content:flex-end}
   .eventInfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem}
   .eventInfo .card{padding:.8rem 1rem}
   .eventInfo b{display:block;font-size:.95rem}
   .eventInfo small{color:var(--text-3);font-size:.68rem;letter-spacing:1px;text-transform:uppercase}
-  .blindRow{display:flex;justify-content:space-between;align-items:center;gap:.8rem;
-            padding:.55rem 0;border-bottom:1px solid var(--border)}
+  .blindRow{display:flex;justify-content:space-between;align-items:center;gap:.8rem;padding:.55rem 0;border-bottom:1px solid var(--border)}
   .blindRow:last-child{border-bottom:none}
   .spin{animation:putar 1s linear infinite}@keyframes putar{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-
 <div class="shell">
   <aside class="sidenav">
     <div class="sidebrand">
@@ -75,21 +68,14 @@
       <button class="navitem danger" onclick="keluarSpectra()"><i data-lucide="log-out"></i> Keluar</button>
     </div>
   </aside>
-
   <div class="shell-main">
     <header class="topbar"><div class="topbar-in">
-      <div class="brand">
-        <div class="brand-logo"><i data-lucide="zap"></i></div>
-        <div><b id="hEvent">SPECTRA</b><small id="hStatus"></small></div>
-      </div>
-      <div class="topbar-actions">
-        <span id="conn"></span>
+      <div class="brand"><div class="brand-logo"><i data-lucide="zap"></i></div><div><b id="hEvent">SPECTRA</b><small id="hStatus"></small></div></div>
+      <div class="topbar-actions"><span id="conn"></span>
         <button class="btn btn-ghost btn-icon" onclick="muat()" title="Segarkan"><i data-lucide="refresh-cw"></i></button>
       </div>
     </div></header>
-
     <main class="container" style="padding-top:1rem">
-
       <section id="sec-dasbor">
         <div class="stat-grid">
           <div class="stat"><i data-lucide="users"></i><div><b id="stP">0</b><small>Peserta</small></div></div>
@@ -118,7 +104,6 @@
           </table></div>
         </div>
       </section>
-
       <section id="sec-peserta" hidden>
         <div class="card">
           <div class="card-head"><h3><i data-lucide="users"></i> Data Peserta</h3>
@@ -134,23 +119,20 @@
           </div>
           <div id="imporPrev" hidden>
             <div class="toolbar">
-              <span class="badge ok" id="pvOk">0 valid</span>
-              <span class="badge warn" id="pvErr">0 error</span>
+              <span class="badge ok" id="pvOk">0 valid</span><span class="badge warn" id="pvErr">0 error</span>
               <button class="btn btn-primary" id="btnImpor" onclick="jalankanImport()"><i data-lucide="check"></i> Import Peserta Valid</button>
             </div>
             <div class="table-wrap"><table>
               <thead><tr><th>Baris</th><th>No.</th><th>Nama</th><th>Cabang</th><th>Kategori</th><th>Status</th></tr></thead>
               <tbody id="tbPrev"></tbody>
-            </table></div>
-            <div style="height:.9rem"></div>
+            </table></div><div style="height:.9rem"></div>
           </div>
           <div class="table-wrap"><table>
-            <thead><tr><th>No.</th><th>Nama Peserta</th><th>Asal Instansi</th><th>Cabang</th><th>Kategori</th></tr></thead>
+            <thead><tr><th>No.</th><th>Nama</th><th>Asal</th><th>Cabang</th><th>Kategori</th><th>TTL</th><th>NISN</th><th>Kelas</th></tr></thead>
             <tbody id="tbPeserta"></tbody>
           </table></div>
         </div>
       </section>
-
       <section id="sec-matriks" hidden>
         <div class="card">
           <div class="card-head"><h3><i data-lucide="table"></i> Matriks Keterisian & Nilai</h3>
@@ -158,7 +140,6 @@
           <div class="table-wrap"><table class="matrix" id="matriksTable"></table></div>
         </div>
       </section>
-
       <section id="sec-laporan" hidden>
         <div class="card">
           <div class="card-head"><h3><i data-lucide="printer"></i> Pusat Laporan</h3></div>
@@ -173,35 +154,34 @@
             <button class="btn btn-ghost" onclick="excelSemuaNilai()"><i data-lucide="file-spreadsheet"></i> Semua Nilai</button>
           </div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Peringkat</th><th>No.</th><th>Peserta</th><th>Asal Instansi</th><th>Juri</th><th>Total</th><th>Kab.</th></tr></thead>
+            <thead><tr><th>Peringkat</th><th>No.</th><th>Peserta</th><th>Asal</th><th>TTL</th><th>NISN</th><th>Kelas</th><th>Juri</th><th>Total</th><th>Kab.</th></tr></thead>
             <tbody id="tbLaporan"></tbody>
           </table></div>
           <p class="muted small" id="lapNote" style="margin-top:.7rem"></p>
         </div>
       </section>
-
       <section id="sec-akses" hidden>
         <div class="card">
           <div class="card-head"><h3><i data-lucide="key-round"></i> Akses & Petugas</h3>
-            <button class="btn btn-primary" onclick="openPetugas('CREATE')"><i data-lucide="user-plus"></i> Tambah Petugas</button></div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="openPetugas('CREATE')"><i data-lucide="user-plus"></i> Tambah</button>
+              <button class="btn btn-ghost" onclick="cetakPIN()"><i data-lucide="printer"></i> Cetak PIN</button>
+              <button class="btn btn-ghost" onclick="excelPIN()"><i data-lucide="download"></i> Excel PIN</button>
+            </div>
+          </div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Nama Petugas</th><th>Peran</th><th>Cabang</th><th>Kode Akses</th><th style="text-align:right">Aksi</th></tr></thead>
+            <thead><tr><th>Nama</th><th>Peran</th><th>Cabang</th><th>Kategori</th><th>Kode Akses</th><th style="text-align:right">Aksi</th></tr></thead>
             <tbody id="tbAkses"></tbody>
           </table></div>
         </div>
       </section>
-
       <section id="sec-event" hidden>
         <div class="eventInfo" id="eventInfo"></div>
-
         <div class="card" style="margin-bottom:1rem">
           <div class="card-head"><h3><i data-lucide="eye-off"></i> Mode Blind Judging per Cabang</h3></div>
-          <p class="muted small" style="margin-bottom:.6rem">
-            <b>Blind AKTIF</b> = juri hanya melihat "Peserta Nomor X". <b>Non-Blind</b> = nama & sekolah tampil.
-          </p>
+          <p class="muted small" style="margin-bottom:.6rem"><b>Blind AKTIF</b> = juri hanya melihat "Peserta Nomor X". <b>Non-Blind</b> = nama tampil.</p>
           <div id="blindList"></div>
         </div>
-
         <div class="card" style="margin-bottom:1rem">
           <div class="card-head"><h3><i data-lucide="settings"></i> Status & Event Baru</h3></div>
           <div class="toolbar" style="margin:0">
@@ -211,25 +191,20 @@
             <a class="btn btn-ghost" href="spectra-setup.html"><i data-lucide="factory"></i> Buat Event Baru</a>
           </div>
         </div>
-
         <div class="card dangerCard">
           <div class="card-head"><h3 style="color:var(--danger-text)"><i data-lucide="alert-triangle"></i> Danger Zone</h3></div>
-          <p class="muted small" style="margin-bottom:.9rem">Tidak dapat dibatalkan. Gunakan hanya untuk menangani human error.</p>
+          <p class="muted small" style="margin-bottom:.9rem">Tidak dapat dibatalkan. Gunakan hanya untuk human error.</p>
           <div class="toolbar" style="margin:0">
             <button class="btn btn-warn" onclick="resetEvent('NILAI')"><i data-lucide="eraser"></i> Reset Semua Nilai</button>
             <button class="btn btn-danger" onclick="resetEvent('FULL')"><i data-lucide="trash-2"></i> Hapus Event</button>
           </div>
         </div>
       </section>
-
-      <div class="card" id="fatal" hidden>
-        <p id="fatalTxt" class="muted"></p>
-        <button class="btn btn-primary btn-block" onclick="location.href='spectra-login.html'">Ke Halaman Login</button>
-      </div>
+      <div class="card" id="fatal" hidden><p id="fatalTxt" class="muted"></p>
+        <button class="btn btn-primary btn-block" onclick="location.href='spectra-login.html'">Ke Halaman Login</button></div>
     </main>
   </div>
 </div>
-
 <nav class="bottomnav">
   <button data-tab="dasbor" class="on" onclick="tab('dasbor')"><i data-lucide="layout-dashboard"></i>Dasbor</button>
   <button data-tab="peserta" onclick="tab('peserta')"><i data-lucide="users"></i>Peserta</button>
@@ -237,363 +212,295 @@
   <button data-tab="akses" onclick="tab('akses')"><i data-lucide="key-round"></i>Akses</button>
   <button data-tab="event" onclick="tab('event')"><i data-lucide="settings"></i>Event</button>
 </nav>
-
 <script>
-const sesi = bacaSesi();
-let DATA = null, JUARA = [], LAP = 'juara', PREV = [];
-const el = id => document.getElementById(id);
-const fatal = m => { el('fatal').hidden = false; el('fatalTxt').textContent = m; };
-const cabangById = id => (DATA.cabang || []).find(c => c.id === id) || {};
-const kategoriById = id => (DATA.kategori || []).find(k => k.id === id) || {};
-const petugasById = id => (DATA.petugas || []).find(p => p.id === id) || {};
-const pesertaById = id => (DATA.peserta || []).find(p => p.id === id) || {};
-
-function tab(t) {
-  ['dasbor','peserta','matriks','laporan','akses','event'].forEach(k => el('sec-' + k).hidden = k !== t);
-  document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
-  icons();
-}
-
-(async function boot() {
-  if (!sesi) { location.href = 'spectra-login.html'; return; }
-  if (sesi.peran !== 'ADMIN') return fatal('Halaman ini khusus ADMIN. Sesi Anda: ' + sesi.peran + '.');
-  initConn('conn');
-  await muat();
+const sesi=bacaSesi(); let DATA=null,JUARA=[],LAP='juara',PREV=[];
+const el=id=>document.getElementById(id);
+const fatal=m=>{el('fatal').hidden=false;el('fatalTxt').textContent=m;};
+const cabangById=id=>(DATA.cabang||[]).find(c=>c.id===id)||{};
+const kategoriById=id=>(DATA.kategori||[]).find(k=>k.id===id)||{};
+const petugasById=id=>(DATA.petugas||[]).find(p=>p.id===id)||{};
+const pesertaById=id=>(DATA.peserta||[]).find(p=>p.id===id)||{};
+function tab(t){['dasbor','peserta','matriks','laporan','akses','event'].forEach(k=>el('sec-'+k).hidden=k!==t);
+  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));icons();}
+(async function boot(){
+  if(!sesi){location.href='spectra-login.html';return;}
+  if(sesi.peran!=='ADMIN')return fatal('Halaman ini khusus ADMIN. Sesi Anda: '+sesi.peran+'.');
+  initConn('conn'); await muat();
 })();
-
-async function muat() {
-  try {
-    const client = await sb();
-    const [a, j] = await Promise.all([
-      client.rpc('spectra_get_admin_data', { p_kode_akses: sesi.kode_akses }),
-      client.rpc('spectra_hitung_juara', { p_event_id: sesi.event_id })
-    ]);
-    if (a.error) throw a.error;
-    if (a.data.error) return fatal(a.data.error);
-    if (j.error) throw j.error;
-    DATA = a.data; JUARA = j.data || [];
-    el('hEvent').textContent = DATA.event.nama;
-    el('hStatus').textContent = 'Status: ' + DATA.event.status;
+async function muat(){
+  try{
+    const client=await sb();
+    const [a,j]=await Promise.all([
+      client.rpc('spectra_get_admin_data',{p_kode_akses:sesi.kode_akses}),
+      client.rpc('spectra_hitung_juara',{p_event_id:sesi.event_id})]);
+    if(a.error)throw a.error; if(a.data.error)return fatal(a.data.error); if(j.error)throw j.error;
+    DATA=a.data; JUARA=j.data||[];
+    el('hEvent').textContent=DATA.event.nama; el('hStatus').textContent='Status: '+DATA.event.status;
     isiFilter(); renderSemua();
-  } catch (e) { fatal('Gagal memuat: ' + e.message); }
+  }catch(e){fatal('Gagal memuat: '+e.message);}
 }
-function renderSemua() { renderDasbor(); renderPeserta(); renderMatriks(); renderLaporan(); renderAkses(); renderEvent(); renderBlind(); icons(); }
-
-function isiFilter() {
-  const opts = '<option value="">Semua Cabang</option>' + DATA.cabang.map(c => '<option value="' + c.id + '">' + c.nama_cabang + '</option>').join('');
-  el('fCabang').innerHTML = opts; el('fPCabang').innerHTML = opts;
-  el('fMCabang').innerHTML = opts.replace('Semua Cabang', 'Pilih Cabang');
-  el('fLCabang').innerHTML = opts;
-  el('fKategori').innerHTML = '<option value="">Semua Kategori</option>' + DATA.kategori.map(k => '<option value="' + k.id + '">' + k.nama_kategori + '</option>').join('');
+function renderSemua(){renderDasbor();renderPeserta();renderMatriks();renderLaporan();renderAkses();renderEvent();renderBlind();icons();}
+function isiFilter(){
+  const opts='<option value="">Semua Cabang</option>'+DATA.cabang.map(c=>'<option value="'+c.id+'">'+c.nama_cabang+'</option>').join('');
+  el('fCabang').innerHTML=opts;el('fPCabang').innerHTML=opts;
+  el('fMCabang').innerHTML=opts.replace('Semua Cabang','Pilih Cabang');el('fLCabang').innerHTML=opts;
+  el('fKategori').innerHTML='<option value="">Semua Kategori</option>'+DATA.kategori.map(k=>'<option value="'+k.id+'">'+k.nama_kategori+'</option>').join('');
 }
-
-function rekap() {
-  const map = {};
-  (DATA.nilai || []).forEach(n => {
-    const m = map[n.peserta_id] = map[n.peserta_id] || { total: 0, juri: 0, final: 0 };
-    m.total += Number(n.total || 0); m.juri++;
-    if (n.status === 'FINAL') m.final++;
-  });
-  return map;
+function rekap(){const map={};(DATA.nilai||[]).forEach(n=>{const m=map[n.peserta_id]=map[n.peserta_id]||{total:0,juri:0,final:0};
+  m.total+=Number(n.total||0);m.juri++;if(n.status==='FINAL')m.final++;});return map;}
+function renderDasbor(){
+  const map=rekap();const q=(el('qDasbor').value||'').toLowerCase();
+  const fc=el('fCabang').value,fk=el('fKategori').value;
+  let rows=(DATA.peserta||[]).map(p=>({p,m:map[p.id]}))
+    .filter(r=>(!fc||r.p.cabang_id===fc)&&(!fk||r.p.kategori_id===fk)&&
+      (!q||(r.p.nama_peserta+' '+(r.p.asal_instansi||'')+' '+r.p.nomor_undian).toLowerCase().includes(q)));
+  if(el('fSort').value==='total')rows.sort((a,b)=>(b.m?b.m.total:-1)-(a.m?a.m.total:-1));
+  let nPr=0,nF=0;
+  el('tbDasbor').innerHTML=rows.map((r,i)=>{let st,cls;
+    if(!r.m){st='BELUM';cls='none';}else if(r.m.final===r.m.juri){st='FINAL';cls='ok';nF++;}else{st='PROSES';cls='proc';nPr++;}
+    return '<tr><td>'+(i+1)+'</td><td>'+r.p.nomor_undian+'</td><td><b>'+r.p.nama_peserta+'</b></td><td>'+(r.p.asal_instansi||'-')+
+      '</td><td class="small muted">'+cabangById(r.p.cabang_id).nama_cabang+'</td><td class="tnum">'+(r.m?r.m.juri:0)+
+      '</td><td class="tnum"><b>'+fmtN(r.m?r.m.total:0)+'</b></td><td><span class="badge '+cls+'">'+st+'</span></td></tr>';}).join('');
+  el('stP').textContent=(DATA.peserta||[]).length;el('stPr').textContent=nPr;el('stF').textContent=nF;el('stC').textContent=(DATA.cabang||[]).length;
+  el('progCabang').innerHTML=(DATA.cabang||[]).map(c=>{const ps=(DATA.peserta||[]).filter(p=>p.cabang_id===c.id);
+    const fin=ps.filter(p=>{const m=map[p.id];return m&&m.final===m.juri;}).length;
+    const pct=ps.length?Math.round(fin/ps.length*100):0;
+    return '<div class="progrow"><div class="lbl"><span>'+c.nama_cabang+'</span><small class="tnum">'+fin+'/'+ps.length+' final</small></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>';}).join('')||'<p class="muted small">Belum ada cabang.</p>';
 }
-function renderDasbor() {
-  const map = rekap();
-  const q = (el('qDasbor').value || '').toLowerCase();
-  const fc = el('fCabang').value, fk = el('fKategori').value;
-  let rows = (DATA.peserta || []).map(p => ({ p, m: map[p.id] }))
-    .filter(r => (!fc || r.p.cabang_id === fc) && (!fk || r.p.kategori_id === fk) &&
-      (!q || (r.p.nama_peserta + ' ' + (r.p.asal_instansi || '') + ' ' + r.p.nomor_undian).toLowerCase().includes(q)));
-  if (el('fSort').value === 'total') rows.sort((a, b) => (b.m ? b.m.total : -1) - (a.m ? a.m.total : -1));
-  let nPr = 0, nF = 0;
-  el('tbDasbor').innerHTML = rows.map((r, i) => {
-    let st, cls;
-    if (!r.m) { st = 'BELUM'; cls = 'none'; }
-    else if (r.m.final === r.m.juri) { st = 'FINAL'; cls = 'ok'; nF++; }
-    else { st = 'PROSES'; cls = 'proc'; nPr++; }
-    return '<tr><td>' + (i + 1) + '</td><td>' + r.p.nomor_undian + '</td><td><b>' + r.p.nama_peserta + '</b></td><td>' +
-      (r.p.asal_instansi || '-') + '</td><td class="small muted">' + cabangById(r.p.cabang_id).nama_cabang + '</td><td class="tnum">' +
-      (r.m ? r.m.juri : 0) + '</td><td class="tnum"><b>' + fmtN(r.m ? r.m.total : 0) + '</b></td><td><span class="badge ' + cls + '">' + st + '</span></td></tr>';
-  }).join('');
-  el('stP').textContent = (DATA.peserta || []).length;
-  el('stPr').textContent = nPr; el('stF').textContent = nF; el('stC').textContent = (DATA.cabang || []).length;
-  el('progCabang').innerHTML = (DATA.cabang || []).map(c => {
-    const ps = (DATA.peserta || []).filter(p => p.cabang_id === c.id);
-    const fin = ps.filter(p => { const m = map[p.id]; return m && m.final === m.juri; }).length;
-    const pct = ps.length ? Math.round(fin / ps.length * 100) : 0;
-    return '<div class="progrow"><div class="lbl"><span>' + c.nama_cabang +
-      '</span><small class="tnum">' + fin + '/' + ps.length + ' final</small></div><div class="pbar"><i style="width:' + pct + '%"></i></div></div>';
-  }).join('') || '<p class="muted small">Belum ada cabang.</p>';
+function renderPeserta(){
+  const q=(el('qPeserta').value||'').toLowerCase();const fc=el('fPCabang').value;
+  const rows=(DATA.peserta||[]).filter(p=>(!fc||p.cabang_id===fc)&&(!q||(p.nama_peserta+' '+(p.asal_instansi||'')).toLowerCase().includes(q)));
+  el('tbPeserta').innerHTML=rows.map(p=>'<tr><td>'+p.nomor_undian+'</td><td><b>'+p.nama_peserta+'</b></td><td>'+(p.asal_instansi||'-')+
+    '</td><td class="small muted">'+cabangById(p.cabang_id).nama_cabang+'</td><td><span class="badge proc">'+(kategoriById(p.kategori_id).nama_kategori||'Umum')+'</span></td>'+
+    '<td class="small muted">'+(p.tempat_lahir||'-')+(p.tanggal_lahir?', '+p.tanggal_lahir:'')+'</td><td class="small muted">'+(p.nisn||'-')+'</td><td class="small muted">'+(p.kelas||'-')+'</td></tr>').join('');
 }
-
-function renderPeserta() {
-  const q = (el('qPeserta').value || '').toLowerCase();
-  const fc = el('fPCabang').value;
-  const rows = (DATA.peserta || []).filter(p => (!fc || p.cabang_id === fc) &&
-    (!q || (p.nama_peserta + ' ' + (p.asal_instansi || '')).toLowerCase().includes(q)));
-  el('tbPeserta').innerHTML = rows.map(p => '<tr><td>' + p.nomor_undian + '</td><td><b>' + p.nama_peserta +
-    '</b></td><td>' + (p.asal_instansi || '-') + '</td><td class="small muted">' + cabangById(p.cabang_id).nama_cabang +
-    '</td><td><span class="badge proc">' + (kategoriById(p.kategori_id).nama_kategori || 'Umum') + '</span></td></tr>').join('');
+function unduhTemplate(){
+  const ws=XLSX.utils.aoa_to_sheet([
+    ['Nomor Undian','Nama Peserta','Asal Instansi','Cabang','Kategori','Tempat Lahir','Tanggal Lahir','NISN','Kelas'],
+    ['1','Contoh Nama','SD Contoh 1',(DATA.cabang[0]||{}).nama_cabang||'Nama Cabang','Putra','Sragen','2014-05-12','12345678','5A']]);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Peserta');
+  XLSX.writeFile(wb,'template_peserta_spectra.xlsx');
 }
-function unduhTemplate() {
-  const ws = XLSX.utils.aoa_to_sheet([
-    ['Nomor Undian', 'Nama Peserta', 'Asal Instansi', 'Cabang', 'Kategori'],
-    ['1', 'Contoh Nama', 'SD Contoh 1', (DATA.cabang[0] || {}).nama_cabang || 'Nama Cabang', 'Umum']
-  ]);
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Peserta');
-  XLSX.writeFile(wb, 'template_peserta_spectra.xlsx');
-}
-function parseFile(file) {
-  if (!file) return;
-  const rd = new FileReader();
-  rd.onload = e => {
-    try {
-      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-      const aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
-      const hi = aoa.findIndex(r => r.some(c => /nomor/i.test(c)) && r.some(c => /nama/i.test(c)));
-      if (hi === -1) return toast('Header template tidak ditemukan.', 'err');
-      const heads = aoa[hi].map(h => String(h).toLowerCase());
-      const col = t => heads.findIndex(h => h.includes(t));
-      const iN = col('nomor'), iNm = col('nama');
-      let iA = col('asal'); if (iA < 0) iA = col('sekolah'); if (iA < 0) iA = col('instansi');
-      const iC = col('cabang'), iK = col('kategori');
-      PREV = [];
-      aoa.slice(hi + 1).forEach((r, idx) => {
-        if (r.every(c => String(c).trim() === '')) return;
-        const nomor = String(r[iN] ?? '').trim(), nama = String(r[iNm] ?? '').trim();
-        const cabRef = iC >= 0 ? String(r[iC] ?? '').trim() : '';
-        const cab = (DATA.cabang || []).find(c => c.kode_cabang.toLowerCase() === cabRef.toLowerCase() || c.nama_cabang.toLowerCase() === cabRef.toLowerCase());
-        let ok = true, pesan = '✅ siap';
-        if (!nomor || !nama) { ok = false; pesan = '🔴 nomor/nama kosong'; }
-        else if (!cab) { ok = false; pesan = '🔴 cabang tidak dikenal'; }
-        PREV.push({ baris: hi + 2 + idx, nomor, nama, asal: iA >= 0 ? String(r[iA] ?? '').trim() : '',
-          cabang: cabRef, kategori: iK >= 0 ? String(r[iK] ?? '').trim() : '', ok, pesan });
-      });
-      const okN = PREV.filter(r => r.ok).length;
-      el('imporPrev').hidden = false;
-      el('pvOk').textContent = okN + ' valid';
-      el('pvErr').textContent = (PREV.length - okN) + ' error';
-      el('btnImpor').disabled = okN === 0;
-      el('tbPrev').innerHTML = PREV.map(r => '<tr><td>' + r.baris + '</td><td>' + r.nomor + '</td><td>' + r.nama +
-        '</td><td>' + r.cabang + '</td><td>' + (r.kategori || '-') + '</td><td class="small" style="color:' +
-        (r.ok ? 'var(--ok-text)' : 'var(--danger-text)') + '">' + r.pesan + '</td></tr>').join('');
-      icons();
-    } catch (err) { toast('Gagal membaca file: ' + err.message, 'err'); }
-  };
+function parseFile(file){
+  if(!file)return;const rd=new FileReader();
+  rd.onload=e=>{try{
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+    const aoa=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+    const hi=aoa.findIndex(r=>r.some(c=>/nomor/i.test(c))&&r.some(c=>/nama/i.test(c)));
+    if(hi===-1)return toast('Header template tidak ditemukan.','err');
+    const heads=aoa[hi].map(h=>String(h).toLowerCase());const col=t=>heads.findIndex(h=>h.includes(t));
+    const iN=col('nomor'),iNm=col('nama');let iA=col('asal');if(iA<0)iA=col('sekolah');if(iA<0)iA=col('instansi');
+    const iC=col('cabang'),iK=col('kategori'),iT=col('tempat'),iTL=col('tanggal'),iNISN=col('nisn'),iKLS=col('kelas');
+    PREV=[];
+    aoa.slice(hi+1).forEach((r,idx)=>{
+      if(r.every(c=>String(c).trim()===''))return;
+      const nomor=String(r[iN]??'').trim(),nama=String(r[iNm]??'').trim();
+      const cabRef=iC>=0?String(r[iC]??'').trim():'';
+      const cab=(DATA.cabang||[]).find(c=>c.kode_cabang.toLowerCase()===cabRef.toLowerCase()||c.nama_cabang.toLowerCase()===cabRef.toLowerCase());
+      let ok=true,pesan='✅ siap';
+      if(!nomor||!nama){ok=false;pesan='🔴 nomor/nama kosong';}else if(!cab){ok=false;pesan='🔴 cabang tidak dikenal';}
+      PREV.push({baris:hi+2+idx,nomor,nama,asal:iA>=0?String(r[iA]??'').trim():'',cabang:cabRef,
+        kategori:iK>=0?String(r[iK]??'').trim():'',tempat:iT>=0?String(r[iT]??'').trim():'',
+        tanggal:fmtTglExcel(r[iTL]),nisn:iNISN>=0?String(r[iNISN]??'').trim():'',kelas:iKLS>=0?String(r[iKLS]??'').trim():'',ok,pesan});
+    });
+    const okN=PREV.filter(r=>r.ok).length;
+    el('imporPrev').hidden=false;el('pvOk').textContent=okN+' valid';el('pvErr').textContent=(PREV.length-okN)+' error';
+    el('btnImpor').disabled=okN===0;
+    el('tbPrev').innerHTML=PREV.map(r=>'<tr><td>'+r.baris+'</td><td>'+r.nomor+'</td><td>'+r.nama+'</td><td>'+r.cabang+'</td><td>'+
+      (r.kategori||'-')+'</td><td class="small" style="color:'+(r.ok?'var(--ok-text)':'var(--danger-text)')+'">'+r.pesan+'</td></tr>').join('');
+    icons();
+  }catch(err){toast('Gagal membaca file: '+err.message,'err');}};
   rd.readAsArrayBuffer(file);
 }
-async function jalankanImport() {
-  const rows = PREV.filter(r => r.ok).map(r => ({ nomor_undian: r.nomor, nama_peserta: r.nama, asal_instansi: r.asal, cabang: r.cabang, kategori: r.kategori }));
-  const { data, error } = await (await sb()).rpc('spectra_import_peserta', { p_kode_akses: sesi.kode_akses, p_rows: rows });
-  if (error) return toast(error.message, 'err');
-  if (data.error) return toast(data.error, 'err');
-  toast('Import: ' + data.inserted + ' baru, ' + data.updated + ' diperbarui.', 'ok');
-  el('imporPrev').hidden = true;
-  await muat();
+function fmtTglExcel(v){
+  if(v==null||v==='')return '';
+  if(typeof v==='number'){const d=new Date(Math.round((v-25569)*86400*1000));return d.toISOString().slice(0,10);}
+  const s=String(v).trim();
+  const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+  return s;
 }
-
-function renderMatriks() {
-  const fc = el('fMCabang').value || (DATA.cabang[0] || {}).id;
-  el('fMCabang').value = fc;
-  const juri = (DATA.petugas || []).filter(p => p.peran === 'JURI' && p.cabang_id === fc && p.is_active);
-  const ps = (DATA.peserta || []).filter(p => p.cabang_id === fc);
-  const byP = {};
-  (DATA.nilai || []).filter(n => n.cabang_id === fc).forEach(n => { (byP[n.peserta_id] = byP[n.peserta_id] || {})[n.petugas_id] = n; });
-  let html = '<thead><tr><th>Peserta</th>' + juri.map(j => '<th>' + j.nama_petugas + '</th>').join('') + '<th>Total</th><th>Status</th></tr></thead><tbody>';
-  html += ps.map(p => {
-    const nm = byP[p.id] || {};
-    const rws = Object.values(nm);
-    const tot = rws.reduce((a, r) => a + Number(r.total || 0), 0);
-    const allF = rws.length > 0 && rws.every(r => r.status === 'FINAL');
-    return '<tr><td><b>' + p.nomor_undian + '. ' + p.nama_peserta + '</b></td>' + juri.map(j => {
-      const v = nm[j.id];
-      return '<td>' + (v ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + ' tnum">' + fmtN(v.total) + '</span>' : '<span class="mcell none">–</span>') + '</td>';
-    }).join('') + '<td class="tnum"><b>' + fmtN(tot) + '</b></td><td><span class="badge ' + (allF ? 'ok' : rws.length ? 'proc' : 'none') + '">' +
-      (allF ? 'FINAL' : rws.length ? 'PROSES' : 'BELUM') + '</span></td></tr>';
-  }).join('');
-  el('matriksTable').innerHTML = html + '</tbody>';
+async function jalankanImport(){
+  const rows=PREV.filter(r=>r.ok).map(r=>({nomor_undian:r.nomor,nama_peserta:r.nama,asal_instansi:r.asal,cabang:r.cabang,kategori:r.kategori,
+    tempat_lahir:r.tempat,tanggal_lahir:r.tanggal,nisn:r.nisn,kelas:r.kelas}));
+  const {data,error}=await (await sb()).rpc('spectra_import_peserta',{p_kode_akses:sesi.kode_akses,p_rows:rows});
+  if(error)return toast(error.message,'err'); if(data.error)return toast(data.error,'err');
+  toast('Import: '+data.inserted+' baru, '+data.updated+' diperbarui.','ok');
+  el('imporPrev').hidden=true; await muat();
 }
-
-function setLap(v) {
-  LAP = v;
-  el('segJ').classList.toggle('on', v === 'juara');
-  el('segK').classList.toggle('on', v === 'kabupaten');
-  renderLaporan();
+function renderMatriks(){
+  const fc=el('fMCabang').value||(DATA.cabang[0]||{}).id;el('fMCabang').value=fc;
+  const juri=(DATA.petugas||[]).filter(p=>p.peran==='JURI'&&p.cabang_id===fc&&p.is_active);
+  const ps=(DATA.peserta||[]).filter(p=>p.cabang_id===fc);
+  const byP={};(DATA.nilai||[]).filter(n=>n.cabang_id===fc).forEach(n=>{(byP[n.peserta_id]=byP[n.peserta_id]||{})[n.petugas_id]=n;});
+  let html='<thead><tr><th>Peserta</th>'+juri.map(j=>'<th>'+j.nama_petugas+'</th>').join('')+'<th>Total</th><th>Status</th></tr></thead><tbody>';
+  html+=ps.map(p=>{const nm=byP[p.id]||{};const rws=Object.values(nm);
+    const tot=rws.reduce((a,r)=>a+Number(r.total||0),0);
+    const allF=rws.length>0&&rws.every(r=>r.status==='FINAL');
+    return '<tr><td><b>'+p.nomor_undian+'. '+p.nama_peserta+'</b></td>'+juri.map(j=>{const v=nm[j.id];
+      return '<td>'+(v?'<span class="mcell '+(v.status==='FINAL'?'final':'draft')+' tnum">'+fmtN(v.total)+'</span>':'<span class="mcell none">–</span>')+'</td>';}).join('')+
+      '<td class="tnum"><b>'+fmtN(tot)+'</b></td><td><span class="badge '+(allF?'ok':rws.length?'proc':'none')+'">'+(allF?'FINAL':rws.length?'PROSES':'BELUM')+'</span></td></tr>';}).join('');
+  el('matriksTable').innerHTML=html+'</tbody>';
 }
-function dataLaporan() {
-  const fc = el('fLCabang').value;
-  let rows = JUARA.filter(r => !fc || r.cabang_id === fc);
-  if (LAP === 'kabupaten') rows = rows.filter(r => r.peringkat === 1);
-  return rows;
+function setLap(v){LAP=v;el('segJ').classList.toggle('on',v==='juara');el('segK').classList.toggle('on',v==='kabupaten');renderLaporan();}
+function dataLaporan(){const fc=el('fLCabang').value;let rows=JUARA.filter(r=>!fc||r.cabang_id===fc);
+  if(LAP==='kabupaten')rows=rows.filter(r=>r.peringkat===1);return rows;}
+function renderLaporan(){
+  const rows=dataLaporan();
+  el('tbLaporan').innerHTML=rows.length?rows.map(r=>
+    '<tr><td><b>'+r.label_juara+'</b><br><small class="muted">'+(r.nama_cabang||'')+(r.nama_kategori?' • '+r.nama_kategori:'')+'</small></td>'+
+    '<td>'+r.nomor_undian+'</td><td>'+r.nama_peserta+'</td><td>'+(r.asal_instansi||'-')+'</td>'+
+    '<td class="small muted">'+(r.tempat_lahir||'-')+(r.tanggal_lahir?', '+r.tanggal_lahir:'')+'</td><td class="small muted">'+(r.nisn||'-')+'</td><td class="small muted">'+(r.kelas||'-')+'</td>'+
+    '<td class="tnum">'+r.jumlah_juri+'</td><td class="tnum"><b>'+fmtN(r.total_nilai)+'</b></td><td>'+(r.kandidat_kabupaten?'🚀':'')+'</td></tr>').join('')
+    :'<tr><td colspan="10" class="muted">Belum ada nilai FINAL yang disahkan.</td></tr>';
+  el('lapNote').textContent=LAP==='kabupaten'?'Kandidat Kabupaten = otomatis Juara 1 tiap cabang & kategori.'
+    :'Peringkat dari nilai FINAL, metode TOTAL (jumlah semua juri).';
 }
-function renderLaporan() {
-  const rows = dataLaporan();
-  el('tbLaporan').innerHTML = rows.length ? rows.map(r =>
-    '<tr><td><b>' + r.label_juara + '</b><br><small class="muted">' + (r.nama_cabang || '') + (r.nama_kategori ? ' • ' + r.nama_kategori : '') + '</small></td>' +
-    '<td>' + r.nomor_undian + '</td><td>' + r.nama_peserta + '</td><td>' + (r.asal_instansi || '-') + '</td>' +
-    '<td class="tnum">' + r.jumlah_juri + '</td><td class="tnum"><b>' + fmtN(r.total_nilai) + '</b></td><td>' + (r.kandidat_kabupaten ? '🚀' : '') + '</td></tr>').join('')
-    : '<tr><td colspan="7" class="muted">Belum ada nilai FINAL yang disahkan.</td></tr>';
-  el('lapNote').textContent = LAP === 'kabupaten' ? 'Kandidat Kabupaten = otomatis Juara 1 tiap cabang & kategori.'
-    : 'Peringkat dari nilai FINAL, metode TOTAL (jumlah semua juri).';
+function kolomLaporan(){return ['Peringkat','Cabang','Kategori','No Undian','Nama','Asal','Tempat Lahir','Tgl Lahir','NISN','Kelas','Juri','Total','Kandidat'];}
+function barisLaporan(){return dataLaporan().map(r=>[r.label_juara,r.nama_cabang,r.nama_kategori||'Umum',r.nomor_undian,r.nama_peserta,r.asal_instansi,
+  r.tempat_lahir||'',r.tanggal_lahir||'',r.nisn||'',r.kelas||'',r.jumlah_juri,r.total_nilai,r.kandidat_kabupaten?'YA':'']);}
+function excelLaporan(){const ws=XLSX.utils.aoa_to_sheet([kolomLaporan(),...barisLaporan()]);
+  XLSX.writeFile({SheetNames:['Laporan'],Sheets:{Laporan:ws}},'spectra_laporan.xlsx');toast('Laporan diunduh.','ok');}
+function cetakLaporan(){const w=window.open('','_blank');
+  w.document.write('<html><head><title>Laporan SPECTRA</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:6px;font-size:11px;text-align:left}</style></head><body>'+
+    '<h2>'+(LAP==='kabupaten'?'Kandidat Maju ke Kabupaten':'Juara per Cabang')+'</h2><p>'+DATA.event.nama+' • dicetak '+new Date().toLocaleString('id-ID')+'</p><table><tr>'+
+    kolomLaporan().map(c=>'<th>'+c+'</th>').join('')+'</tr>'+barisLaporan().map(r=>'<tr>'+r.map(x=>'<td>'+(x==null?'':x)+'</td>').join('')+'</tr>').join('')+'</table></body></html>');
+  w.document.close();w.focus();w.print();}
+function excelSemuaNilai(){
+  const aspek=[...new Set((DATA.kriteria||[]).map(k=>k.nama_aspek))];
+  const rows=(DATA.nilai||[]).map(n=>{const p=pesertaById(n.peserta_id),c=cabangById(n.cabang_id),j=petugasById(n.petugas_id);
+    const o={Cabang:c.nama_cabang,Kategori:kategoriById(p.kategori_id).nama_kategori||'Umum','No Undian':p.nomor_undian,Peserta:p.nama_peserta,
+      'Asal':p.asal_instansi,'Tempat Lahir':p.tempat_lahir||'','Tgl Lahir':p.tanggal_lahir||'',NISN:p.nisn||'',Kelas:p.kelas||'',Juri:j.nama_petugas};
+    aspek.forEach(a=>o[a]=(n.rincian||{})[a]??'');
+    o.Penalti=n.penalti;o.Total=n.total;o.Status=n.status;o.Catatan=n.catatan_juri||'';return o;});
+  const ws=XLSX.utils.json_to_sheet(rows);
+  XLSX.writeFile({SheetNames:['Nilai'],Sheets:{Nilai:ws}},'spectra_semua_nilai.xlsx');toast('Semua nilai diunduh.','ok');
 }
-function kolomLaporan() { return ['Peringkat', 'Cabang', 'Kategori', 'No Undian', 'Nama Peserta', 'Asal Instansi', 'Jumlah Juri', 'Total Nilai', 'Kandidat Kabupaten']; }
-function barisLaporan() { return dataLaporan().map(r => [r.label_juara, r.nama_cabang, r.nama_kategori || 'Umum', r.nomor_undian, r.nama_peserta, r.asal_instansi, r.jumlah_juri, r.total_nilai, r.kandidat_kabupaten ? 'YA' : '']); }
-function excelLaporan() {
-  const ws = XLSX.utils.aoa_to_sheet([kolomLaporan(), ...barisLaporan()]);
-  XLSX.writeFile({ SheetNames: ['Laporan'], Sheets: { Laporan: ws } }, 'spectra_laporan.xlsx');
-  toast('Laporan diunduh.', 'ok');
-}
-function cetakLaporan() {
-  const w = window.open('', '_blank');
-  w.document.write('<html><head><title>Laporan SPECTRA</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:6px;font-size:12px;text-align:left}</style></head><body>' +
-    '<h2>' + (LAP === 'kabupaten' ? 'Kandidat Maju ke Kabupaten' : 'Juara per Cabang') + '</h2><p>' + DATA.event.nama +
-    ' • dicetak ' + new Date().toLocaleString('id-ID') + '</p><table><tr>' + kolomLaporan().map(c => '<th>' + c + '</th>').join('') + '</tr>' +
-    barisLaporan().map(r => '<tr>' + r.map(x => '<td>' + (x == null ? '' : x) + '</td>').join('') + '</tr>').join('') + '</table></body></html>');
-  w.document.close(); w.focus(); w.print();
-}
-function excelSemuaNilai() {
-  const aspek = [...new Set((DATA.kriteria || []).map(k => k.nama_aspek))];
-  const rows = (DATA.nilai || []).map(n => {
-    const p = pesertaById(n.peserta_id), c = cabangById(n.cabang_id), j = petugasById(n.petugas_id);
-    const o = { Cabang: c.nama_cabang, Kategori: kategoriById(p.kategori_id).nama_kategori || 'Umum', 'No Undian': p.nomor_undian,
-      Peserta: p.nama_peserta, 'Asal Instansi': p.asal_instansi, Juri: j.nama_petugas };
-    aspek.forEach(a => o[a] = (n.rincian || {})[a] ?? '');
-    o.Penalti = n.penalti; o.Total = n.total; o.Status = n.status; o.Catatan = n.catatan_juri || '';
-    return o;
-  });
-  const ws = XLSX.utils.json_to_sheet(rows);
-  XLSX.writeFile({ SheetNames: ['Nilai'], Sheets: { Nilai: ws } }, 'spectra_semua_nilai.xlsx');
-  toast('Semua nilai diunduh.', 'ok');
-}
-
-function renderAkses() {
-  el('tbAkses').innerHTML = (DATA.petugas || []).map(p =>
-    '<tr' + (p.is_active ? '' : ' style="opacity:.55"') + '><td><b>' + p.nama_petugas + '</b>' +
-    (p.is_active ? '' : ' <span class="badge danger">NONAKTIF</span>') +
-    '</td><td><span class="badge ' + (p.peran === 'ADMIN' ? 'warn' : p.peran === 'OPERATOR' ? 'proc' : 'ok') + '">' + p.peran +
-    '</span></td><td class="small muted">' + (cabangById(p.cabang_id).nama_cabang || 'Semua Cabang') + '</td><td><b>' + p.kode_akses + '</b></td>' +
-    '<td><div class="actCell">' +
-    '<button class="btn btn-ghost btn-icon" title="Edit" onclick="openPetugas(\'UPDATE\',\'' + p.id + '\')"><i data-lucide="pencil"></i></button>' +
+function renderAkses(){
+  el('tbAkses').innerHTML=(DATA.petugas||[]).map(p=>
+    '<tr'+(p.is_active?'':' style="opacity:.55"')+'><td><b>'+p.nama_petugas+'</b>'+(p.is_active?'':' <span class="badge danger">NONAKTIF</span>')+
+    '</td><td><span class="badge '+(p.peran==='ADMIN'?'warn':p.peran==='OPERATOR'?'proc':'ok')+'">'+p.peran+'</span></td>'+
+    '<td class="small muted">'+(cabangById(p.cabang_id).nama_cabang||'Semua Cabang')+'</td>'+
+    '<td class="small muted">'+((p.kategori_id&&kategoriById(p.kategori_id).nama_kategori)||'-')+'</td><td><b>'+p.kode_akses+'</b></td>'+
+    '<td><div class="actCell">'+
+    '<button class="btn btn-ghost btn-icon" title="Edit" onclick="openPetugas(\'UPDATE\',\''+p.id+'\')"><i data-lucide="pencil"></i></button>'+
     (p.is_active
-      ? '<button class="btn btn-warn btn-icon" title="Nonaktifkan" onclick="aksiPetugas(\'DEACTIVATE\',\'' + p.id + '\')"><i data-lucide="user-minus"></i></button>'
-      : '<button class="btn btn-primary btn-icon" title="Aktifkan" onclick="aksiPetugas(\'ACTIVATE\',\'' + p.id + '\')"><i data-lucide="user-plus"></i></button>') +
-    '<button class="btn btn-danger btn-icon" title="Hapus" onclick="aksiPetugas(\'DELETE\',\'' + p.id + '\')"><i data-lucide="trash-2"></i></button>' +
+      ?'<button class="btn btn-warn btn-icon" title="Nonaktifkan" onclick="aksiPetugas(\'DEACTIVATE\',\''+p.id+'\')"><i data-lucide="user-minus"></i></button>'
+      :'<button class="btn btn-primary btn-icon" title="Aktifkan" onclick="aksiPetugas(\'ACTIVATE\',\''+p.id+'\')"><i data-lucide="user-plus"></i></button>')+
+    '<button class="btn btn-danger btn-icon" title="Hapus" onclick="aksiPetugas(\'DELETE\',\''+p.id+'\')"><i data-lucide="trash-2"></i></button>'+
     '</div></td></tr>').join('');
   icons();
 }
-function saranKode(peran, cabangId) {
-  const pre = DATA.event.kode_prefix || String(DATA.event.slug || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const c = cabangById(cabangId);
-  if (peran === 'JURI' && c.kode_cabang) {
-    const n = (DATA.petugas || []).filter(p => p.cabang_id === cabangId && p.peran === 'JURI').length + 1;
-    return pre + '-' + c.kode_cabang + '-J' + n;
-  }
-  if (peran === 'OPERATOR' && c.kode_cabang) return pre + '-' + c.kode_cabang + '-OP';
-  return pre + '-ADMIN';
+function cetakPIN(){
+  const w=window.open('','_blank');
+  w.document.write('<html><head><title>Daftar PIN SPECTRA</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;font-size:12px;text-align:left}td.kode{font-weight:bold;font-size:14px}</style></head><body>'+
+    '<h2>Daftar Kode Akses — '+DATA.event.nama+'</h2><p>Bagikan ke petugas terkait. Jaga kerahasiaan.</p><table><tr><th>Nama</th><th>Peran</th><th>Cabang</th><th>Kategori</th><th>Kode Akses</th></tr>'+
+    (DATA.petugas||[]).map(p=>'<tr><td>'+p.nama_petugas+'</td><td>'+p.peran+'</td><td>'+(cabangById(p.cabang_id).nama_cabang||'Umum')+'</td><td>'+
+    ((p.kategori_id&&kategoriById(p.kategori_id).nama_kategori)||'-')+'</td><td class="kode">'+p.kode_akses+'</td></tr>').join('')+'</table></body></html>');
+  w.document.close();w.focus();w.print();
 }
-function openPetugas(mode, id) {
-  const t = mode === 'UPDATE' ? petugasById(id) : null;
-  const ovl = document.createElement('div'); ovl.className = 'ovl';
-  ovl.innerHTML = '<div class="card"><h3 style="margin-bottom:.9rem">' + (t ? '✏️ Edit Petugas' : '➕ Tambah Petugas') + '</h3>' +
-    '<label class="field"><span>Nama petugas</span><input class="input" id="mNama" value="' + (t ? t.nama_petugas : '') + '"></label>' +
-    '<label class="field"><span>Peran</span><select class="input" id="mPeran">' + ['ADMIN', 'OPERATOR', 'JURI'].map(r =>
-      '<option ' + (t && t.peran === r ? 'selected' : '') + '>' + r + '</option>').join('') + '</select></label>' +
-    '<label class="field"><span>Cabang tugas</span><select class="input" id="mCabang"><option value="">Semua Cabang</option>' +
-    DATA.cabang.map(c => '<option value="' + c.id + '" ' + (t && t.cabang_id === c.id ? 'selected' : '') + '>' + c.nama_cabang + '</option>').join('') + '</select></label>' +
-    '<label class="field"><span>Kode akses</span><div style="display:flex;gap:.5rem"><input class="input" id="mKode" style="text-transform:uppercase" value="' + (t ? t.kode_akses : '') + '">' +
-    '<button class="btn btn-ghost" onclick="document.getElementById(\'mKode\').value=saranKode(document.getElementById(\'mPeran\').value,document.getElementById(\'mCabang\').value)">💡</button></div></label>' +
-    '<div class="modal-actions"><button class="btn btn-ghost" onclick="this.closest(\'.ovl\').remove()">Batal</button>' +
-    '<button class="btn btn-primary" onclick="simpanPetugas(\'' + mode + '\',\'' + (id || '') + '\')">Simpan</button></div></div>';
-  document.body.appendChild(ovl); icons();
+function excelPIN(){
+  const ws=XLSX.utils.json_to_sheet((DATA.petugas||[]).map(p=>({Nama:p.nama_petugas,Peran:p.peran,
+    Cabang:cabangById(p.cabang_id).nama_cabang||'Umum',Kategori:(p.kategori_id&&kategoriById(p.kategori_id).nama_kategori)||'-','Kode Akses':p.kode_akses})));
+  XLSX.writeFile({SheetNames:['PIN'],Sheets:{PIN:ws}},'spectra_pin.xlsx');toast('Daftar PIN diunduh.','ok');
 }
-async function simpanPetugas(mode, id) {
-  const payload = { nama_petugas: el('mNama').value.trim(), peran: el('mPeran').value,
-    cabang_id: el('mCabang').value || '', kode_akses: el('mKode').value.trim().toUpperCase() };
-  if (mode === 'UPDATE') payload.id = id;
-  const { data, error } = await (await sb()).rpc('spectra_manage_petugas', {
-    p_kode_akses_admin: sesi.kode_akses, p_aksi: mode, p_payload: payload });
-  if (error) return toast(error.message, 'err');
-  if (data.error) return toast(data.error, 'err');
-  document.querySelector('.ovl').remove();
-  toast('Petugas disimpan.', 'ok');
+function saranKode(peran,cabangId){
+  const pre=DATA.event.kode_prefix||String(DATA.event.slug||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const c=cabangById(cabangId);
+  if(peran==='JURI'&&c.kode_cabang){const n=(DATA.petugas||[]).filter(p=>p.cabang_id===cabangId&&p.peran==='JURI').length+1;
+    return pre+'-'+c.kode_cabang+'-J'+n;}
+  if(peran==='OPERATOR'&&c.kode_cabang)return pre+'-'+c.kode_cabang+'-OP';
+  return pre+'-ADMIN';
+}
+function openPetugas(mode,id){
+  const t=mode==='UPDATE'?petugasById(id):null;
+  const ovl=document.createElement('div');ovl.className='ovl';
+  ovl.innerHTML='<div class="card"><h3 style="margin-bottom:.9rem">'+(t?'✏️ Edit Petugas':'➕ Tambah Petugas')+'</h3>'+
+    '<label class="field"><span>Nama petugas</span><input class="input" id="mNama" value="'+(t?t.nama_petugas:'')+'"></label>'+
+    '<label class="field"><span>Peran</span><select class="input" id="mPeran">'+['ADMIN','OPERATOR','JURI'].map(r=>
+      '<option '+(t&&t.peran===r?'selected':'')+'>'+r+'</option>').join('')+'</select></label>'+
+    '<label class="field"><span>Cabang tugas</span><select class="input" id="mCabang"><option value="">Semua Cabang</option>'+
+    DATA.cabang.map(c=>'<option value="'+c.id+'" '+(t&&t.cabang_id===c.id?'selected':'')+'>'+c.nama_cabang+'</option>').join('')+'</select></label>'+
+    '<label class="field"><span>Kategori (untuk JURI)</span><select class="input" id="mKategori"><option value="">Semua Kategori</option>'+
+    DATA.kategori.map(k=>'<option value="'+k.id+'" '+(t&&t.kategori_id===k.id?'selected':'')+'>'+k.nama_kategori+'</option>').join('')+'</select></label>'+
+    '<label class="field"><span>Kode akses</span><div style="display:flex;gap:.5rem"><input class="input" id="mKode" style="text-transform:uppercase" value="'+(t?t.kode_akses:'')+'">'+
+    '<button class="btn btn-ghost" onclick="document.getElementById(\'mKode\').value=saranKode(document.getElementById(\'mPeran\').value,document.getElementById(\'mCabang\').value)">💡</button></div></label>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="this.closest(\'.ovl\').remove()">Batal</button>'+
+    '<button class="btn btn-primary" onclick="simpanPetugas(\''+mode+'\',\''+(id||'')+'\')">Simpan</button></div></div>';
+  document.body.appendChild(ovl);icons();
+}
+async function simpanPetugas(mode,id){
+  const payload={nama_petugas:el('mNama').value.trim(),peran:el('mPeran').value,
+    cabang_id:el('mCabang').value||'',kategori_id:el('mKategori').value||'',
+    kode_akses:el('mKode').value.trim().toUpperCase()};
+  if(mode==='UPDATE')payload.id=id;
+  const {data,error}=await (await sb()).rpc('spectra_manage_petugas',{p_kode_akses_admin:sesi.kode_akses,p_aksi:mode,p_payload:payload});
+  if(error)return toast(error.message,'err'); if(data.error)return toast(data.error,'err');
+  document.querySelector('.ovl').remove();toast('Petugas disimpan.','ok');await muat();
+}
+async function aksiPetugas(aksi,id){
+  const t=petugasById(id);
+  const msg=aksi==='DELETE'?'Hapus permanen "'+t.nama_petugas+'"? Hanya bisa jika belum punya nilai.'
+    :(aksi==='DEACTIVATE'?'Nonaktifkan "'+t.nama_petugas+'"? Kode tidak bisa dipakai login.':'Aktifkan kembali "'+t.nama_petugas+'"?');
+  const ok=await spectraConfirm({judul:aksi==='DELETE'?'Hapus petugas':'Ubah status petugas',pesan:msg,
+    teksYa:aksi==='DELETE'?'Hapus':'Ya',bahaya:aksi==='DELETE'});
+  if(!ok)return;
+  const {data,error}=await (await sb()).rpc('spectra_manage_petugas',{p_kode_akses_admin:sesi.kode_akses,p_aksi:aksi,p_payload:{id}});
+  if(error)return toast(error.message,'err'); if(data.error)return toast(data.error,'err');
+  toast('Berhasil.','ok');await muat();
+}
+function renderEvent(){const e=DATA.event;
+  el('eventInfo').innerHTML=
+    '<div class="card"><small>Nama Event</small><b>'+e.nama+'</b></div>'+
+    '<div class="card"><small>Tahun</small><b>'+e.tahun+'</b></div>'+
+    '<div class="card"><small>Status</small><b><span class="badge '+(e.status==='AKTIF'?'ok':e.status==='DRAFT'?'warn':'none')+'">'+e.status+'</span></b></div>'+
+    '<div class="card"><small>Slug / Prefix</small><b>'+(e.slug||'-')+' / '+(e.kode_prefix||'-')+'</b></div>';}
+function renderBlind(){
+  el('blindList').innerHTML=(DATA.cabang||[]).map(c=>
+    '<div class="blindRow"><div><b>'+c.nama_cabang+'</b> <span class="muted small">'+c.kode_cabang+'</span></div>'+
+    '<button class="btn '+(c.blind_judging?'btn-warn':'btn-ghost')+'" onclick="setBlind(\''+c.id+'\','+(!c.blind_judging)+')">'+
+    '<i data-lucide="'+(c.blind_judging?'eye-off':'eye')+'"></i> '+(c.blind_judging?'Blind AKTIF':'Non-Blind')+'</button></div>').join('');
+  icons();
+}
+async function setBlind(id,blind){
+  const {data,error}=await (await sb()).rpc('spectra_set_blind_cabang',{p_kode_akses_admin:sesi.kode_akses,p_cabang_id:id,p_blind:blind});
+  if(error)return toast(error.message,'err'); if(data.error)return toast(data.error,'err');
+  toast(blind?'Blind judging diaktifkan — nama disembunyikan dari juri.':'Blind dimatikan — nama & sekolah tampil.','ok');
   await muat();
 }
-async function aksiPetugas(aksi, id) {
-  const t = petugasById(id);
-  const msg = aksi === 'DELETE'
-    ? 'Hapus permanen "' + t.nama_petugas + '"? Hanya bisa jika belum punya nilai.'
-    : (aksi === 'DEACTIVATE' ? 'Nonaktifkan "' + t.nama_petugas + '"? Kode tidak bisa dipakai login.' : 'Aktifkan kembali "' + t.nama_petugas + '"?');
-  const ok = await spectraConfirm({ judul: aksi === 'DELETE' ? 'Hapus petugas' : 'Ubah status petugas', pesan: msg,
-    teksYa: aksi === 'DELETE' ? 'Hapus' : 'Ya', bahaya: aksi === 'DELETE' });
-  if (!ok) return;
-  const { data, error } = await (await sb()).rpc('spectra_manage_petugas', {
-    p_kode_akses_admin: sesi.kode_akses, p_aksi: aksi, p_payload: { id } });
-  if (error) return toast(error.message, 'err');
-  if (data.error) return toast(data.error, 'err');
-  toast('Berhasil.', 'ok');
-  await muat();
+async function setStatus(st){
+  const ok=await spectraConfirm({judul:'Ubah status event',pesan:'Status event akan menjadi '+st+'.',teksYa:'Ubah'});
+  if(!ok)return;
+  const {error}=await (await sb()).rpc('spectra_set_status_event',{p_kode_akses:sesi.kode_akses,p_event_id:sesi.event_id,p_status:st});
+  if(error)return toast(error.message,'err');
+  toast('Status event: '+st,'ok');await muat();
 }
-
-function renderEvent() {
-  const e = DATA.event;
-  el('eventInfo').innerHTML =
-    '<div class="card"><small>Nama Event</small><b>' + e.nama + '</b></div>' +
-    '<div class="card"><small>Tahun</small><b>' + e.tahun + '</b></div>' +
-    '<div class="card"><small>Status</small><b><span class="badge ' + (e.status === 'AKTIF' ? 'ok' : e.status === 'DRAFT' ? 'warn' : 'none') + '">' + e.status + '</span></b></div>' +
-    '<div class="card"><small>Slug / Prefix</small><b>' + (e.slug || '-') + ' / ' + (e.kode_prefix || '-') + '</b></div>';
-}
-function renderBlind() {
-  el('blindList').innerHTML = (DATA.cabang || []).map(c =>
-    '<div class="blindRow"><div><b>' + c.nama_cabang + '</b> <span class="muted small">' + c.kode_cabang + '</span></div>' +
-    '<button class="btn ' + (c.blind_judging ? 'btn-warn' : 'btn-ghost') + '" onclick="setBlind(\'' + c.id + '\',' + (!c.blind_judging) + ')">' +
-    '<i data-lucide="' + (c.blind_judging ? 'eye-off' : 'eye') + '"></i> ' +
-    (c.blind_judging ? 'Blind AKTIF' : 'Non-Blind') + '</button></div>').join('');
-}
-async function setBlind(id, blind) {
-  const { data, error } = await (await sb()).rpc('spectra_set_blind_cabang', {
-    p_kode_akses_admin: sesi.kode_akses, p_cabang_id: id, p_blind: blind });
-  if (error) return toast(error.message, 'err');
-  if (data.error) return toast(data.error, 'err');
-  toast(blind ? 'Bl judging diaktifkan — nama disembunyikan dari juri.' : 'Blind dimatikan — nama & sekolah tampil.', 'ok');
-  await muat();
-}
-async function setStatus(st) {
-  const ok = await spectraConfirm({ judul: 'Ubah status event', pesan: 'Status event akan menjadi ' + st + '.', teksYa: 'Ubah' });
-  if (!ok) return;
-  const { error } = await (await sb()).rpc('spectra_set_status_event', { p_kode_akses: sesi.kode_akses, p_event_id: sesi.event_id, p_status: st });
-  if (error) return toast(error.message, 'err');
-  toast('Status event: ' + st, 'ok');
-  await muat();
-}
-function promptKonfirmasi(judul, pesan, tombol, bahaya) {
-  return new Promise(res => {
-    const m = document.createElement('div'); m.className = 'ovl';
-    m.innerHTML = '<div class="card"><h4 style="margin-bottom:.5rem;color:' + (bahaya ? 'var(--danger-text)' : 'inherit') + '">⚠️ ' + judul +
-      '</h4><p class="muted small" style="margin-bottom:.8rem">' + pesan +
-      '</p><label class="field"><span>Ketik nama event untuk konfirmasi</span><input class="input" id="kKonf" placeholder="' + DATA.event.nama + '"></label>' +
-      '<div class="modal-actions"><button class="btn btn-ghost" id="cB">Batal</button><button class="btn ' + (bahaya ? 'btn-danger' : 'btn-warn') + '" id="cY" disabled>' + tombol + '</button></div></div>';
-    document.body.appendChild(m); icons();
-    const inp = m.querySelector('#kKonf');
-    inp.oninput = () => m.querySelector('#cY').disabled = inp.value.trim().toLowerCase() !== DATA.event.nama.trim().toLowerCase();
-    m.querySelector('#cB').onclick = () => { m.remove(); res(false); };
-    m.querySelector('#cY').onclick = () => { m.remove(); res(true); };
+function promptKonfirmasi(judul,pesan,tombol,bahaya){
+  return new Promise(res=>{
+    const m=document.createElement('div');m.className='ovl';
+    m.innerHTML='<div class="card"><h4 style="margin-bottom:.5rem;color:'+(bahaya?'var(--danger-text)':'inherit')+'">⚠️ '+judul+
+      '</h4><p class="muted small" style="margin-bottom:.8rem">'+pesan+
+      '</p><label class="field"><span>Ketik nama event untuk konfirmasi</span><input class="input" id="kKonf" placeholder="'+DATA.event.nama+'"></label>'+
+      '<div class="modal-actions"><button class="btn btn-ghost" id="cB">Batal</button><button class="btn '+(bahaya?'btn-danger':'btn-warn')+'" id="cY" disabled>'+tombol+'</button></div></div>';
+    document.body.appendChild(m);icons();
+    const inp=m.querySelector('#kKonf');
+    inp.oninput=()=>m.querySelector('#cY').disabled=inp.value.trim().toLowerCase()!==DATA.event.nama.trim().toLowerCase();
+    m.querySelector('#cB').onclick=()=>{m.remove();res(false);};
+    m.querySelector('#cY').onclick=()=>{m.remove();res(true);};
   });
 }
-async function resetEvent(mode) {
-  const bahaya = mode === 'FULL';
-  const ok = await promptKonfirmasi(
-    mode === 'NILAI' ? 'Reset semua nilai?' : 'Hapus seluruh event?',
-    mode === 'NILAI'
-      ? 'Seluruh nilai semua cabang akan dihapus. Peserta, cabang, dan kode akses TETAP ada.'
-      : 'Event, cabang, kategori, kriteria, peserta, nilai, dan semua kode akses akan DIHAPUS PERMANEN. Anda akan keluar dari sistem.',
-    mode === 'NILAI' ? 'Reset Nilai' : 'Hapus Event', bahaya);
-  if (!ok) return;
-  const { data, error } = await (await sb()).rpc('spectra_reset_event', {
-    p_kode_akses_admin: sesi.kode_akses, p_event_id: sesi.event_id, p_mode: mode, p_konfirmasi: DATA.event.nama });
-  if (error) return toast(error.message, 'err');
-  if (data.error) return toast(data.error, 'err');
-  if (mode === 'FULL') { keluarSpectra(); return; }
-  toast(data.rows + ' baris nilai direset.', 'warn');
-  await muat();
+async function resetEvent(mode){
+  const bahaya=mode==='FULL';
+  const ok=await promptKonfirmasi(
+    mode==='NILAI'?'Reset semua nilai?':'Hapus seluruh event?',
+    mode==='NILAI'?'Seluruh nilai semua cabang akan dihapus. Peserta, cabang, dan kode akses TETAP ada.'
+      :'Event, cabang, kategori, kriteria, peserta, nilai, dan semua kode akses akan DIHAPUS PERMANEN. Anda akan keluar dari sistem.',
+    mode==='NILAI'?'Reset Nilai':'Hapus Event',bahaya);
+  if(!ok)return;
+  const {data,error}=await (await sb()).rpc('spectra_reset_event',{p_kode_akses_admin:sesi.kode_akses,p_event_id:sesi.event_id,p_mode:mode,p_konfirmasi:DATA.event.nama});
+  if(error)return toast(error.message,'err'); if(data.error)return toast(data.error,'err');
+  if(mode==='FULL'){keluarSpectra();return;}
+  toast(data.rows+' baris nilai direset.','warn');await muat();
 }
 </script>
 </body>
