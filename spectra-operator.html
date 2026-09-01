@@ -31,7 +31,6 @@
 </style>
 </head>
 <body>
-
 <header class="topbar"><div class="topbar-in">
   <div class="brand">
     <div class="brand-logo"><i data-lucide="shield-check"></i></div>
@@ -39,7 +38,7 @@
   </div>
   <div class="topbar-actions">
     <span id="conn"></span>
-    <button class="btn btn-ghost btn-icon" onclick="muat()" title="Segarkan data"><i data-lucide="refresh-cw"></i></button>
+    <button class="btn btn-ghost btn-icon" onclick="muat()" title="Segarkan"><i data-lucide="refresh-cw"></i></button>
     <button class="btn btn-ghost btn-icon" onclick="toggleTheme()" title="Ganti tema"><i id="icTheme" data-lucide="moon"></i></button>
     <button class="btn btn-ghost btn-icon" onclick="keluarSpectra()" title="Keluar"><i data-lucide="log-out"></i></button>
   </div>
@@ -52,39 +51,20 @@
     <div class="stat ok"><i data-lucide="badge-check"></i><div><b id="stF">0</b><small>Final</small></div></div>
     <div class="stat warn"><i data-lucide="alert-triangle"></i><div><b id="stW">0</b><small>⚠ Juri</small></div></div>
   </div>
-
   <div class="alert alert-warn" id="warnBox" hidden><i data-lucide="alert-triangle"></i><span></span></div>
 
-  <!-- DESKTOP: MATRIKS -->
-  <div class="matrix-wrap">
-    <table class="matrix">
-      <thead id="mHead"></thead>
-      <tbody id="mBody"></tbody>
-    </table>
-  </div>
-
-  <!-- MOBILE: KARTU -->
+  <div class="matrix-wrap"><table class="matrix"><thead id="mHead"></thead><tbody id="mBody"></tbody></table></div>
   <div class="cards" id="cards"></div>
-
-  <div class="card empty" id="empty" hidden>
-    <i data-lucide="clipboard-list"></i>
-    <p>Belum ada peserta di cabang ini.</p>
-  </div>
-
-  <div class="card" id="fatal" hidden>
-    <p id="fatalTxt" class="muted"></p>
-    <button class="btn btn-primary btn-block" onclick="location.href='spectra-login.html'">Ke Halaman Login</button>
-  </div>
+  <div class="card empty" id="empty" hidden><i data-lucide="clipboard-list"></i><p>Belum ada peserta di ruang ini.</p></div>
+  <div class="card" id="fatal" hidden><p id="fatalTxt" class="muted"></p>
+    <button class="btn btn-primary btn-block" onclick="location.href='spectra-login.html'">Ke Halaman Login</button></div>
 </main>
 
-<div class="bottombar">
-  <div class="bottombar-in" style="align-items:center">
-    <div style="flex:1;font-size:.83rem;color:var(--text-2)" id="ringkasan">Memuat...</div>
-    <button class="btn btn-primary" id="btnBatch" disabled onclick="sahkanLengkap()">
-      <i data-lucide="badge-check"></i><span>Sahkan Semua Lengkap</span>
-    </button>
-  </div>
-</div>
+<div class="bottombar"><div class="bottombar-in" style="align-items:center">
+  <div style="flex:1;font-size:.83rem;color:var(--text-2)" id="ringkasan">Memuat...</div>
+  <button class="btn btn-primary" id="btnBatch" disabled onclick="sahkanLengkap()">
+    <i data-lucide="badge-check"></i><span>Sahkan Semua Lengkap</span></button>
+</div></div>
 
 <script>
 const sesi = bacaSesi();
@@ -93,14 +73,15 @@ const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 const fatal = m => { document.getElementById('fatal').hidden = false; document.getElementById('fatalTxt').textContent = m; };
 
 (async function boot(){
-  if(!sesi){ location.href = 'spectra-login.html'; return; }
-  if(sesi.peran !== 'OPERATOR') return fatal('Halaman ini khusus OPERATOR. Sesi Anda: ' + sesi.peran + '.');
+  if (!sesi) { location.href = 'spectra-login.html'; return; }
+  if (sesi.peran !== 'OPERATOR') return fatal('Halaman ini khusus OPERATOR. Sesi Anda: ' + sesi.peran + '.');
   document.getElementById('hEvent').textContent = sesi.nama_event;
-  document.getElementById('hCabang').textContent = (sesi.nama_cabang || '') + ' • Panel Operator';
+  document.getElementById('hCabang').textContent =
+    (sesi.nama_cabang || '') + (sesi.nama_kategori ? ' • ' + sesi.nama_kategori : '') + ' • Panel Operator';
   document.getElementById('icTheme').setAttribute('data-lucide', themeIcon());
   initConn('conn');
   await muat();
-  setInterval(() => { if (navigator.onLine) muat(true); }, 45000); // auto-refresh hemat kuota
+  setInterval(() => { if (navigator.onLine) muat(true); }, 45000);
 })();
 
 async function muat(senyap){
@@ -108,8 +89,7 @@ async function muat(senyap){
     const { data, error } = await (await sb()).rpc('spectra_get_operator_data', { p_kode_akses: sesi.kode_akses });
     if (error) throw error;
     if (data && data.error) return fatal(data.error);
-    DATA = data;
-    render();
+    DATA = data; render();
   } catch (e) { if (!senyap) fatal('Gagal memuat data: ' + e.message); }
 }
 
@@ -117,7 +97,6 @@ function render(){
   const juri = DATA.juri || [], peserta = DATA.peserta || [], nilai = DATA.nilai || [];
   const byP = {};
   nilai.forEach(n => { (byP[n.peserta_id] = byP[n.peserta_id] || {})[n.petugas_id] = n; });
-
   let nPr = 0, nFin = 0, nWarn = 0;
   ROWS = peserta.map(p => {
     const nm = byP[p.id] || {};
@@ -131,96 +110,63 @@ function render(){
     if (dinilai > 0 && !lengkap) nWarn++;
     return { p, nm, dinilai, total, lengkap, allFinal };
   });
-
   document.getElementById('stP').textContent = peserta.length;
   document.getElementById('stPr').textContent = nPr;
   document.getElementById('stF').textContent = nFin;
   document.getElementById('stW').textContent = nWarn;
-
   const wb = document.getElementById('warnBox');
-  if (nWarn > 0) {
-    wb.hidden = false;
-    wb.querySelector('span').textContent = nWarn + ' peserta belum dinilai lengkap ' + juri.length +
-      ' juri — perhatikan konsistensi metode TOTAL.';
+  if (nWarn > 0) { wb.hidden = false;
+    wb.querySelector('span').textContent = nWarn + ' peserta belum dinilai lengkap ' + juri.length + ' juri.';
   } else wb.hidden = true;
 
-  // ---- Matriks (desktop) ----
   document.getElementById('mHead').innerHTML = '<tr><th>Peserta</th>' +
     juri.map(j => '<th>' + esc(j.nama_petugas) + '</th>').join('') +
     '<th>Total</th><th>Status</th><th style="text-align:center">Aksi</th></tr>';
   document.getElementById('mBody').innerHTML = ROWS.map(r =>
     '<tr><td><b>' + r.p.nomor_undian + '. ' + esc(r.p.nama_peserta) + '</b><br>' +
     '<small class="muted">' + esc(r.p.asal_instansi || '') + (r.p.nama_kategori ? ' • ' + esc(r.p.nama_kategori) : '') + '</small></td>' +
-    juri.map(j => {
-      const v = r.nm[j.id];
-      return '<td>' + (v
-        ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + '">' + fmtN(v.total) + '</span>'
-        : '<span class="mcell none">–</span>') + '</td>';
-    }).join('') +
+    juri.map(j => { const v = r.nm[j.id];
+      return '<td>' + (v ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + '">' + fmtN(v.total) + '</span>' : '<span class="mcell none">–</span>') + '</td>'; }).join('') +
     '<td class="tnum"><b>' + fmtN(r.total) + '</b></td>' +
-    '<td><span class="badge ' + (r.allFinal ? 'ok' : r.dinilai ? 'proc' : 'none') + '">' +
-    (r.allFinal ? 'FINAL' : r.dinilai ? 'PROSES' : 'BELUM') + '</span></td>' +
+    '<td><span class="badge ' + (r.allFinal ? 'ok' : r.dinilai ? 'proc' : 'none') + '">' + (r.allFinal ? 'FINAL' : r.dinilai ? 'PROSES' : 'BELUM') + '</span></td>' +
     '<td><div class="aksiCell">' + aksiBtn(r) + '</div></td></tr>').join('');
 
-  // ---- Kartu (mobile) ----
   document.getElementById('cards').innerHTML = ROWS.map(r =>
-    '<div class="card"><div class="card-head"><div><h3 style="font-size:1rem">' + r.p.nomor_undian + '. ' +
-    esc(r.p.nama_peserta) + '</h3><span class="muted small">' + esc(r.p.asal_instansi || '-') + ' • ' +
-    (esc(r.p.nama_kategori) || 'Umum') + '</span></div>' +
+    '<div class="card"><div class="card-head"><div><h3 style="font-size:1rem">' + r.p.nomor_undian + '. ' + esc(r.p.nama_peserta) + '</h3>' +
+    '<span class="muted small">' + esc(r.p.asal_instansi || '-') + (r.p.nama_kategori ? ' • ' + esc(r.p.nama_kategori) : '') + '</span></div>' +
     '<span class="badge ' + (r.lengkap ? 'ok' : 'warn') + '">Juri ' + r.dinilai + '/' + juri.length + '</span></div>' +
-    '<div class="jChips">' + juri.map(j => {
-      const v = r.nm[j.id];
-      return '<span class="jChip ' + (v ? (v.status === 'FINAL' ? 'final' : 'draft') : '') + '">' +
-        esc(j.nama_petugas) + ': ' + (v ? fmtN(v.total) : 'belum') + '</span>';
-    }).join('') + '</div>' +
-    '<div class="pFoot"><div class="tot"><small>TOTAL GABUNGAN</small><b>' + fmtN(r.total) + '</b></div>' +
-    aksiBtn(r, true) + '</div></div>').join('');
+    '<div class="jChips">' + juri.map(j => { const v = r.nm[j.id];
+      return '<span class="jChip ' + (v ? (v.status === 'FINAL' ? 'final' : 'draft') : '') + '">' + esc(j.nama_petugas) + ': ' + (v ? fmtN(v.total) : 'belum') + '</span>'; }).join('') + '</div>' +
+    '<div class="pFoot"><div class="tot"><small>TOTAL GABUNGAN</small><b>' + fmtN(r.total) + '</b></div>' + aksiBtn(r, true) + '</div></div>').join('');
 
   document.getElementById('empty').hidden = peserta.length > 0;
-
   const batch = ROWS.filter(r => r.dinilai > 0 && r.lengkap && !r.allFinal);
   document.getElementById('btnBatch').disabled = batch.length === 0;
-  document.getElementById('ringkasan').innerHTML =
-    '<b>' + nFin + '</b> FINAL • <b>' + nPr + '</b> proses • <b>' + nWarn + '</b> ⚠ juri';
+  document.getElementById('ringkasan').innerHTML = '<b>' + nFin + '</b> FINAL • <b>' + nPr + '</b> proses • <b>' + nWarn + '</b> ⚠ juri';
   icons();
 }
 
 function aksiBtn(r, lebar){
   const cls = lebar ? 'btn' : 'btn btn-icon';
-  if (r.allFinal)
-    return '<button class="' + cls + ' btn-warn" onclick="validasi(\'' + r.p.id + '\',\'DRAFT\')">' +
-      '<i data-lucide="lock-open"></i>' + (lebar ? '<span> Buka Kunci</span>' : '') + '</button>';
-  if (r.dinilai > 0)
-    return '<button class="' + cls + ' btn-primary" onclick="validasi(\'' + r.p.id + '\',\'FINAL\')">' +
-      '<i data-lucide="badge-check"></i>' + (lebar ? '<span> Sahkan Final</span>' : '') + '</button>';
-  return '<button class="' + cls + ' btn-ghost" disabled><i data-lucide="minus"></i>' +
-    (lebar ? '<span> Belum ada nilai</span>' : '') + '</button>';
+  if (r.allFinal) return '<button class="' + cls + ' btn-warn" onclick="validasi(\'' + r.p.id + '\',\'DRAFT\')"><i data-lucide="lock-open"></i>' + (lebar ? '<span> Buka Kunci</span>' : '') + '</button>';
+  if (r.dinilai > 0) return '<button class="' + cls + ' btn-primary" onclick="validasi(\'' + r.p.id + '\',\'FINAL\')"><i data-lucide="badge-check"></i>' + (lebar ? '<span> Sahkan Final</span>' : '') + '</button>';
+  return '<button class="' + cls + ' btn-ghost" disabled><i data-lucide="minus"></i>' + (lebar ? '<span> Belum ada nilai</span>' : '') + '</button>';
 }
 
 async function validasi(pesertaId, status){
-  const r = ROWS.find(x => x.p.id === pesertaId);
-  if (!r) return;
+  const r = ROWS.find(x => x.p.id === pesertaId); if (!r) return;
   if (status === 'FINAL' && !r.lengkap) {
-    const ok = await spectraConfirm({
-      judul: 'Juri belum lengkap',
-      pesan: 'Peserta "' + r.p.nama_peserta + '" baru dinilai ' + r.dinilai + ' dari ' +
-        (DATA.juri || []).length + ' juri. Dengan metode TOTAL, nilai ini mungkin tidak adil. Sahkan tetap?',
-      teksYa: 'Sahkan Tetap', bahaya: true
-    });
+    const ok = await spectraConfirm({ judul: 'Juri belum lengkap',
+      pesan: 'Peserta "' + r.p.nama_peserta + '" baru dinilai ' + r.dinilai + ' dari ' + (DATA.juri || []).length + ' juri. Sahkan tetap?',
+      teksYa: 'Sahkan Tetap', bahaya: true });
     if (!ok) return;
   }
   if (status === 'DRAFT') {
-    const ok = await spectraConfirm({
-      judul: 'Buka kunci?',
-      pesan: 'Nilai "' + r.p.nama_peserta + '" akan kembali ke DRAFT dan hilang dari livescore.',
-      teksYa: 'Buka Kunci'
-    });
+    const ok = await spectraConfirm({ judul: 'Buka kunci?', pesan: 'Nilai "' + r.p.nama_peserta + '" akan kembali ke DRAFT dan hilang dari livescore.', teksYa: 'Buka Kunci' });
     if (!ok) return;
   }
   const { error } = await (await sb()).rpc('spectra_validasi_operator', {
-    p_kode_akses: sesi.kode_akses, p_cabang_id: sesi.cabang_id,
-    p_peserta_id: pesertaId, p_status: status
-  });
+    p_kode_akses: sesi.kode_akses, p_cabang_id: (DATA.cabang || {}).id, p_peserta_id: pesertaId, p_status: status });
   if (error) return toast('Gagal: ' + error.message, 'err');
   toast(status === 'FINAL' ? 'Nilai disahkan FINAL.' : 'Kunci dibuka.', 'ok');
   await muat(true);
@@ -229,18 +175,13 @@ async function validasi(pesertaId, status){
 async function sahkanLengkap(){
   const batch = ROWS.filter(r => r.dinilai > 0 && r.lengkap && !r.allFinal);
   if (!batch.length) return;
-  const ok = await spectraConfirm({
-    judul: 'Sahkan ' + batch.length + ' peserta?',
-    pesan: 'Hanya peserta dengan juri lengkap yang akan disahkan menjadi FINAL dan tampil di livescore.',
-    teksYa: 'Sahkan Semua'
-  });
+  const ok = await spectraConfirm({ judul: 'Sahkan ' + batch.length + ' peserta?',
+    pesan: 'Hanya peserta dengan juri lengkap yang akan disahkan menjadi FINAL dan tampil di livescore.', teksYa: 'Sahkan Semua' });
   if (!ok) return;
   let n = 0;
   for (const r of batch) {
     const { error } = await (await sb()).rpc('spectra_validasi_operator', {
-      p_kode_akses: sesi.kode_akses, p_cabang_id: sesi.cabang_id,
-      p_peserta_id: r.p.id, p_status: 'FINAL'
-    });
+      p_kode_akses: sesi.kode_akses, p_cabang_id: (DATA.cabang || {}).id, p_peserta_id: r.p.id, p_status: 'FINAL' });
     if (!error) n++;
   }
   toast(n + ' peserta disahkan FINAL.', 'ok');
