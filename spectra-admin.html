@@ -197,8 +197,7 @@
         <div class="card" style="margin-bottom:1rem">
           <div class="card-head"><h3><i data-lucide="eye-off"></i> Mode Blind Judging per Cabang</h3></div>
           <p class="muted small" style="margin-bottom:.6rem">
-            <b>Blind AKTIF</b> = juri hanya melihat "Peserta Nomor X" (nama & sekolah disembunyikan).
-            <b>Non-Blind</b> = nama & sekolah tampil. Default = Non-Blind.
+            <b>Blind AKTIF</b> = juri hanya melihat "Peserta Nomor X". <b>Non-Blind</b> = nama & sekolah tampil.
           </p>
           <div id="blindList"></div>
         </div>
@@ -265,17 +264,14 @@ function tab(t) {
 async function muat() {
   try {
     const client = await sb();
-    const [a, j, b] = await Promise.all([
+    const [a, j] = await Promise.all([
       client.rpc('spectra_get_admin_data', { p_kode_akses: sesi.kode_akses }),
-      client.rpc('spectra_hitung_juara', { p_event_id: sesi.event_id }),
-      client.from('spectra_cabang').select('id, blind_judging').eq('event_id', sesi.event_id)
+      client.rpc('spectra_hitung_juara', { p_event_id: sesi.event_id })
     ]);
     if (a.error) throw a.error;
     if (a.data.error) return fatal(a.data.error);
     if (j.error) throw j.error;
     DATA = a.data; JUARA = j.data || [];
-    const bf = {}; (b.data || []).forEach(c => { bf[c.id] = !!c.blind_judging; });
-    (DATA.cabang || []).forEach(c => { c.blind_judging = !!bf[c.id]; });
     el('hEvent').textContent = DATA.event.nama;
     el('hStatus').textContent = 'Status: ' + DATA.event.status;
     isiFilter(); renderSemua();
@@ -316,7 +312,7 @@ function renderDasbor() {
     else { st = 'PROSES'; cls = 'proc'; nPr++; }
     return '<tr><td>' + (i + 1) + '</td><td>' + r.p.nomor_undian + '</td><td><b>' + r.p.nama_peserta + '</b></td><td>' +
       (r.p.asal_instansi || '-') + '</td><td class="small muted">' + cabangById(r.p.cabang_id).nama_cabang + '</td><td class="tnum">' +
-      (r.m ? r.m.juri : 0) + '</td><td class="tnum"><b>' + (r.m ? r.m.total : 0) + '</b></td><td><span class="badge ' + cls + '">' + st + '</span></td></tr>';
+      (r.m ? r.m.juri : 0) + '</td><td class="tnum"><b>' + fmtN(r.m ? r.m.total : 0) + '</b></td><td><span class="badge ' + cls + '">' + st + '</span></td></tr>';
   }).join('');
   el('stP').textContent = (DATA.peserta || []).length;
   el('stPr').textContent = nPr; el('stF').textContent = nF; el('stC').textContent = (DATA.cabang || []).length;
@@ -410,8 +406,8 @@ function renderMatriks() {
     const allF = rws.length > 0 && rws.every(r => r.status === 'FINAL');
     return '<tr><td><b>' + p.nomor_undian + '. ' + p.nama_peserta + '</b></td>' + juri.map(j => {
       const v = nm[j.id];
-      return '<td>' + (v ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + ' tnum">' + v.total + '</span>' : '<span class="mcell none">–</span>') + '</td>';
-    }).join('') + '<td class="tnum"><b>' + tot + '</b></td><td><span class="badge ' + (allF ? 'ok' : rws.length ? 'proc' : 'none') + '">' +
+      return '<td>' + (v ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + ' tnum">' + fmtN(v.total) + '</span>' : '<span class="mcell none">–</span>') + '</td>';
+    }).join('') + '<td class="tnum"><b>' + fmtN(tot) + '</b></td><td><span class="badge ' + (allF ? 'ok' : rws.length ? 'proc' : 'none') + '">' +
       (allF ? 'FINAL' : rws.length ? 'PROSES' : 'BELUM') + '</span></td></tr>';
   }).join('');
   el('matriksTable').innerHTML = html + '</tbody>';
@@ -434,7 +430,7 @@ function renderLaporan() {
   el('tbLaporan').innerHTML = rows.length ? rows.map(r =>
     '<tr><td><b>' + r.label_juara + '</b><br><small class="muted">' + (r.nama_cabang || '') + (r.nama_kategori ? ' • ' + r.nama_kategori : '') + '</small></td>' +
     '<td>' + r.nomor_undian + '</td><td>' + r.nama_peserta + '</td><td>' + (r.asal_instansi || '-') + '</td>' +
-    '<td class="tnum">' + r.jumlah_juri + '</td><td class="tnum"><b>' + r.total_nilai + '</b></td><td>' + (r.kandidat_kabupaten ? '🚀' : '') + '</td></tr>').join('')
+    '<td class="tnum">' + r.jumlah_juri + '</td><td class="tnum"><b>' + fmtN(r.total_nilai) + '</b></td><td>' + (r.kandidat_kabupaten ? '🚀' : '') + '</td></tr>').join('')
     : '<tr><td colspan="7" class="muted">Belum ada nilai FINAL yang disahkan.</td></tr>';
   el('lapNote').textContent = LAP === 'kabupaten' ? 'Kandidat Kabupaten = otomatis Juara 1 tiap cabang & kategori.'
     : 'Peringkat dari nilai FINAL, metode TOTAL (jumlah semua juri).';
@@ -551,14 +547,13 @@ function renderBlind() {
     '<button class="btn ' + (c.blind_judging ? 'btn-warn' : 'btn-ghost') + '" onclick="setBlind(\'' + c.id + '\',' + (!c.blind_judging) + ')">' +
     '<i data-lucide="' + (c.blind_judging ? 'eye-off' : 'eye') + '"></i> ' +
     (c.blind_judging ? 'Blind AKTIF' : 'Non-Blind') + '</button></div>').join('');
-  icons();
 }
 async function setBlind(id, blind) {
   const { data, error } = await (await sb()).rpc('spectra_set_blind_cabang', {
     p_kode_akses_admin: sesi.kode_akses, p_cabang_id: id, p_blind: blind });
   if (error) return toast(error.message, 'err');
   if (data.error) return toast(data.error, 'err');
-  toast(blind ? 'Blind judging diaktifkan — nama disembunyikan dari juri.' : 'Blind dimatikan — nama & sekolah tampil.', 'ok');
+  toast(blind ? 'Bl judging diaktifkan — nama disembunyikan dari juri.' : 'Blind dimatikan — nama & sekolah tampil.', 'ok');
   await muat();
 }
 async function setStatus(st) {
