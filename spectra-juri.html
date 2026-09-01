@@ -108,18 +108,23 @@ const fatal = m => { document.getElementById('fatal').hidden = false; document.g
   if (!sesi.petugas_id) return fatal('Format sesi lama. Keluar lalu masuk kembali di halaman login.');
 
   document.getElementById('hEvent').textContent = sesi.nama_event;
-  document.getElementById('hCabang').textContent = sesi.nama_cabang || '';
+  document.getElementById('hCabang').textContent =
+    (sesi.nama_cabang || '') + (sesi.nama_kategori ? ' • ' + sesi.nama_kategori : '');
   document.getElementById('icTheme').setAttribute('data-lucide', themeIcon());
   initConn('conn');
   muatDraft();
 
   try {
     const client = await sb();
+    let qPeserta = client.from('spectra_peserta')
+      .select('*, spectra_kategori(nama_kategori)')
+      .eq('cabang_id', sesi.cabang_id).eq('is_active', true);
+    if (sesi.kategori_id) qPeserta = qPeserta.eq('kategori_id', sesi.kategori_id); // KUNCI KATEGORI
+
     const [cRes, kRes, pRes, mRes] = await Promise.all([
       client.from('spectra_cabang').select('blind_judging').eq('id', sesi.cabang_id).maybeSingle(),
       client.from('spectra_kriteria').select('*').eq('cabang_id', sesi.cabang_id).order('urutan'),
-      client.from('spectra_peserta').select('*, spectra_kategori(nama_kategori)')
-        .eq('cabang_id', sesi.cabang_id).eq('is_active', true).order('sort_key'),
+      qPeserta.order('sort_key'),
       client.rpc('spectra_get_my_nilai', { p_kode_akses: sesi.kode_akses })
     ]);
     if (kRes.error) throw kRes.error;
