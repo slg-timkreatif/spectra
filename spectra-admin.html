@@ -16,8 +16,6 @@
 <style>
   .shell-main{padding-bottom:96px}
   @media(min-width:901px){.shell-main{padding-bottom:2rem}}
-
-  /* ---------- SIDEBAR PRESISI (desktop saja; HP pakai bottom-nav) ---------- */
   @media(min-width:901px){ .sidenav{display:flex;flex-direction:column} }
   .sidebrand{display:flex;gap:.65rem;align-items:center;padding:.2rem .6rem 1.1rem;
              border-bottom:1px solid var(--border);margin-bottom:.7rem}
@@ -36,8 +34,6 @@
   .navitem.on .lucide{color:var(--primary-text)}
   .side-bottom{margin-top:auto;padding-top:.9rem;border-top:1px solid var(--border)}
   .bottomnav button{font-size:.68rem}
-
-  /* ---------- Komponen halaman ---------- */
   .progrow{margin-bottom:.85rem}
   .progrow .lbl{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.35rem;font-weight:600}
   .progrow .lbl small{color:var(--text-3);font-weight:500}
@@ -52,29 +48,28 @@
   .eventInfo .card{padding:.8rem 1rem}
   .eventInfo b{display:block;font-size:.95rem}
   .eventInfo small{color:var(--text-3);font-size:.68rem;letter-spacing:1px;text-transform:uppercase}
+  .blindRow{display:flex;justify-content:space-between;align-items:center;gap:.8rem;
+            padding:.55rem 0;border-bottom:1px solid var(--border)}
+  .blindRow:last-child{border-bottom:none}
   .spin{animation:putar 1s linear infinite}@keyframes putar{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
 <div class="shell">
-  <!-- ================= SIDEBAR (desktop) ================= -->
   <aside class="sidenav">
     <div class="sidebrand">
       <div class="brand-logo"><i data-lucide="zap"></i></div>
       <div><b>SPECTRA</b><small>Pusat Komando</small></div>
     </div>
-
     <div class="navlabel">Manajemen</div>
     <button class="navitem on" data-tab="dasbor" onclick="tab('dasbor')"><i data-lucide="layout-dashboard"></i> Dasbor</button>
     <button class="navitem" data-tab="peserta" onclick="tab('peserta')"><i data-lucide="users"></i> Peserta</button>
     <button class="navitem" data-tab="matriks" onclick="tab('matriks')"><i data-lucide="table"></i> Matriks Nilai</button>
     <button class="navitem" data-tab="laporan" onclick="tab('laporan')"><i data-lucide="printer"></i> Laporan</button>
-
     <div class="navlabel">Sistem</div>
     <button class="navitem" data-tab="akses" onclick="tab('akses')"><i data-lucide="key-round"></i> Akses & Petugas</button>
     <button class="navitem" data-tab="event" onclick="tab('event')"><i data-lucide="settings"></i> Event</button>
-
     <div class="side-bottom">
       <button class="navitem" onclick="toggleTheme()"><i data-lucide="moon"></i> Ganti Tema</button>
       <button class="navitem danger" onclick="keluarSpectra()"><i data-lucide="log-out"></i> Keluar</button>
@@ -95,7 +90,6 @@
 
     <main class="container" style="padding-top:1rem">
 
-      <!-- ========== DASBOR ========== -->
       <section id="sec-dasbor">
         <div class="stat-grid">
           <div class="stat"><i data-lucide="users"></i><div><b id="stP">0</b><small>Peserta</small></div></div>
@@ -103,13 +97,11 @@
           <div class="stat ok"><i data-lucide="badge-check"></i><div><b id="stF">0</b><small>Final</small></div></div>
           <div class="stat"><i data-lucide="trophy"></i><div><b id="stC">0</b><small>Cabang</small></div></div>
         </div>
-
         <div class="card" style="margin-bottom:1rem">
           <div class="card-head"><h3><i data-lucide="bar-chart-3"></i> Progres Finalisasi per Cabang</h3>
             <button class="btn btn-ghost" onclick="tab('matriks')"><i data-lucide="table"></i> Lihat Matriks</button></div>
           <div id="progCabang"></div>
         </div>
-
         <div class="card">
           <div class="card-head"><h3><i data-lucide="clipboard-list"></i> Rekapitulasi Nilai Akhir</h3></div>
           <div class="toolbar">
@@ -127,7 +119,6 @@
         </div>
       </section>
 
-      <!-- ========== PESERTA ========== -->
       <section id="sec-peserta" hidden>
         <div class="card">
           <div class="card-head"><h3><i data-lucide="users"></i> Data Peserta</h3>
@@ -160,7 +151,6 @@
         </div>
       </section>
 
-      <!-- ========== MATRIKS ========== -->
       <section id="sec-matriks" hidden>
         <div class="card">
           <div class="card-head"><h3><i data-lucide="table"></i> Matriks Keterisian & Nilai</h3>
@@ -169,7 +159,6 @@
         </div>
       </section>
 
-      <!-- ========== LAPORAN ========== -->
       <section id="sec-laporan" hidden>
         <div class="card">
           <div class="card-head"><h3><i data-lucide="printer"></i> Pusat Laporan</h3></div>
@@ -191,7 +180,6 @@
         </div>
       </section>
 
-      <!-- ========== AKSES ========== -->
       <section id="sec-akses" hidden>
         <div class="card">
           <div class="card-head"><h3><i data-lucide="key-round"></i> Akses & Petugas</h3>
@@ -203,9 +191,18 @@
         </div>
       </section>
 
-      <!-- ========== EVENT ========== -->
       <section id="sec-event" hidden>
         <div class="eventInfo" id="eventInfo"></div>
+
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-head"><h3><i data-lucide="eye-off"></i> Mode Blind Judging per Cabang</h3></div>
+          <p class="muted small" style="margin-bottom:.6rem">
+            <b>Blind AKTIF</b> = juri hanya melihat "Peserta Nomor X" (nama & sekolah disembunyikan).
+            <b>Non-Blind</b> = nama & sekolah tampil. Default = Non-Blind.
+          </p>
+          <div id="blindList"></div>
+        </div>
+
         <div class="card" style="margin-bottom:1rem">
           <div class="card-head"><h3><i data-lucide="settings"></i> Status & Event Baru</h3></div>
           <div class="toolbar" style="margin:0">
@@ -215,6 +212,7 @@
             <a class="btn btn-ghost" href="spectra-setup.html"><i data-lucide="factory"></i> Buat Event Baru</a>
           </div>
         </div>
+
         <div class="card dangerCard">
           <div class="card-head"><h3 style="color:var(--danger-text)"><i data-lucide="alert-triangle"></i> Danger Zone</h3></div>
           <p class="muted small" style="margin-bottom:.9rem">Tidak dapat dibatalkan. Gunakan hanya untuk menangani human error.</p>
@@ -233,7 +231,6 @@
   </div>
 </div>
 
-<!-- ================= BOTTOM NAV (mobile) ================= -->
 <nav class="bottomnav">
   <button data-tab="dasbor" class="on" onclick="tab('dasbor')"><i data-lucide="layout-dashboard"></i>Dasbor</button>
   <button data-tab="peserta" onclick="tab('peserta')"><i data-lucide="users"></i>Peserta</button>
@@ -268,31 +265,32 @@ function tab(t) {
 async function muat() {
   try {
     const client = await sb();
-    const [a, j] = await Promise.all([
+    const [a, j, b] = await Promise.all([
       client.rpc('spectra_get_admin_data', { p_kode_akses: sesi.kode_akses }),
-      client.rpc('spectra_hitung_juara', { p_event_id: sesi.event_id })
+      client.rpc('spectra_hitung_juara', { p_event_id: sesi.event_id }),
+      client.from('spectra_cabang').select('id, blind_judging').eq('event_id', sesi.event_id)
     ]);
     if (a.error) throw a.error;
     if (a.data.error) return fatal(a.data.error);
     if (j.error) throw j.error;
     DATA = a.data; JUARA = j.data || [];
+    const bf = {}; (b.data || []).forEach(c => { bf[c.id] = !!c.blind_judging; });
+    (DATA.cabang || []).forEach(c => { c.blind_judging = !!bf[c.id]; });
     el('hEvent').textContent = DATA.event.nama;
     el('hStatus').textContent = 'Status: ' + DATA.event.status;
     isiFilter(); renderSemua();
   } catch (e) { fatal('Gagal memuat: ' + e.message); }
 }
-function renderSemua() { renderDasbor(); renderPeserta(); renderMatriks(); renderLaporan(); renderAkses(); renderEvent(); icons(); }
+function renderSemua() { renderDasbor(); renderPeserta(); renderMatriks(); renderLaporan(); renderAkses(); renderEvent(); renderBlind(); icons(); }
 
 function isiFilter() {
   const opts = '<option value="">Semua Cabang</option>' + DATA.cabang.map(c => '<option value="' + c.id + '">' + c.nama_cabang + '</option>').join('');
-  el('fCabang').innerHTML = opts;
-  el('fPCabang').innerHTML = opts;
+  el('fCabang').innerHTML = opts; el('fPCabang').innerHTML = opts;
   el('fMCabang').innerHTML = opts.replace('Semua Cabang', 'Pilih Cabang');
   el('fLCabang').innerHTML = opts;
   el('fKategori').innerHTML = '<option value="">Semua Kategori</option>' + DATA.kategori.map(k => '<option value="' + k.id + '">' + k.nama_kategori + '</option>').join('');
 }
 
-/* ================= DASBOR ================= */
 function rekap() {
   const map = {};
   (DATA.nilai || []).forEach(n => {
@@ -317,26 +315,20 @@ function renderDasbor() {
     else if (r.m.final === r.m.juri) { st = 'FINAL'; cls = 'ok'; nF++; }
     else { st = 'PROSES'; cls = 'proc'; nPr++; }
     return '<tr><td>' + (i + 1) + '</td><td>' + r.p.nomor_undian + '</td><td><b>' + r.p.nama_peserta + '</b></td><td>' +
-      (r.p.asal_instansi || '-') + '</td><td class="small muted">' + cabangById(r.p.cabang_id).nama_cabang + '</td>' +
-      '<td class="tnum">' + (r.m ? r.m.juri : 0) + '</td><td class="tnum"><b>' + fmtN(r.m ? r.m.total : 0) + '</b></td>' +
-      '<td><span class="badge ' + cls + '">' + st + '</span></td></tr>';
+      (r.p.asal_instansi || '-') + '</td><td class="small muted">' + cabangById(r.p.cabang_id).nama_cabang + '</td><td class="tnum">' +
+      (r.m ? r.m.juri : 0) + '</td><td class="tnum"><b>' + (r.m ? r.m.total : 0) + '</b></td><td><span class="badge ' + cls + '">' + st + '</span></td></tr>';
   }).join('');
   el('stP').textContent = (DATA.peserta || []).length;
-  el('stPr').textContent = nPr;
-  el('stF').textContent = nF;
-  el('stC').textContent = (DATA.cabang || []).length;
-
+  el('stPr').textContent = nPr; el('stF').textContent = nF; el('stC').textContent = (DATA.cabang || []).length;
   el('progCabang').innerHTML = (DATA.cabang || []).map(c => {
     const ps = (DATA.peserta || []).filter(p => p.cabang_id === c.id);
     const fin = ps.filter(p => { const m = map[p.id]; return m && m.final === m.juri; }).length;
     const pct = ps.length ? Math.round(fin / ps.length * 100) : 0;
     return '<div class="progrow"><div class="lbl"><span>' + c.nama_cabang +
-      '</span><small class="tnum">' + fin + '/' + ps.length + ' final</small></div>' +
-      '<div class="pbar"><i style="width:' + pct + '%"></i></div></div>';
+      '</span><small class="tnum">' + fin + '/' + ps.length + ' final</small></div><div class="pbar"><i style="width:' + pct + '%"></i></div></div>';
   }).join('') || '<p class="muted small">Belum ada cabang.</p>';
 }
 
-/* ================= PESERTA + IMPORT ================= */
 function renderPeserta() {
   const q = (el('qPeserta').value || '').toLowerCase();
   const fc = el('fPCabang').value;
@@ -351,8 +343,7 @@ function unduhTemplate() {
     ['Nomor Undian', 'Nama Peserta', 'Asal Instansi', 'Cabang', 'Kategori'],
     ['1', 'Contoh Nama', 'SD Contoh 1', (DATA.cabang[0] || {}).nama_cabang || 'Nama Cabang', 'Umum']
   ]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Peserta');
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Peserta');
   XLSX.writeFile(wb, 'template_peserta_spectra.xlsx');
 }
 function parseFile(file) {
@@ -395,8 +386,7 @@ function parseFile(file) {
   rd.readAsArrayBuffer(file);
 }
 async function jalankanImport() {
-  const rows = PREV.filter(r => r.ok).map(r => ({ nomor_undian: r.nomor, nama_peserta: r.nama,
-    asal_instansi: r.asal, cabang: r.cabang, kategori: r.kategori }));
+  const rows = PREV.filter(r => r.ok).map(r => ({ nomor_undian: r.nomor, nama_peserta: r.nama, asal_instansi: r.asal, cabang: r.cabang, kategori: r.kategori }));
   const { data, error } = await (await sb()).rpc('spectra_import_peserta', { p_kode_akses: sesi.kode_akses, p_rows: rows });
   if (error) return toast(error.message, 'err');
   if (data.error) return toast(data.error, 'err');
@@ -405,7 +395,6 @@ async function jalankanImport() {
   await muat();
 }
 
-/* ================= MATRIKS ================= */
 function renderMatriks() {
   const fc = el('fMCabang').value || (DATA.cabang[0] || {}).id;
   el('fMCabang').value = fc;
@@ -421,14 +410,13 @@ function renderMatriks() {
     const allF = rws.length > 0 && rws.every(r => r.status === 'FINAL');
     return '<tr><td><b>' + p.nomor_undian + '. ' + p.nama_peserta + '</b></td>' + juri.map(j => {
       const v = nm[j.id];
-      return '<td>' + (v ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + ' tnum">' + fmtN(v.total) + '</span>' : '<span class="mcell none">–</span>') + '</td>';
-    }).join('') + '<td class="tnum"><b>' + fmtN(tot) + '</b></td><td><span class="badge ' + (allF ? 'ok' : rws.length ? 'proc' : 'none') + '">' +
+      return '<td>' + (v ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + ' tnum">' + v.total + '</span>' : '<span class="mcell none">–</span>') + '</td>';
+    }).join('') + '<td class="tnum"><b>' + tot + '</b></td><td><span class="badge ' + (allF ? 'ok' : rws.length ? 'proc' : 'none') + '">' +
       (allF ? 'FINAL' : rws.length ? 'PROSES' : 'BELUM') + '</span></td></tr>';
   }).join('');
   el('matriksTable').innerHTML = html + '</tbody>';
 }
 
-/* ================= LAPORAN ================= */
 function setLap(v) {
   LAP = v;
   el('segJ').classList.toggle('on', v === 'juara');
@@ -446,7 +434,7 @@ function renderLaporan() {
   el('tbLaporan').innerHTML = rows.length ? rows.map(r =>
     '<tr><td><b>' + r.label_juara + '</b><br><small class="muted">' + (r.nama_cabang || '') + (r.nama_kategori ? ' • ' + r.nama_kategori : '') + '</small></td>' +
     '<td>' + r.nomor_undian + '</td><td>' + r.nama_peserta + '</td><td>' + (r.asal_instansi || '-') + '</td>' +
-    '<td class="tnum">' + r.jumlah_juri + '</td><td class="tnum"><b>' + fmtN(r.total_nilai) + '</b></td><td>' + (r.kandidat_kabupaten ? '🚀' : '') + '</td></tr>').join('')
+    '<td class="tnum">' + r.jumlah_juri + '</td><td class="tnum"><b>' + r.total_nilai + '</b></td><td>' + (r.kandidat_kabupaten ? '🚀' : '') + '</td></tr>').join('')
     : '<tr><td colspan="7" class="muted">Belum ada nilai FINAL yang disahkan.</td></tr>';
   el('lapNote').textContent = LAP === 'kabupaten' ? 'Kandidat Kabupaten = otomatis Juara 1 tiap cabang & kategori.'
     : 'Peringkat dari nilai FINAL, metode TOTAL (jumlah semua juri).';
@@ -481,7 +469,6 @@ function excelSemuaNilai() {
   toast('Semua nilai diunduh.', 'ok');
 }
 
-/* ================= AKSES (CRUD petugas, termasuk NONAKTIF) ================= */
 function renderAkses() {
   el('tbAkses').innerHTML = (DATA.petugas || []).map(p =>
     '<tr' + (p.is_active ? '' : ' style="opacity:.55"') + '><td><b>' + p.nama_petugas + '</b>' +
@@ -523,16 +510,11 @@ function openPetugas(mode, id) {
   document.body.appendChild(ovl); icons();
 }
 async function simpanPetugas(mode, id) {
-  const payload = {
-    nama_petugas: el('mNama').value.trim(),
-    peran: el('mPeran').value,
-    cabang_id: el('mCabang').value || '',
-    kode_akses: el('mKode').value.trim().toUpperCase()
-  };
+  const payload = { nama_petugas: el('mNama').value.trim(), peran: el('mPeran').value,
+    cabang_id: el('mCabang').value || '', kode_akses: el('mKode').value.trim().toUpperCase() };
   if (mode === 'UPDATE') payload.id = id;
   const { data, error } = await (await sb()).rpc('spectra_manage_petugas', {
-    p_kode_akses_admin: sesi.kode_akses, p_aksi: mode, p_payload: payload
-  });
+    p_kode_akses_admin: sesi.kode_akses, p_aksi: mode, p_payload: payload });
   if (error) return toast(error.message, 'err');
   if (data.error) return toast(data.error, 'err');
   document.querySelector('.ovl').remove();
@@ -548,15 +530,13 @@ async function aksiPetugas(aksi, id) {
     teksYa: aksi === 'DELETE' ? 'Hapus' : 'Ya', bahaya: aksi === 'DELETE' });
   if (!ok) return;
   const { data, error } = await (await sb()).rpc('spectra_manage_petugas', {
-    p_kode_akses_admin: sesi.kode_akses, p_aksi: aksi, p_payload: { id }
-  });
+    p_kode_akses_admin: sesi.kode_akses, p_aksi: aksi, p_payload: { id } });
   if (error) return toast(error.message, 'err');
   if (data.error) return toast(data.error, 'err');
   toast('Berhasil.', 'ok');
   await muat();
 }
 
-/* ================= EVENT + DANGER ZONE ================= */
 function renderEvent() {
   const e = DATA.event;
   el('eventInfo').innerHTML =
@@ -564,6 +544,22 @@ function renderEvent() {
     '<div class="card"><small>Tahun</small><b>' + e.tahun + '</b></div>' +
     '<div class="card"><small>Status</small><b><span class="badge ' + (e.status === 'AKTIF' ? 'ok' : e.status === 'DRAFT' ? 'warn' : 'none') + '">' + e.status + '</span></b></div>' +
     '<div class="card"><small>Slug / Prefix</small><b>' + (e.slug || '-') + ' / ' + (e.kode_prefix || '-') + '</b></div>';
+}
+function renderBlind() {
+  el('blindList').innerHTML = (DATA.cabang || []).map(c =>
+    '<div class="blindRow"><div><b>' + c.nama_cabang + '</b> <span class="muted small">' + c.kode_cabang + '</span></div>' +
+    '<button class="btn ' + (c.blind_judging ? 'btn-warn' : 'btn-ghost') + '" onclick="setBlind(\'' + c.id + '\',' + (!c.blind_judging) + ')">' +
+    '<i data-lucide="' + (c.blind_judging ? 'eye-off' : 'eye') + '"></i> ' +
+    (c.blind_judging ? 'Blind AKTIF' : 'Non-Blind') + '</button></div>').join('');
+  icons();
+}
+async function setBlind(id, blind) {
+  const { data, error } = await (await sb()).rpc('spectra_set_blind_cabang', {
+    p_kode_akses_admin: sesi.kode_akses, p_cabang_id: id, p_blind: blind });
+  if (error) return toast(error.message, 'err');
+  if (data.error) return toast(data.error, 'err');
+  toast(blind ? 'Blind judging diaktifkan — nama disembunyikan dari juri.' : 'Blind dimatikan — nama & sekolah tampil.', 'ok');
+  await muat();
 }
 async function setStatus(st) {
   const ok = await spectraConfirm({ judul: 'Ubah status event', pesan: 'Status event akan menjadi ' + st + '.', teksYa: 'Ubah' });
@@ -597,8 +593,7 @@ async function resetEvent(mode) {
     mode === 'NILAI' ? 'Reset Nilai' : 'Hapus Event', bahaya);
   if (!ok) return;
   const { data, error } = await (await sb()).rpc('spectra_reset_event', {
-    p_kode_akses_admin: sesi.kode_akses, p_event_id: sesi.event_id, p_mode: mode, p_konfirmasi: DATA.event.nama
-  });
+    p_kode_akses_admin: sesi.kode_akses, p_event_id: sesi.event_id, p_mode: mode, p_konfirmasi: DATA.event.nama });
   if (error) return toast(error.message, 'err');
   if (data.error) return toast(data.error, 'err');
   if (mode === 'FULL') { keluarSpectra(); return; }
