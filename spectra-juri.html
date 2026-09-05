@@ -20,6 +20,12 @@
   #aspekList .field>span{font-size:.9rem;font-weight:700}
   .statusline{text-align:center;font-size:.8rem;margin-top:.7rem;color:var(--text-2);min-height:1.2em}
   .spin{animation:putar 1s linear infinite}@keyframes putar{to{transform:rotate(360deg)}}
+  .chip.lock::after{content:" 🔒";font-size:.68em}
+  .chip.lock{opacity:.75}
+  .locknote{display:flex;gap:.5rem;align-items:center;justify-content:center;margin:.6rem 0 0;
+    background:var(--warning-soft);color:var(--warn-text);border:1px solid var(--warning);
+    border-radius:10px;padding:.5rem .8rem;font-size:.8rem;font-weight:600}
+  input:disabled,textarea:disabled{opacity:.55;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -57,6 +63,8 @@
       <button class="btn btn-ghost btn-icon" id="btnNext" onclick="pilihDelta(1)" title="Berikutnya"><i data-lucide="chevron-right"></i></button>
     </div>
 
+    <div class="locknote" id="lockNote" hidden>🔒 Nilai sudah dikunci operator — tidak dapat diedit.</div>
+
     <div id="aspekList"></div>
 
     <label class="field"><span>Catatan juri</span>
@@ -93,13 +101,13 @@ const sesi = bacaSesi();
 const DRAFT_KEY = sesi && sesi.petugas_id ? 'spectra_draft_' + sesi.petugas_id : null;
 
 let kriteria = [], peserta = [], pesertaMap = {};
-let drafts = {}, synced = new Set(), selectedId = null, blind = false;
+let drafts = {}, synced = new Set(), locked = new Set(), selectedId = null, blind = false;
 
 const muatDraft   = () => { try { drafts = JSON.parse(localStorage.getItem(DRAFT_KEY)) || {}; } catch (e) { drafts = {}; } };
 const simpanDraft = () => localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
 const adaIsi = d => d && d.rincian && Object.values(d.rincian).some(v => v !== '' && v != null);
-const statusOf = id => synced.has(id) ? 'ok' : (adaIsi(drafts[id]) ? 'warn' : '');
-const daftarKotor = () => peserta.filter(p => adaIsi(drafts[p.id]) && !synced.has(p.id)).map(p => p.id);
+const statusOf = id => locked.has(id) ? 'lock' : (synced.has(id) ? 'ok' : (adaIsi(drafts[id]) ? 'warn' : ''));
+const daftarKotor = () => peserta.filter(p => adaIsi(drafts[p.id]) && !synced.has(p.id) && !locked.has(p.id)).map(p => p.id);
 const fatal = m => { document.getElementById('fatal').hidden = false; document.getElementById('fatalTxt').textContent = m; };
 
 (async function boot() {
@@ -109,6 +117,7 @@ const fatal = m => { document.getElementById('fatal').hidden = false; document.g
 
   document.getElementById('hEvent').textContent = sesi.nama_event;
   document.getElementById('hCabang').textContent =
+    (sesi.nama_petugas ? sesi.nama_petugas + ' • ' : '') +
     (sesi.nama_cabang || '') + (sesi.nama_kategori ? ' • ' + sesi.nama_kategori : '');
   document.getElementById('icTheme').setAttribute('data-lucide', themeIcon());
   initConn('conn');
@@ -119,7 +128,7 @@ const fatal = m => { document.getElementById('fatal').hidden = false; document.g
     let qPeserta = client.from('spectra_peserta')
       .select('*, spectra_kategori(nama_kategori)')
       .eq('cabang_id', sesi.cabang_id).eq('is_active', true);
-    if (sesi.kategori_id) qPeserta = qPeserta.eq('kategori_id', sesi.kategori_id); // KUNCI KATEGORI
+    if (sesi.kategori_id) qPeserta = qPeserta.eq('kategori_id', sesi.kategori_id);
 
     const [cRes, kRes, pRes, mRes] = await Promise.all([
       client.from('spectra_cabang').select('blind_judging').eq('id', sesi.cabang_id).maybeSingle(),
@@ -136,15 +145,38 @@ const fatal = m => { document.getElementById('fatal').hidden = false; document.g
     pesertaMap = Object.fromEntries(peserta.map(p => [p.id, p]));
 
     (Array.isArray(mRes.data) ? mRes.data : []).forEach(r => {
-      synced.add(r.peserta_id);
-      if (!drafts[r.peserta_id])
+      if (r.status === 'FINAL') {
+        locked.add(r.peserta_id);
         drafts[r.peserta_id] = { rincian: r.rincian || {}, penalti: r.penalti || 0, catatan: r.catatan || '' };
+      } else {
+        synced.add(r.peserta_id);
+        if (!drafts[r.peserta_id])
+          drafts[r.peserta_id] = { rincian: r.rincian || {}, penalti: r.penalti || 0, catatan: r.catatan || '' };
+      }
     });
 
     if (peserta.length) pilih(peserta[0].id);
     renderChips(); updateProg();
+    setInterval(refreshLocks, 30000);
   } catch (e) { fatal('Gagal memuat data: ' + e.message); }
 })();
+
+async function refreshLocks() {
+  try {
+    const { data } = await (await sb()).rpc('spectra_get_my_nilai', { p_kode_akses: sesi.kode_akses });
+    const baru = new Set();
+    (Array.isArray(data) ? data : []).forEach(r => {
+      if (r.status === 'FINAL') {
+        baru.add(r.peserta_id);
+        drafts[r.peserta_id] = { rincian: r.rincian || {}, penalti: r.penalti || 0, catatan: r.catatan || '' };
+      }
+    });
+    const berubah = selectedId && (baru.has(selectedId) !== locked.has(selectedId));
+    locked = baru;
+    simpanDraft(); renderChips();
+    if (berubah) pilih(selectedId); else if (selectedId) applyLockUI();
+  } catch (e) {}
+}
 
 function renderChips() {
   const box = document.getElementById('chips');
@@ -194,10 +226,18 @@ function pilih(id) {
   document.getElementById('inPenalti').oninput = e => setDraft(id, x => x.penalti = Number(e.target.value) || 0);
   document.getElementById('inCatatan').oninput = e => setDraft(id, x => x.catatan = e.target.value);
 
-  resetBtnKirim(); updateTotal(); updateStatusLine(); renderChips();
+  updateTotal(); updateStatusLine(); applyLockUI(); renderChips();
 
   const act = document.querySelector('.chip.active');
   if (act) act.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+}
+
+function applyLockUI() {
+  const isLock = locked.has(selectedId);
+  document.querySelectorAll('#aspekList input, #inPenalti, #inCatatan').forEach(i => i.disabled = isLock);
+  document.getElementById('btnKirim').disabled = isLock;
+  document.getElementById('lockNote').hidden = !isLock;
+  if (isLock) document.getElementById('statusLine').textContent = '🔒 Nilai terkunci oleh operator — tidak dapat diedit.';
 }
 
 function pilihDelta(d) {
@@ -207,6 +247,7 @@ function pilihDelta(d) {
 }
 
 function ubahAspek(k, elInp) {
+  if (locked.has(selectedId)) return;
   let v = elInp.value;
   if (v !== '') {
     v = Number(v);
@@ -236,6 +277,7 @@ const updateProg = () => {
 };
 function updateStatusLine() {
   const elS = document.getElementById('statusLine');
+  if (locked.has(selectedId)) { elS.textContent = '🔒 Nilai terkunci oleh operator — tidak dapat diedit.'; return; }
   if (synced.has(selectedId)) elS.textContent = '✅ Nilai peserta ini sudah tersimpan di server.';
   else if (adaIsi(drafts[selectedId])) elS.textContent = '🟡 Draft lokal — belum terkirim ke server.';
   else elS.textContent = '';
@@ -247,7 +289,7 @@ function updateBanner() {
 }
 function resetBtnKirim() {
   const b = document.getElementById('btnKirim');
-  b.disabled = false;
+  b.disabled = locked.has(selectedId);
   b.innerHTML = '<i data-lucide="cloud-upload"></i><span id="btnTxt">Kirim Nilai</span>';
   icons();
 }
@@ -268,6 +310,7 @@ async function kirim(list) {
 }
 
 async function kirimIni() {
+  if (locked.has(selectedId)) { toast('Nilai terkunci oleh operator.', 'err'); return; }
   const b = document.getElementById('btnKirim');
   b.disabled = true;
   b.innerHTML = '<i data-lucide="loader-2" class="spin"></i><span>Mengirim...</span>'; icons();
@@ -291,7 +334,7 @@ async function kirimSemua() {
   toast(ok ? 'Semua nilai terkirim.' : 'Sebagian gagal — coba lagi saat sinyal membaik.', ok ? 'ok' : 'err');
 }
 
-window.addEventListener('online', () => { initConn('conn'); kirimSemua(); });
+window.addEventListener('online', () => { initConn('conn'); kirimSemua(); refreshLocks(); });
 window.addEventListener('offline', () => initConn('conn'));
 </script>
 </body>
