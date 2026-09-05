@@ -3,164 +3,114 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LIVESCORE — SPECTRA</title>
+<title>SPECTRA — Livescore</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 <link rel="stylesheet" href="spectra-theme.css?v=2">
 <script src="vendor/supabase.min.js"></script>
 <script src="vendor/lucide.min.js"></script>
+<script>if(!window.lucide) document.write('<script src="https://unpkg.com/lucide@latest"><\/script>')</script>
 <script src="spectra-ui.js?v=2"></script>
-<script>initTheme('dark', true)</script>
+<script>initTheme('dark')</script>
 <style>
-  body{font-size:18px}
-  .live{display:flex;align-items:center;gap:.5rem;font-weight:800;color:#f87171;font-size:.95rem}
-  .dot{width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pul 1.2s infinite}
-  @keyframes pul{0%,100%{opacity:1}50%{opacity:.25}}
-  main{max-width:1060px;margin:0 auto;padding:1.2rem 1rem}
-  .filters{display:flex;gap:.7rem;flex-wrap:wrap;margin-bottom:.9rem}
-  table{min-width:720px}
-  td{padding:1rem 1.1rem}
-  .pos{font-size:1.45rem;font-weight:900;width:64px}
-  .bx-name{font-size:1.15rem;font-weight:700}
-  .bx-num{font-size:1.7rem;font-weight:900;color:var(--ok-text)}
-  tr.r1 td{background:linear-gradient(90deg,rgba(245,158,11,.16),transparent)}
-  tr.r2 td{background:linear-gradient(90deg,rgba(148,163,184,.14),transparent)}
-  tr.r3 td{background:linear-gradient(90deg,rgba(180,83,9,.14),transparent)}
-  .stamp{color:var(--text-3);font-size:.8rem;margin-bottom:.6rem}
-  .liveCard{display:flex;align-items:center;gap:.9rem;background:var(--surface);border:1px solid var(--border);
-            border-radius:14px;padding:.85rem 1rem;margin-bottom:.6rem}
-  .liveCard .lcPos{font-size:1.3rem;font-weight:900;width:44px}
-  .liveCard .lcMid{flex:1}
-  .liveCard .lcTot{font-size:1.35rem;font-weight:900;color:var(--ok-text)}
-  .liveCard.r1{border-color:rgba(245,158,11,.5)}
-  @media(max-width:640px){ .table-wrap{display:none} }
-  @media(min-width:641px){ #cards{display:none} }
-  footer{text-align:center;color:var(--text-3);font-size:.75rem;padding:1.6rem}
+  main{max-width:1100px;margin:0 auto;padding:1rem}
+  .live-head{text-align:center;margin-bottom:1rem}
+  .live-head h1{font-size:clamp(1.4rem,4vw,2.2rem);letter-spacing:1px}
+  .live-dot{display:inline-flex;align-items:center;gap:.4rem;color:var(--danger);font-weight:700;font-size:.8rem}
+  .live-dot i{animation:kedip 1.2s infinite}
+  @keyframes kedip{50%{opacity:.2}}
+  .cab-tabs{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-bottom:.8rem}
+  .cab-tabs button{border:1px solid var(--border-2);background:var(--surface-2);color:var(--text-2);border-radius:99px;padding:.45rem 1rem;font-weight:700;cursor:pointer}
+  .cab-tabs button.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .podium{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-bottom:1rem}
+  .podium .card{text-align:center;padding:1rem .6rem}
+  .podium .med{font-size:2rem}
+  .podium .nm{font-weight:800;margin:.3rem 0}
+  .podium .tot{font-size:1.3rem;color:var(--primary-text);font-weight:800}
+  .board .row{display:grid;grid-template-columns:52px 60px 1fr auto;gap:.7rem;align-items:center;padding:.6rem .8rem;border-bottom:1px solid var(--border)}
+  .board .row .rk{font-weight:800;font-size:1.05rem}
+  .board .row .tot{font-weight:800;font-size:1.05rem;color:var(--primary-text)}
+  @media(max-width:600px){.podium{grid-template-columns:1fr}.board .row{grid-template-columns:40px 44px 1fr auto}}
 </style>
 </head>
 <body>
-
-<header class="topbar"><div class="topbar-in">
-  <div class="brand">
-    <div class="brand-logo"><i data-lucide="zap"></i></div>
-    <div><b>SPECTRA</b><small id="hEvent">Memuat event...</small></div>
-  </div>
-  <div class="topbar-actions">
-    <span class="live" id="liveBadge"><span class="dot"></span> LIVE</span>
-    <button class="btn btn-ghost btn-icon" id="btnLive" onclick="toggleLive()" title="Jeda/Lanjutkan">⏸</button>
-    <button class="btn btn-ghost btn-icon" onclick="muat()" title="Segarkan"><i data-lucide="refresh-cw"></i></button>
-    <button class="btn btn-ghost btn-icon" onclick="layarPenuh()" title="Mode Proyektor"><i data-lucide="maximize"></i></button>
-  </div>
-</div></header>
-
 <main>
-  <div class="filters">
-    <select class="input" id="fCabang" onchange="render()" style="width:auto"></select>
-    <select class="input" id="fKategori" onchange="render()" style="width:auto"></select>
+  <div class="live-head">
+    <span class="live-dot"><i data-lucide="radio"></i> LIVE</span>
+    <h1 id="evName">SPECTRA</h1>
+    <span class="muted" id="evLoc"></span>
   </div>
-  <div class="stamp" id="stamp"></div>
-  <div class="table-wrap"><table>
-    <thead><tr><th>Pos</th><th>No. Undi</th><th>Peserta & Instansi</th><th>Juri</th><th>Total Nilai</th><th>Status</th></tr></thead>
-    <tbody id="tb"></tbody>
-  </table></div>
-  <div id="cards"></div>
-  <div class="empty" id="empty" hidden>
-    <i data-lucide="monitor"></i>
-    <p>Belum ada nilai FINAL yang disahkan untuk tampilan ini.<br>Klasemen muncul otomatis saat operator mengesahkan nilai.</p>
-  </div>
+  <div class="cab-tabs" id="cabTabs"></div>
+  <div class="cab-tabs" id="katTabs"></div>
+  <div class="podium" id="podium"></div>
+  <div class="card board"><div id="board"></div></div>
 </main>
-
-<footer>© Tim Kreatif Selogiri — Hanya menampilkan nilai yang sudah disahkan operator (FINAL).</footer>
-
 <script>
-const INTERVAL_DETIK = 20;
-let EVENT = null, CABANG = [], KATEGORI = [], NILAI = [], liveOn = true, timer = null;
-const slugParam = new URLSearchParams(location.search).get('e');
+let DATA=null, curCab=null, curKat=null;
+const params=new URLSearchParams(location.search);
+const slug=params.get('e');
 
-async function muat() {
-  try {
-    const client = await sb();
-    if (!EVENT) {
-      if (slugParam) {
-        const { data } = await client.from('spectra_events').select('*').eq('slug', slugParam).maybeSingle();
-        EVENT = data;
-      } else {
-        const { data } = await client.from('spectra_events').select('*').order('created_at', { ascending: false }).limit(5);
-        EVENT = (data || []).find(e => e.status === 'AKTIF') || (data || [])[0];
-      }
-      if (!EVENT) { document.getElementById('hEvent').textContent = 'Event tidak ditemukan.'; return; }
-      document.getElementById('hEvent').textContent = EVENT.nama_event + ' • ' + EVENT.tahun;
-      const [c, k] = await Promise.all([
-        client.from('spectra_cabang').select('id, nama_cabang').eq('event_id', EVENT.id).eq('is_active', true).order('urutan'),
-        client.from('spectra_kategori').select('id, nama_kategori').eq('event_id', EVENT.id).order('urutan')
-      ]);
-      CABANG = c.data || []; KATEGORI = k.data || [];
-      document.getElementById('fCabang').innerHTML = '<option value="">🏆 Semua Cabang</option>' +
-        CABANG.map(c => '<option value="' + c.id + '">' + c.nama_cabang + '</option>').join('');
-      document.getElementById('fKategori').innerHTML = '<option value="">Semua Kategori</option>' +
-        KATEGORI.map(k => '<option value="' + k.id + '">' + k.nama_kategori + '</option>').join('');
-    }
-    const { data, error } = await client.from('spectra_nilai')
-      .select('cabang_id, kategori_id, peserta_id, total, spectra_peserta(nomor_undian, nama_peserta, asal_instansi, sort_key)')
-      .eq('event_id', EVENT.id).eq('status', 'FINAL');
-    if (error) throw error;
-    NILAI = data || [];
-    render();
-  } catch (e) {
-    document.getElementById('stamp').textContent = '⚠️ Gagal memuat: ' + e.message;
-  }
+(async function load(){
+  try{
+    const client=await sb();
+    let evQ=client.from('spectra_events').select('*');
+    evQ = slug ? evQ.eq('slug',slug) : evQ.eq('status','AKTIF');
+    const ev=await evQ.maybeSingle();
+    if(ev.error) throw ev.error;
+    if(!ev.data){ document.getElementById('evName').textContent='Belum ada event AKTIF'; return; }
+    const E=ev.data;
+    document.getElementById('evName').textContent=E.nama_event;
+    document.getElementById('evLoc').textContent=E.lokasi||'';
+    const [cab,kat,pes,nil]=await Promise.all([
+      client.from('spectra_cabang').select('*').eq('event_id',E.id).order('urutan'),
+      client.from('spectra_kategori').select('*').eq('event_id',E.id).order('urutan'),
+      client.from('spectra_peserta').select('*').eq('event_id',E.id).eq('is_active',true),
+      client.from('spectra_nilai').select('peserta_id,cabang_id,kategori_id,total,status').eq('event_id',E.id).eq('status','FINAL')
+    ]);
+    DATA={E,cab:cab.data||[],kat:kat.data||[],pes:pes.data||[],nil:nil.data||[]};
+    curCab=DATA.cab[0]?.id||null;
+    renderTabs(); render();
+    setInterval(load, 8000);
+  }catch(e){ document.getElementById('evName').textContent='Gagal memuat: '+e.message; }
+})();
+
+function renderTabs(){
+  el('cabTabs').innerHTML=DATA.cab.map(c=>'<button class="'+(c.id===curCab?'on':'')+'" onclick="setCab(\''+c.id+'\')">'+c.nama_cabang+'</button>').join('');
+  const kats=DATA.kat;
+  el('katTabs').innerHTML='<button class="'+(curKat==null?'on':'')+'" onclick="setKat(null)">Semua</button>'+
+    kats.map(k=>'<button class="'+(curKat===k.id?'on':'')+'" onclick="setKat(\''+k.id+'\')">'+k.nama_kategori+'</button>').join('');
 }
+function setCab(id){ curCab=id; curKat=null; renderTabs(); render(); }
+function setKat(id){ curKat=id; renderTabs(); render(); }
 
-function render() {
-  const fc = document.getElementById('fCabang').value;
-  const fk = document.getElementById('fKategori').value;
-  const agg = {};
-  NILAI.forEach(n => {
-    if (fc && n.cabang_id !== fc) return;
-    if (fk && n.kategori_id !== fk) return;
-    const a = agg[n.peserta_id] = agg[n.peserta_id] || { p: n.spectra_peserta, total: 0, juri: 0 };
-    a.total += Number(n.total || 0); a.juri++;
+function totals(){
+  const t={};
+  (DATA.nil||[]).forEach(n=>{
+    if(n.cabang_id!==curCab) return;
+    if(curKat && n.kategori_id!==curKat) return;
+    const m=t[n.peserta_id]=t[n.peserta_id]||{tot:0,n:0};
+    m.tot+=Number(n.total||0); m.n++;
   });
-  const rows = Object.values(agg).sort((a, b) => (b.total - a.total) ||
-    String(a.p.sort_key || '').localeCompare(String(b.p.sort_key || '')));
-
-  const rowHtml = (r, i, mode) => {
-    const med = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
-    if (mode === 'card')
-      return '<div class="liveCard ' + (i < 3 ? 'r' + (i + 1) : '') + '"><div class="lcPos">' + med + '</div>' +
-        '<div class="lcMid"><div class="bx-name">' + r.p.nama_peserta + '</div>' +
-        '<div class="muted small">' + (r.p.asal_instansi || '') + ' • No. ' + r.p.nomor_undian + '</div></div>' +
-        '<div class="lcTot tnum">' + fmtN(r.total) + '</div></div>';
-    return '<tr class="' + (i < 3 ? 'r' + (i + 1) : '') + '"><td class="pos">' + med + '</td>' +
-      '<td class="tnum">' + r.p.nomor_undian + '</td>' +
-      '<td><div class="bx-name">' + r.p.nama_peserta + '</div><div class="muted small">' + (r.p.asal_instansi || '') + '</div></td>' +
-      '<td class="tnum">' + r.juri + ' juri</td><td class="bx-num">' + fmtN(r.total) + '</td>' +
-      '<td><span class="badge ok">FINAL</span></td></tr>';
-  };
-
-  document.getElementById('tb').innerHTML = rows.map((r, i) => rowHtml(r, i, 'row')).join('');
-  document.getElementById('cards').innerHTML = rows.map((r, i) => rowHtml(r, i, 'card')).join('');
-  document.getElementById('empty').hidden = rows.length > 0;
-  document.getElementById('stamp').textContent = '🕐 Sinkron ' + new Date().toLocaleTimeString('id-ID') +
-    ' • metode TOTAL • update tiap ' + INTERVAL_DETIK + ' dtk';
+  return t;
+}
+function render(){
+  const cab=DATA.cab.find(c=>c.id===curCab)||{};
+  const blind=!!cab.blind_judging;
+  const t=totals();
+  let rows=(DATA.pes||[]).filter(p=>p.cabang_id===curCab && (!curKat||p.kategori_id===curKat))
+    .map(p=>({p, m:t[p.id]}))
+    .filter(r=>r.m && r.m.n>0)
+    .sort((a,b)=> b.m.tot-a.m.tot || a.p.nomor_undian-b.p.nomor_undian);
+  const nama=p=> blind ? ('Peserta Nomor '+p.nomor_undian) : p.nama_peserta;
+  const asal=p=> blind ? '' : (p.asal_instansi||'');
+  const top=rows.slice(0,3);
+  const med=['🥇','🥈','🥉'];
+  el('podium').innerHTML=top.map((r,i)=>'<div class="card"><div class="med">'+med[i]+'</div><div class="nm">'+nama(r.p)+'</div>'+
+    (asal(r.p)?'<span class="muted small">'+asal(r.p)+'</span>':'')+'<div class="tot">'+fmtN(r.m.tot)+'</div></div>').join('')||
+    '<div class="card" style="grid-column:1/-1;text-align:center">Belum ada nilai FINAL.</div>';
+  el('board').innerHTML=rows.map((r,i)=>'<div class="row"><span class="rk">'+(i+1)+'</span><span class="tnum">'+r.p.nomor_undian+
+    '</span><span><b>'+nama(r.p)+'</b>'+(asal(r.p)?'<br><small class="muted">'+asal(r.p)+'</small>':'')+'</span><span class="tot">'+fmtN(r.m.tot)+'</span></div>').join('')||'';
   icons();
 }
-
-function toggleLive() {
-  liveOn = !liveOn;
-  document.getElementById('btnLive').textContent = liveOn ? '⏸' : '▶';
-  document.getElementById('liveBadge').style.opacity = liveOn ? 1 : .3;
-  aturTimer();
-}
-function aturTimer() {
-  clearInterval(timer);
-  timer = setInterval(() => { if (liveOn && !document.hidden) muat(); }, INTERVAL_DETIK * 1000);
-}
-document.addEventListener('visibilitychange', () => { if (!document.hidden && liveOn) muat(); });
-function layarPenuh() {
-  if (document.fullscreenElement) document.exitFullscreen();
-  else document.documentElement.requestFullscreen();
-}
-muat().then(aturTimer);
 </script>
 </body>
 </html>
