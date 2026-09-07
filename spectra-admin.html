@@ -167,9 +167,10 @@
           <div class="toolbar" style="margin-bottom:.4rem">
             <button class="btn btn-primary" onclick="cetakRekap()"><i data-lucide="printer"></i> Cetak Rekap Bertandatangan</button>
             <button class="btn btn-ghost" onclick="buatBA('HASIL')"><i data-lucide="scroll-text"></i> BA Hasil</button>
+            <button class="btn btn-ghost" onclick="buatBA('SEMUA')"><i data-lucide="layers"></i> BA Semua Cabang</button>
             <button class="btn btn-ghost" onclick="buatBA('KABUPATEN')"><i data-lucide="rocket"></i> BA Kandidat</button>
           </div>
-          <p class="muted small">Rekap & BA Hasil mengikuti cabang+kategori terpilih. BA Kandidat untuk seluruh event. BA yang sudah terbit bersifat arsip (nomor tetap).</p>
+          <p class="muted small">Rekap & BA Hasil mengikuti cabang+kategori terpilih. BA Semua Cabang memuat Juara 1–3 & Harapan 1–3 seluruh cabang. BA Kandidat = juara 1 tiap cabang. BA terbit bersifat arsip (nomor tetap).</p>
         </div>
         <div class="card">
           <div class="card-head"><h3><i data-lucide="archive"></i> Riwayat Berita Acara</h3></div>
@@ -201,14 +202,14 @@
             <label class="field"><span>Kop baris 2</span><input class="input" id="sKop2" placeholder="DINAS PENDIDIKAN"></label>
             <label class="field"><span>Tempat cetak</span><input class="input" id="sTempat" placeholder="Sragen"></label>
             <label class="field"><span>Ketua Panitia</span><input class="input" id="sKetua"></label>
-            <label class="field"><span>NIP Ketua Panitia</span><input class="input" id="sNipKetua"></label>
             <label class="field"><span>Pejabat kedua (opsional)</span><input class="input" id="sPejabat2"></label>
-            <label class="field"><span>Jabatan pejabat kedua</span><input class="input" id="sJab2" placeholder="Mengetahui, Kepala Dinas ..."></label>
-            <label class="field"><span>NIP pejabat kedua</span><input class="input" id="sNip2"></label>
+            <label class="field"><span>Jabatan pejabat kedua</span><input class="input" id="sJab2" placeholder="Kepala Dinas ..."></label>
           </div>
           <label class="field"><span>Template BA Hasil (token: {{NOMOR_BA}} {{HARI}} {{TANGGAL_PANJANG}} {{TEMPAT}} {{NAMA_EVENT}} {{TAHUN}} {{CABANG}} {{KATEGORI}} {{JUMLAH_PESERTA}} {{JUMLAH_PESERTA_TERBILANG}} {{TABEL_JUARA}} {{BLOK_TTD}})</span>
             <textarea class="input" id="sTplHasil" rows="6"></textarea></label>
-          <label class="field"><span>Template BA Kandidat (token: {{NOMOR_BA}} {{HARI}} {{TANGGAL_PANJANG}} {{TEMPAT}} {{NAMA_EVENT}} {{TAHUN}} {{TABEL_KANDIDAT}} {{BLOK_TTD_KETUA}})</span>
+          <label class="field"><span>Template BA Semua Cabang (token: {{NOMOR_BA}} {{HARI}} {{TANGGAL_PANJANG}} {{TEMPAT}} {{NAMA_EVENT}} {{TAHUN}} {{JUMLAH_PESERTA}} {{JUMLAH_PESERTA_TERBILANG}} {{TABEL_SEMUA}} {{BLOK_TTD}})</span>
+            <textarea class="input" id="sTplSemua" rows="5"></textarea></label>
+          <label class="field"><span>Template BA Kandidat (token: {{NOMOR_BA}} {{HARI}} {{TANGGAL_PANJANG}} {{TEMPAT}} {{NAMA_EVENT}} {{TAHUN}} {{TABEL_KANDIDAT}} {{BLOK_TTD}})</span>
             <textarea class="input" id="sTplKab" rows="5"></textarea></label>
         </div>
         <div class="card" style="margin-bottom:1rem">
@@ -251,7 +252,24 @@ const kategoriById=id=>(DATA.kategori||[]).find(k=>k.id===id)||{};
 const petugasById=id=>(DATA.petugas||[]).find(p=>p.id===id)||{};
 const pesertaById=id=>(DATA.peserta||[]).find(p=>p.id===id)||{};
 const SET=()=>(DATA&&DATA.event&&DATA.event.settings)||{};
-const PRINT_CSS='<style>body{font-family:Georgia,serif;font-size:13px;margin:34px;color:#000}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #000;padding:5px 7px;font-size:11px;text-align:left}th{background:#eee}.kop{text-align:center;margin-bottom:6px}.kop .l1{font-weight:bold;font-size:15px}.kop .l2{font-size:13px}.kophr{border-bottom:3px double #000;margin:6px 0 14px}.ttd{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}.ttd .slot{flex:1;min-width:150px;text-align:center}.wm{position:fixed;top:38%;left:8%;font-size:44px;color:rgba(200,0,0,.15);transform:rotate(-28deg);font-weight:bold}.center{text-align:center}</style>';
+const BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+/* ---- CSS cetak gaya kedinasan ---- */
+const PRINT_CSS='<style>'+
+'@page{size:A4;margin:20mm 20mm 20mm 25mm}'+
+'body{font-family:"Times New Roman",Times,serif;font-size:12pt;color:#000;line-height:1.5;margin:0}'+
+'.kop{text-align:center}.kop .l1{font-size:14pt;font-weight:bold;text-transform:uppercase;letter-spacing:.5px}.kop .l2{font-size:13pt;font-weight:bold;text-transform:uppercase}'+
+'.kophr{border-bottom:4px double #000;margin:4px 0 16px}'+
+'.judul{text-align:center;margin:0 0 14px}.judul .t1{font-size:12pt;font-weight:bold;text-transform:uppercase;text-decoration:underline}.judul .t2{font-size:12pt;margin-top:2px}'+
+'p{margin:8px 0;text-align:justify}'+
+'table{width:100%;border-collapse:collapse;margin:10px 0;font-size:10.5pt}'+
+'th,td{border:1px solid #000;padding:4px 6px;vertical-align:top}'+
+'th{font-weight:bold;text-align:center}'+
+'.center{text-align:center}'+
+'.ttd{margin-top:26px}.ttd .ket{text-align:right;margin-bottom:8px}'+
+'.ttd-row{display:flex;flex-wrap:wrap;gap:10px}.ttd-row .slot{flex:1;min-width:150px;text-align:center;font-size:12pt}'+
+'.ttd-row .slot .nama{font-weight:bold;text-decoration:underline}'+
+'.wm{position:fixed;top:40%;left:6%;font-size:40px;color:rgba(200,0,0,.16);transform:rotate(-28deg);font-weight:bold}'+
+'</style>';
 
 function navToggle(open){const o=(open===undefined)?!el('sidenav').classList.contains('open'):open;
   el('sidenav').classList.toggle('open',o);el('scrim').classList.toggle('show',o);}
@@ -295,14 +313,14 @@ function isiRKategori(){
 }
 function isiSettings(){const s=SET();
   el('sKop1').value=s.kop_baris_1||'';el('sKop2').value=s.kop_baris_2||'';el('sTempat').value=s.tempat_cetak||'';
-  el('sKetua').value=s.ketua_panitia||'';el('sNipKetua').value=s.nip_ketua_panitia||'';
-  el('sPejabat2').value=s.pejabat_kedua||'';el('sJab2').value=s.jabatan_kedua||'';el('sNip2').value=s.nip_kedua||'';
-  el('sTplHasil').value=s.template_ba_hasil||'';el('sTplKab').value=s.template_ba_kabupaten||'';}
+  el('sKetua').value=s.ketua_panitia||'';
+  el('sPejabat2').value=s.pejabat_kedua||'';el('sJab2').value=s.jabatan_kedua||'';
+  el('sTplHasil').value=s.template_ba_hasil||'';el('sTplSemua').value=s.template_ba_semua||'';el('sTplKab').value=s.template_ba_kabupaten||'';}
 async function simpanSettings(){
   const p={kop_baris_1:el('sKop1').value.trim(),kop_baris_2:el('sKop2').value.trim(),tempat_cetak:el('sTempat').value.trim(),
-    ketua_panitia:el('sKetua').value.trim(),nip_ketua_panitia:el('sNipKetua').value.trim(),
-    pejabat_kedua:el('sPejabat2').value.trim(),jabatan_kedua:el('sJab2').value.trim(),nip_kedua:el('sNip2').value.trim(),
-    template_ba_hasil:el('sTplHasil').value,template_ba_kabupaten:el('sTplKab').value};
+    ketua_panitia:el('sKetua').value.trim(),
+    pejabat_kedua:el('sPejabat2').value.trim(),jabatan_kedua:el('sJab2').value.trim(),
+    template_ba_hasil:el('sTplHasil').value,template_ba_semua:el('sTplSemua').value,template_ba_kabupaten:el('sTplKab').value};
   const {data,error}=await (await sb()).rpc('spectra_save_settings',{p_kode_akses:sesi.kode_akses,p_settings:p});
   if(error)return toast(error.message,'err');
   if(data.error)return toast(data.error,'err');
@@ -403,7 +421,7 @@ function kolomLaporan(){return ['Peringkat','Cabang','Kategori','No','Nama','Asa
 function barisLaporan(){return dataLaporan().map(r=>[r.label_juara,r.nama_cabang,r.nama_kategori||'Umum',r.nomor_undian,r.nama_peserta,r.asal_instansi,
   (r.tempat_lahir||'')+(r.tanggal_lahir?', '+r.tanggal_lahir:''),r.nisn||'',r.kelas||'',r.jumlah_juri,r.total_nilai,r.kandidat_kabupaten?'YA':'']);}
 function excelLaporan(){XLSX.writeFile({SheetNames:['Laporan'],Sheets:{Laporan:XLSX.utils.aoa_to_sheet([kolomLaporan(),...barisLaporan()])}},'spectra_laporan.xlsx');toast('Diunduh.','ok');}
-function cetakLaporan(){const w=window.open('','_blank');w.document.write(PRINT_CSS+'<h2>'+(LAP==='kabupaten'?'Kandidat Kabupaten':'Juara per Cabang')+'</h2><p>'+DATA.event.nama+'</p><table><tr>'+kolomLaporan().map(c=>'<th>'+c+'</th>').join('')+'</tr>'+barisLaporan().map(r=>'<tr>'+r.map(x=>'<td>'+(x==null?'':x)+'</td>').join('')+'</tr>').join('')+'</table>');w.document.close();w.focus();w.print();}
+function cetakLaporan(){const w=window.open('','_blank');w.document.write('<html><head><meta charset="utf-8">'+PRINT_CSS+'</head><body><div class="judul"><div class="t1">'+(LAP==='kabupaten'?'Kandidat Maju ke Tingkat Kabupaten':'Daftar Juara per Cabang')+'</div><div class="t2">'+DATA.event.nama+' Tahun '+DATA.event.tahun+'</div></div><table><tr>'+kolomLaporan().map(c=>'<th>'+c+'</th>').join('')+'</tr>'+barisLaporan().map(r=>'<tr>'+r.map(x=>'<td>'+(x==null?'':x)+'</td>').join('')+'</tr>').join('')+'</table></body></html>');w.document.close();w.focus();w.print();}
 function excelSemuaNilai(){const aspek=[...new Set((DATA.kriteria||[]).map(k=>k.nama_aspek))];
   const rows=(DATA.nilai||[]).map(n=>{const p=pesertaById(n.peserta_id),c=cabangById(n.cabang_id),j=petugasById(n.petugas_id);
     const o={Cabang:c.nama_cabang,Kategori:kategoriById(p.kategori_id).nama_kategori||'Umum','No':p.nomor_undian,Peserta:p.nama_peserta,Asal:p.asal_instansi,Juri:j.nama_petugas};
@@ -412,6 +430,9 @@ function excelSemuaNilai(){const aspek=[...new Set((DATA.kriteria||[]).map(k=>k.
 
 function kopHtml(){const s=SET();if(!s.kop_baris_1&&!s.kop_baris_2)return '';
   return '<div class="kop"><div class="l1">'+(s.kop_baris_1||'')+'</div><div class="l2">'+(s.kop_baris_2||'')+'</div></div><div class="kophr"></div>';}
+function tglPanjang(){const d=new Date();return d.getDate()+' '+BULAN[d.getMonth()]+' '+d.getFullYear();}
+
+/* ---- CETAK REKAP: kedinasan, ttd kosong tanpa NIP ---- */
 function cetakRekap(){
   const fc=el('fRCabang').value;if(!fc)return toast('Pilih cabang dulu.','err');
   const fk=el('fRKategori').value||null;
@@ -424,37 +445,52 @@ function cetakRekap(){
   const byP={};(DATA.nilai||[]).filter(n=>n.cabang_id===fc&&(!fk||n.kategori_id===fk)).forEach(n=>{(byP[n.peserta_id]=byP[n.peserta_id]||{})[n.petugas_id]=n;});
   let belum=false;
   const rowHtml=(p,no,und)=>{
-    if(!p)return '<tr><td>'+no+'</td><td>'+und+'</td><td></td><td></td>'+juri.map(()=>'<td></td>').join('')+'<td></td><td></td></tr>';
+    if(!p)return '<tr><td class="center">'+no+'</td><td class="center">'+und+'</td><td></td><td></td>'+juri.map(()=>'<td></td>').join('')+'<td></td><td></td></tr>';
     const nm=byP[p.id]||{};let tot=0,allF=juri.length>0;
-    const cells=juri.map(j=>{const v=nm[j.id];if(!v){allF=false;return '<td></td>';}if(v.status!=='FINAL')allF=false;tot+=Number(v.total||0);return '<td>'+fmtN(v.total)+'</td>';});
+    const cells=juri.map(j=>{const v=nm[j.id];if(!v){allF=false;return '<td class="center"></td>';}if(v.status!=='FINAL')allF=false;tot+=Number(v.total||0);return '<td class="center">'+fmtN(v.total)+'</td>';});
     if(!allF)belum=true;
-    return '<tr><td>'+no+'</td><td>'+und+'</td><td>'+p.nama_peserta+'</td><td>'+(p.asal_instansi||'-')+'</td>'+cells.join('')+'<td><b>'+fmtN(tot)+'</b></td><td>'+(juara[p.id]||'')+'</td></tr>';};
+    return '<tr><td class="center">'+no+'</td><td class="center">'+und+'</td><td>'+p.nama_peserta+'</td><td>'+(p.asal_instansi||'-')+'</td>'+cells.join('')+'<td class="center"><b>'+fmtN(tot)+'</b></td><td class="center">'+(juara[p.id]||'')+'</td></tr>';};
   let no=0,rowsHtml='';
   for(let i=1;i<=maxUnd;i++){no++;rowsHtml+=rowHtml(byUnd[i]||null,i,byUnd[i]?String(i):'–');}
   noUnd.forEach(p=>{no++;rowsHtml+=rowHtml(p,no,'–');});
-  let ttd='<div class="ttd">';
-  juri.forEach((j,i)=>{ttd+='<div class="slot">Juri '+(i+1)+',<br><br><br><br><b>'+j.nama_petugas+'</b><br>NIP. '+(j.nip||'-')+'</div>';});
-  ttd+='<div class="slot">Mengetahui,<br>Ketua Panitia<br><br><br><br><b>'+(s.ketua_panitia||'(........................)')+'</b><br>NIP. '+(s.nip_ketua_panitia||'-')+'</div></div>';
-  const B=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];const d=new Date();
-  let h=PRINT_CSS+kopHtml()+(belum?'<div class="wm">BELUM DISAHKAN</div>':'')+
-    '<div class="center"><b>REKAPITULASI NILAI HASIL PENILAIAN</b><br>'+cab.nama_cabang+(kat?' — Kategori '+kat.nama_kategori:'')+'<br>'+DATA.event.nama+' Tahun '+DATA.event.tahun+'</div>'+
-    '<table><thead><tr><th>No</th><th>No. Undian</th><th>Nama Peserta</th><th>Asal Instansi</th>'+juri.map((j,i)=>'<th>J'+(i+1)+'</th>').join('')+'<th>Total</th><th>Peringkat</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
-    '<p>'+(s.tempat_cetak||'')+', '+d.getDate()+' '+B[d.getMonth()]+' '+d.getFullYear()+'</p>'+ttd;
-  const w=window.open('','_blank');w.document.write(h);w.document.close();w.focus();w.print();
+  let h='<html><head><meta charset="utf-8">'+PRINT_CSS+'</head><body>'+kopHtml();
+  if(belum)h+='<div class="wm">BELUM DISAHKAN</div>';
+  h+='<div class="judul"><div class="t1">Rekapitulasi Nilai Hasil Penilaian</div>'+
+     '<div class="t2">'+DATA.event.nama+' Tahun '+DATA.event.tahun+'</div>'+
+     '<div class="t2">Cabang '+cab.nama_cabang+(kat?' — Kategori '+kat.nama_kategori:'')+'</div></div>';
+  h+='<table><thead><tr><th>No</th><th>No. Undian</th><th>Nama Peserta</th><th>Asal Instansi</th>'+juri.map((j,i)=>'<th>Juri '+(i+1)+'</th>').join('')+'<th>Total</th><th>Peringkat</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>';
+  h+='<div class="ttd"><div class="ket">Ditetapkan di : '+(s.tempat_cetak||'....................')+'<br>Pada tanggal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: '+tglPanjang()+'</div><div class="ttd-row">';
+  juri.forEach((j,i)=>{h+='<div class="slot">Juri '+(i+1)+',<br><br><br><br>(..............................)</div>';});
+  h+='<div class="slot">Operator,<br><br><br><br>(..............................)</div>';
+  h+='<div class="slot">Mengetahui,<br>Ketua Panitia,<br><br><br><br><span class="nama">'+(s.ketua_panitia||'(..............................)')+'</span></div>';
+  h+='</div></div></body></html>';
+  const w=window.open('','_blank');w.document.write(h);w.document.close();w.focus();setTimeout(()=>w.print(),300);
 }
+
+/* ---- BERITA ACARA ---- */
 async function buatBA(jenis){
-  const fc=el('fRCabang').value||null,fk=el('fRKategori').value||null;
+  let fc=el('fRCabang').value||null,fk=el('fRKategori').value||null;
   if(jenis==='HASIL'&&!fc)return toast('Pilih cabang dulu.','err');
+  if(jenis==='SEMUA'||jenis==='KABUPATEN'){fc=null;fk=null;}
   const {data,error}=await (await sb()).rpc('spectra_create_ba',{p_kode_akses:sesi.kode_akses,p_jenis:jenis,p_cabang_id:fc,p_kategori_id:fk});
   if(error)return toast(error.message,'err');if(data.error)return toast(data.error,'err');
-  toast(data.exists?('BA '+data.nomor+' sudah terbit, menampilkan arsip.'):('BA '+data.nomor+' diterbitkan.'),data.exists?'warn':'ok');
+  toast(data.exists?('BA '+data.nomor+' sudah terbit — menampilkan arsip.'):('BA '+data.nomor+' diterbitkan.'),data.exists?'warn':'ok');
   cetakBAIsi(data.isi);await muat();
 }
+const BA_CSS='<style>.ba-head{text-align:center;margin:0 0 16px}.ba-head .ba-title{font-weight:bold;text-transform:uppercase;text-decoration:underline;font-size:12pt}.ba-head .ba-nomor{font-size:12pt;margin-top:2px}.ba-isi{text-align:justify}.ttd{margin-top:28px}.ttd-row{display:flex;flex-wrap:wrap;gap:12px}.ttd-row .slot{flex:1 1 170px;text-align:center;line-height:1.5}.ttd-row .slot .nama{font-weight:bold;text-decoration:underline}</style>';
+function baBody(isi){
+  const parts=String(isi||'').split(/\n\n/);let head='';
+  if(parts.length>1&&/BERITA ACARA|NOMOR/i.test(parts[0]))head=parts.shift();
+  const hl=head.split('\n');
+  const headHtml=head?('<div class="ba-head"><div class="ba-title">'+hl[0]+'</div>'+hl.slice(1).map(l=>'<div class="ba-nomor">'+l+'</div>').join('')+'</div>'):'';
+  return headHtml+'<div class="ba-isi">'+parts.join('\n\n').replace(/\n/g,'<br>')+'</div>';
+}
 function cetakBAIsi(isi){const w=window.open('','_blank');
-  w.document.write(PRINT_CSS+kopHtml()+String(isi||'').replace(/\n/g,'<br>'));w.document.close();w.focus();w.print();}
+  w.document.write('<html><head><meta charset="utf-8">'+PRINT_CSS+BA_CSS+'</head><body>'+kopHtml()+baBody(isi)+'</body></html>');
+  w.document.close();w.focus();setTimeout(()=>w.print(),300);}
 function cetakUlangBA(id){const b=BALIST.find(x=>x.id===id);if(!b)return;cetakBAIsi(b.isi_snapshot);}
 function renderBA(){el('baList').innerHTML=BALIST.length?BALIST.map(b=>
-  '<div class="baRow"><div><b>'+b.nomor+'</b> <span class="badge '+(b.jenis==='HASIL'?'proc':'ok')+'">'+b.jenis+'</span><br><small class="muted">'+(b.nama_cabang||'Seluruh event')+(b.nama_kategori?' • '+b.nama_kategori:'')+' • '+b.tanggal_ba+'</small></div>'+
+  '<div class="baRow"><div><b>'+b.nomor+'</b> <span class="badge '+(b.jenis==='HASIL'?'proc':b.jenis==='SEMUA'?'warn':'ok')+'">'+b.jenis+'</span><br><small class="muted">'+(b.nama_cabang||'Seluruh event')+(b.nama_kategori?' • '+b.nama_kategori:'')+' • '+b.tanggal_ba+'</small></div>'+
   '<button class="btn btn-ghost" onclick="cetakUlangBA(\''+b.id+'\')"><i data-lucide="printer"></i> Cetak Ulang</button></div>').join('')
   :'<span class="muted small">Belum ada berita acara.</span>';icons();}
 
@@ -468,8 +504,8 @@ function renderAkses(){el('tbAkses').innerHTML=(DATA.petugas||[]).map(p=>
   (p.is_active?'<button class="btn btn-warn btn-icon" title="Nonaktifkan" onclick="aksiPetugas(\'DEACTIVATE\',\''+p.id+'\')"><i data-lucide="user-minus"></i></button>'
     :'<button class="btn btn-primary btn-icon" title="Aktifkan" onclick="aksiPetugas(\'ACTIVATE\',\''+p.id+'\')"><i data-lucide="user-plus"></i></button>')+
   '<button class="btn btn-danger btn-icon" title="Hapus" onclick="aksiPetugas(\'DELETE\',\''+p.id+'\')"><i data-lucide="trash-2"></i></button></div></td></tr>').join('');icons();}
-function cetakPIN(){const w=window.open('','_blank');w.document.write(PRINT_CSS+'<h2>Daftar Kode Akses — '+DATA.event.nama+'</h2><table><tr><th>Nama</th><th>NIP</th><th>Peran</th><th>Cabang</th><th>Kategori</th><th>Kode</th></tr>'+
-  (DATA.petugas||[]).map(p=>'<tr><td>'+p.nama_petugas+'</td><td>'+(p.nip||'-')+'</td><td>'+p.peran+'</td><td>'+(cabangById(p.cabang_id).nama_cabang||'Umum')+'</td><td>'+((p.kategori_id&&kategoriById(p.kategori_id).nama_kategori)||'-')+'</td><td><b>'+p.kode_akses+'</b></td></tr>').join('')+'</table>');
+function cetakPIN(){const w=window.open('','_blank');w.document.write('<html><head><meta charset="utf-8">'+PRINT_CSS+'</head><body><div class="judul"><div class="t1">Daftar Kode Akses Petugas</div><div class="t2">'+DATA.event.nama+' Tahun '+DATA.event.tahun+'</div></div><table><tr><th>Nama</th><th>Peran</th><th>Cabang</th><th>Kategori</th><th>Kode Akses</th></tr>'+
+  (DATA.petugas||[]).map(p=>'<tr><td>'+p.nama_petugas+'</td><td>'+p.peran+'</td><td>'+(cabangById(p.cabang_id).nama_cabang||'Umum')+'</td><td>'+((p.kategori_id&&kategoriById(p.kategori_id).nama_kategori)||'-')+'</td><td><b>'+p.kode_akses+'</b></td></tr>').join('')+'</table></body></html>');
   w.document.close();w.focus();w.print();}
 function excelPIN(){XLSX.writeFile({SheetNames:['PIN'],Sheets:{PIN:XLSX.utils.json_to_sheet((DATA.petugas||[]).map(p=>({Nama:p.nama_petugas,NIP:p.nip||'',Peran:p.peran,
   Cabang:cabangById(p.cabang_id).nama_cabang||'Umum',Kategori:(p.kategori_id&&kategoriById(p.kategori_id).nama_kategori)||'-','Kode Akses':p.kode_akses})))}},'spectra_pin.xlsx');toast('Diunduh.','ok');}
@@ -536,4 +572,4 @@ async function resetEvent(mode){const ok=await promptKonfirmasi(mode==='NILAI'?'
   toast(data.rows+' baris nilai direset.','warn');await muat();}
 </script>
 </body>
-</html>
+</html
