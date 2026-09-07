@@ -436,6 +436,7 @@ function tglPanjang(){const d=new Date();return d.getDate()+' '+BULAN[d.getMonth
 function cetakRekap(){
   const fc=el('fRCabang').value;if(!fc)return toast('Pilih cabang dulu.','err');
   const fk=el('fRKategori').value||null;
+  const fN = n => { const x=Number(n)||0; return Number.isInteger(x)? String(x) : x.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:2}); };
   const cab=cabangById(fc),kat=fk?kategoriById(fk):null,s=SET();
   const juri=(DATA.petugas||[]).filter(p=>p.peran==='JURI'&&p.is_active&&p.cabang_id===fc&&(!fk||p.kategori_id===fk));
   const ps=(DATA.peserta||[]).filter(p=>p.cabang_id===fc&&(!fk||p.kategori_id===fk));
@@ -445,25 +446,25 @@ function cetakRekap(){
   const byP={};(DATA.nilai||[]).filter(n=>n.cabang_id===fc&&(!fk||n.kategori_id===fk)).forEach(n=>{(byP[n.peserta_id]=byP[n.peserta_id]||{})[n.petugas_id]=n;});
   let belum=false;
   const rowHtml=(p,no,und)=>{
-    if(!p)return '<tr><td class="center">'+no+'</td><td class="center">'+und+'</td><td></td><td></td>'+juri.map(()=>'<td></td>').join('')+'<td></td><td></td></tr>';
+    if(!p)return '<tr><td style="text-align:center">'+no+'</td><td style="text-align:center">'+und+'</td><td></td><td></td>'+juri.map(()=>'<td></td>').join('')+'<td></td><td></td></tr>';
     const nm=byP[p.id]||{};let tot=0,allF=juri.length>0;
-    const cells=juri.map(j=>{const v=nm[j.id];if(!v){allF=false;return '<td class="center"></td>';}if(v.status!=='FINAL')allF=false;tot+=Number(v.total||0);return '<td class="center">'+fmtN(v.total)+'</td>';});
+    const cells=juri.map(j=>{const v=nm[j.id];if(!v){allF=false;return '<td style="text-align:center"></td>';}if(v.status!=='FINAL')allF=false;tot+=Number(v.total||0);return '<td style="text-align:center">'+fN(v.total)+'</td>';});
     if(!allF)belum=true;
-    return '<tr><td class="center">'+no+'</td><td class="center">'+und+'</td><td>'+p.nama_peserta+'</td><td>'+(p.asal_instansi||'-')+'</td>'+cells.join('')+'<td class="center"><b>'+fmtN(tot)+'</b></td><td class="center">'+(juara[p.id]||'')+'</td></tr>';};
+    return '<tr><td style="text-align:center">'+no+'</td><td style="text-align:center">'+und+'</td><td>'+p.nama_peserta+'</td><td>'+(p.asal_instansi||'-')+'</td>'+cells.join('')+'<td style="text-align:center"><b>'+fN(tot)+'</b></td><td style="text-align:center">'+(juara[p.id]||'')+'</td></tr>';};
   let no=0,rowsHtml='';
   for(let i=1;i<=maxUnd;i++){no++;rowsHtml+=rowHtml(byUnd[i]||null,i,byUnd[i]?String(i):'–');}
   noUnd.forEach(p=>{no++;rowsHtml+=rowHtml(p,no,'–');});
-  let h='<html><head><meta charset="utf-8">'+PRINT_CSS+'</head><body>'+kopHtml();
-  if(belum)h+='<div class="wm">BELUM DISAHKAN</div>';
-  h+='<div class="judul"><div class="t1">Rekapitulasi Nilai Hasil Penilaian</div>'+
-     '<div class="t2">'+DATA.event.nama+' Tahun '+DATA.event.tahun+'</div>'+
-     '<div class="t2">Cabang '+cab.nama_cabang+(kat?' — Kategori '+kat.nama_kategori:'')+'</div></div>';
-  h+='<table><thead><tr><th>No</th><th>No. Undian</th><th>Nama Peserta</th><th>Asal Instansi</th>'+juri.map((j,i)=>'<th>Juri '+(i+1)+'</th>').join('')+'<th>Total</th><th>Peringkat</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>';
-  h+='<div class="ttd"><div class="ket">Ditetapkan di : '+(s.tempat_cetak||'....................')+'<br>Pada tanggal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: '+tglPanjang()+'</div><div class="ttd-row">';
-  juri.forEach((j,i)=>{h+='<div class="slot">Juri '+(i+1)+',<br><br><br><br>(..............................)</div>';});
-  h+='<div class="slot">Operator,<br><br><br><br>(..............................)</div>';
-  h+='<div class="slot">Mengetahui,<br>Ketua Panitia,<br><br><br><br><span class="nama">'+(s.ketua_panitia||'(..............................)')+'</span></div>';
-  h+='</div></div></body></html>';
+  let ttd='<div class="ttd"><div class="ttd-row">';
+  juri.forEach((j,i)=>{ttd+='<div class="slot">Juri '+(i+1)+',<br><br><br><br>(..............................)</div>';});
+  ttd+='<div class="slot">Operator,<br><br><br><br>(..............................)</div>';
+  ttd+='<div class="slot">Mengetahui,<br>Ketua Panitia<br><br><br><br><span class="nama">'+(s.ketua_panitia||'(..............................)')+'</span></div></div></div>';
+  const d=new Date();
+  let h=PRINT_CSS+kopHtml()+(belum?'<div class="wm">BELUM DISAHKAN</div>':'')+
+    '<div class="judul"><div class="t1">Rekapitulasi Nilai Hasil Penilaian</div>'+
+    '<div class="t2">'+DATA.event.nama+' Tahun '+DATA.event.tahun+'</div>'+
+    '<div class="t2">Cabang '+cab.nama_cabang+(kat?' — Kategori '+kat.nama_kategori:'')+'</div></div>'+
+    '<table><thead><tr><th>No</th><th>No. Undian</th><th>Nama Peserta</th><th>Asal Instansi</th>'+juri.map((j,i)=>'<th>Juri '+(i+1)+'</th>').join('')+'<th>Total</th><th>Peringkat</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
+    '<p style="text-align:right">'+(s.tempat_cetak||'')+', '+d.getDate()+' '+BULAN[d.getMonth()]+' '+d.getFullYear()+'</p>'+ttd+'</body></html>';
   const w=window.open('','_blank');w.document.write(h);w.document.close();w.focus();setTimeout(()=>w.print(),300);
 }
 
