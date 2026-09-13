@@ -80,5 +80,5 @@ function initConn(elId) {
 
 /* ---------- Lucide & util ---------- */
 function icons() { if (window.lucide) lucide.createIcons(); }
-const fmtN = n => { const x = Math.round((Number(n) || 0) * 100) / 100; return x % 1 === 0 ? String(x) : x.toFixed(2); };
+const fmtN = n => (n===null||n===undefined||n==='')?'':(function(x){return Number.isInteger(x)?String(x):x.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:2});})(Number(n));
 document.addEventListener('DOMContentLoaded', icons);
