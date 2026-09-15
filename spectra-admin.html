@@ -169,6 +169,25 @@
             <tbody id="tbLaporan"></tbody></table></div>
           <p class="muted small" id="lapNote" style="margin-top:.7rem"></p>
         </div>
+
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-head"><h3><i data-lucide="users"></i> Cetak Daftar Peserta & Daftar Hadir</h3></div>
+          <div class="toolbar">
+            <select class="input" id="fDCabang" style="width:auto"><option value="">Semua Cabang</option></select>
+            <select class="input" id="fDKategori" style="width:auto"><option value="">Semua Kategori</option></select>
+            <select class="input" id="fDSort" style="width:auto">
+              <option value="undian">Urut: Nomor Undian</option>
+              <option value="cabang">Urut: Cabang</option>
+              <option value="sekolah">Urut: Sekolah</option>
+            </select>
+          </div>
+          <div class="toolbar" style="margin-bottom:0">
+            <button class="btn btn-primary" onclick="cetakDaftarPeserta()"><i data-lucide="printer"></i> Cetak Daftar Peserta (Verifikasi)</button>
+            <button class="btn btn-ghost" onclick="cetakDaftarHadir()"><i data-lucide="clipboard-check"></i> Cetak Daftar Hadir (TTD)</button>
+          </div>
+          <p class="muted small" style="margin-top:.6rem">Daftar Peserta = lembar verifikasi manual panitia (landscape). Daftar Hadir = lembar tanda tangan peserta yang dibawa operator cabang.</p>
+        </div>
+
         <div class="card" style="margin-bottom:1rem">
           <div class="card-head"><h3><i data-lucide="file-signature"></i> Cetak Rekap & Berita Acara</h3></div>
           <div class="toolbar">
@@ -183,6 +202,7 @@
           </div>
           <p class="muted small">Rekap & BA Hasil mengikuti cabang+kategori terpilih. BA Semua Cabang = Juara 1–3 & Harapan 1–3 seluruh cabang. BA Kandidat = juara 1 tiap cabang. Cetak BA menyertakan QR metadata arsip.</p>
         </div>
+
         <div class="card">
           <div class="card-head"><h3><i data-lucide="archive"></i> Riwayat Berita Acara</h3></div>
           <div id="baList" class="muted small">Belum ada berita acara.</div>
@@ -289,21 +309,17 @@ const PRINT_CSS='<style>@page{size:A4;margin:20mm 20mm 20mm 25mm}body{font-famil
 '.kop .k1{font-size:14pt;font-weight:bold;text-transform:uppercase}.kop .k2{font-size:13pt;font-weight:bold;text-transform:uppercase}.kop .k3{font-size:10pt;font-weight:normal}'+
 '.judul{text-align:center;margin:0 0 14px}.judul .t1{font-size:12pt;font-weight:bold;text-transform:uppercase;text-decoration:underline}.judul .t2{font-size:12pt;margin-top:2px}'+
 'p{margin:8px 0;text-align:justify}'+
-
-/* tabel cetak umum */
 'table.data{width:100%;border-collapse:collapse;margin:10px 0;font-size:10.5pt}'+
 'table.data th,table.data td{border:1px solid #000!important;padding:4px 6px;vertical-align:top}'+
 'table.data th{font-weight:bold;text-align:center}'+
-
-/* tabel di dalam BA, walau tanpa class="data" */
 '.ba-isi table{width:100%;border-collapse:collapse!important;margin:10px 0;font-size:10.5pt}'+
 '.ba-isi table th,.ba-isi table td{border:1px solid #000!important;padding:4px 6px;vertical-align:top}'+
 '.ba-isi table th{font-weight:bold;text-align:center}'+
-
 '.ttd{margin-top:26px}.ttd .ket{text-align:right;margin-bottom:8px}.ttd-row{display:flex;flex-wrap:wrap;gap:12px}.ttd-row .slot{flex:1 1 150px;text-align:center;line-height:1.5}.ttd-row .slot .nama{font-weight:bold;text-decoration:underline}'+
 '.ba-head{text-align:center;margin:0 0 16px}.ba-head .ba-title{font-weight:bold;text-transform:uppercase;text-decoration:underline}.ba-head .ba-nomor{margin-top:2px}'+
 '.ba-isi{text-align:justify}.qrbox{position:fixed;bottom:16px;right:16px;text-align:center}.qrbox img{width:90px;height:90px}.qrbox div{font-size:8pt}'+
 '.wm{position:fixed;top:40%;left:6%;font-size:40px;color:rgba(200,0,0,.16);transform:rotate(-28deg);font-weight:bold}</style>';
+const cssLandscape=()=>PRINT_CSS.replace('@page{size:A4;','@page{size:A4 landscape;');
 
 function kopHtml(){
   const s=SET();
@@ -354,7 +370,9 @@ function isiFilter(){
   el('fCabang').innerHTML=opts;el('fPCabang').innerHTML=opts;
   el('fMCabang').innerHTML=opts.replace('Semua Cabang','Pilih Cabang');
   el('fLCabang').innerHTML=opts;el('fRCabang').innerHTML=opts.replace('Semua Cabang','Pilih Cabang');
-  el('fKategori').innerHTML='<option value="">Semua Kategori</option>'+DATA.kategori.map(k=>'<option value="'+k.id+'">'+k.nama_kategori+'</option>').join('');
+  el('fDCabang').innerHTML=opts;
+  const kopts='<option value="">Semua Kategori</option>'+DATA.kategori.map(k=>'<option value="'+k.id+'">'+k.nama_kategori+'</option>').join('');
+  el('fKategori').innerHTML=kopts;el('fDKategori').innerHTML=kopts;
 }
 function isiRKategori(){
   const fc=el('fRCabang').value;
@@ -390,19 +408,19 @@ function renderDasbor(){
   let nPr=0,nF=0;
   el('tbDasbor').innerHTML=rows.map((r,i)=>{let st,cls;
     if(!r.m){st='BELUM';cls='none';}else if(r.m.final===r.m.juri){st='FINAL';cls='ok';nF++;}else{st='PROSES';cls='proc';nPr++;}
-    return '<tr><td>'+(i+1)+'</td><td>'+r.p.nomor_undian+'</td><td><b>'+r.p.nama_peserta+'</b></td><td>'+(r.p.asal_instansi||'-')+
+    return '<tr><td>'+(i+1)+'</td><td>'+r.p.nomor_undian+'</td><td><b>'+esc(r.p.nama_peserta)+'</b></td><td>'+(r.p.asal_instansi||'-')+
       '</td><td class="small muted">'+cabangById(r.p.cabang_id).nama_cabang+'</td><td class="small muted">'+(kategoriById(r.p.kategori_id).nama_kategori||'Umum')+
       '</td><td class="tnum">'+(r.m?r.m.juri:0)+'</td><td class="tnum"><b>'+fmtNilai(r.m?r.m.total:0)+'</b></td><td><span class="badge '+cls+'">'+st+'</span></td></tr>';}).join('');
   el('stP').textContent=(DATA.peserta||[]).length;el('stPr').textContent=nPr;el('stF').textContent=nF;el('stC').textContent=(DATA.cabang||[]).length;
   el('progCabang').innerHTML=(DATA.cabang||[]).map(c=>{const ps=(DATA.peserta||[]).filter(p=>p.cabang_id===c.id);
     const fin=ps.filter(p=>{const m=map[p.id];return m&&m.final===m.juri;}).length;
     const pct=ps.length?Math.round(fin/ps.length*100):0;
-    return '<div class="progrow"><div class="lbl"><span>'+c.nama_cabang+'</span><small class="tnum">'+fin+'/'+ps.length+' final</small></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>';}).join('')||'<p class="muted small">Belum ada cabang.</p>';
+    return '<div class="progrow"><div class="lbl"><span>'+esc(c.nama_cabang)+'</span><small class="tnum">'+fin+'/'+ps.length+' final</small></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>';}).join('')||'<p class="muted small">Belum ada cabang.</p>';
 }
 
 function renderPeserta(){const q=(el('qPeserta').value||'').toLowerCase();const fc=el('fPCabang').value;
   const rows=(DATA.peserta||[]).filter(p=>(!fc||p.cabang_id===fc)&&(!q||(p.nama_peserta+' '+(p.asal_instansi||'')).toLowerCase().includes(q)));
-  el('tbPeserta').innerHTML=rows.map(p=>'<tr><td>'+p.nomor_undian+'</td><td><b>'+p.nama_peserta+'</b></td><td>'+(p.asal_instansi||'-')+
+  el('tbPeserta').innerHTML=rows.map(p=>'<tr><td>'+p.nomor_undian+'</td><td><b>'+esc(p.nama_peserta)+'</b></td><td>'+(p.asal_instansi||'-')+
     '</td><td class="small muted">'+cabangById(p.cabang_id).nama_cabang+'</td><td class="small muted">'+(kategoriById(p.kategori_id).nama_kategori||'Umum')+
     '</td><td class="small muted">'+(p.tempat_lahir||'')+(p.tanggal_lahir?', '+p.tanggal_lahir:'')+'</td><td class="small muted">'+(p.nisn||'-')+'</td><td class="small muted">'+(p.kelas||'-')+
     '</td><td><div class="actCell"><button class="btn btn-ghost btn-icon" title="Edit" onclick="openEditPeserta(\''+p.id+'\')"><i data-lucide="pencil"></i></button>'+
@@ -414,8 +432,8 @@ function openEditPeserta(id){const p=pesertaById(id);if(!p)return;
    '<label class="field"><span>Nomor Undian</span><input class="input" id="eNomor" value="'+esc(p.nomor_undian)+'"></label>'+
    '<label class="field"><span>Nama</span><input class="input" id="eNama" value="'+esc(p.nama_peserta)+'"></label>'+
    '<label class="field"><span>Asal Instansi</span><input class="input" id="eAsal" value="'+esc(p.asal_instansi||'')+'"></label>'+
-   '<label class="field"><span>Cabang</span><select class="input" id="eCabang">'+DATA.cabang.map(c=>'<option value="'+c.id+'" '+(p.cabang_id===c.id?'selected':'')+'>'+c.nama_cabang+'</option>').join('')+'</select></label>'+
-   '<label class="field"><span>Kategori</span><select class="input" id="eKategori"><option value="">(Tanpa kategori)</option>'+DATA.kategori.map(k=>'<option value="'+k.id+'" '+(p.kategori_id===k.id?'selected':'')+'>'+k.nama_kategori+'</option>').join('')+'</select></label>'+
+   '<label class="field"><span>Cabang</span><select class="input" id="eCabang">'+DATA.cabang.map(c=>'<option value="'+c.id+'" '+(p.cabang_id===c.id?'selected':'')+'>'+esc(c.nama_cabang)+'</option>').join('')+'</select></label>'+
+   '<label class="field"><span>Kategori</span><select class="input" id="eKategori"><option value="">(Tanpa kategori)</option>'+DATA.kategori.map(k=>'<option value="'+k.id+'" '+(p.kategori_id===k.id?'selected':'')+'>'+esc(k.nama_kategori)+'</option>').join('')+'</select></label>'+
    '<label class="field"><span>Tempat Lahir</span><input class="input" id="eTempat" value="'+esc(p.tempat_lahir||'')+'"></label>'+
    '<label class="field"><span>Tanggal Lahir</span><input class="input" type="date" id="eTgl" value="'+(p.tanggal_lahir||'')+'"></label>'+
    '<label class="field"><span>NISN</span><input class="input" id="eNisn" value="'+esc(p.nisn||'')+'"></label>'+
@@ -457,7 +475,7 @@ function parseFile(file){if(!file)return;const rd=new FileReader();
       const cabRef=iC>=0?String(r[iC]??'').trim():'';
       const cab=(DATA.cabang||[]).find(c=>c.kode_cabang.toLowerCase()===cabRef.toLowerCase()||c.nama_cabang.toLowerCase()===cabRef.toLowerCase());
       let ok=true,pesan='✅ siap';if(!nomor||!nama){ok=false;pesan='🔴 nomor/nama kosong';}else if(!cab){ok=false;pesan='🔴 cabang tidak dikenal';}
-      PREV.push({baris:hi+2+idx,nomor,nomor,nama,asal:iA>=0?String(r[iA]??'').trim():'',cabang:cabRef,
+      PREV.push({baris:hi+2+idx,nomor,nama,asal:iA>=0?String(r[iA]??'').trim():'',cabang:cabRef,
         kategori:iK>=0?String(r[iK]??'').trim():'',tempat:iT>=0?String(r[iT]??'').trim():'',
         tanggal:iTL>=0?fmtTglExcel(r[iTL]):'',nisn:iNISN>=0?String(r[iNISN]??'').trim():'',kelas:iKLS>=0?String(r[iKLS]??'').trim():'',ok,pesan});});
     const okN=PREV.filter(r=>r.ok).length;el('imporPrev').hidden=false;el('pvOk').textContent=okN+' valid';el('pvErr').textContent=(PREV.length-okN)+' error';el('btnImpor').disabled=(okN===0);
@@ -514,6 +532,73 @@ function excelSemuaNilai(){const aspek=[...new Set((DATA.kriteria||[]).map(k=>k.
     aspek.forEach(a=>o[a]=(n.rincian||{})[a]??'');o.Penalti=n.penalti;o.Total=n.total;o.Status=n.status;o.Catatan=n.catatan_juri||'';return o;});
   XLSX.writeFile({SheetNames:['Nilai'],Sheets:{Nilai:XLSX.utils.json_to_sheet(rows)}},'spectra_semua_nilai.xlsx');toast('Diunduh.','ok');}
 
+/* ===== DAFTAR PESERTA & DAFTAR HADIR ===== */
+function daftarRows(){
+  const fc=el('fDCabang').value, fk=el('fDKategori').value, sort=el('fDSort').value;
+  let rows=(DATA.peserta||[]).filter(p=>(!fc||p.cabang_id===fc)&&(!fk||p.kategori_id===fk));
+  rows=rows.map(p=>({p,cab:cabangById(p.cabang_id),kat:kategoriById(p.kategori_id)}));
+  const num=x=>parseInt(x.p.nomor_undian,10)||0;
+  if(sort==='cabang')rows.sort((a,b)=>(a.cab.nama_cabang||'').localeCompare(b.cab.nama_cabang||'')||num(a)-num(b));
+  else if(sort==='sekolah')rows.sort((a,b)=>(a.p.asal_instansi||'').localeCompare(b.p.asal_instansi||'')||num(a)-num(b));
+  else rows.sort((a,b)=>num(a)-num(b));
+  return rows;
+}
+function cetakDaftarPeserta(){
+  const rows=daftarRows();
+  let h=kopHtml();
+  h+='<div class="judul"><div class="t1">Daftar Peserta — Verifikasi Manual Panitia</div>'+
+     '<div class="t2">'+esc(DATA.event.nama)+' Tahun '+DATA.event.tahun+'</div>'+
+     '<div class="t2">'+(el('fDCabang').value?('Cabang: '+esc(cabangById(el('fDCabang').value).nama_cabang)):'Semua Cabang')+
+     (el('fDKategori').value?(' — Kategori: '+esc(kategoriById(el('fDKategori').value).nama_kategori)):'')+'</div></div>';
+  h+='<table class="data"><thead><tr><th>No</th><th>Undian</th><th>Sekolah</th><th>Cabang</th><th>Kategori</th><th>Nama</th><th>TTL</th><th>NISN</th><th>Kelas</th></tr></thead><tbody>';
+  rows.forEach((r,i)=>{
+    h+='<tr><td style="text-align:center">'+(i+1)+'</td>'+
+       '<td style="text-align:center">'+esc(r.p.nomor_undian)+'</td>'+
+       '<td>'+esc(r.p.asal_instansi||'-')+'</td>'+
+       '<td>'+esc(r.cab.nama_cabang||'-')+'</td>'+
+       '<td>'+esc(r.kat.nama_kategori||'Umum')+'</td>'+
+       '<td>'+esc(r.p.nama_peserta)+'</td>'+
+       '<td>'+esc((r.p.tempat_lahir||'')+(r.p.tanggal_lahir?', '+r.p.tanggal_lahir:''))+'</td>'+
+       '<td>'+esc(r.p.nisn||'-')+'</td>'+
+       '<td style="text-align:center">'+esc(r.p.kelas||'-')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  const w=window.open('','_blank');
+  w.document.write('<html><head><meta charset="utf-8">'+cssLandscape()+'</head><body>'+h+'</body></html>');
+  w.document.close();w.focus();setTimeout(()=>w.print(),300);
+}
+function cetakDaftarHadir(){
+  const fc=el('fDCabang').value;
+  if(!fc)return toast('Pilih cabang untuk Daftar Hadir (lembar dibawa operator cabang).','err');
+  const fk=el('fDKategori').value;
+  const rows=daftarRows();
+  const cab=cabangById(fc);
+  const op=(DATA.petugas||[]).find(p=>p.peran==='OPERATOR'&&p.cabang_id===fc&&(!fk||p.kategori_id===fk))
+        ||(DATA.petugas||[]).find(p=>p.peran==='OPERATOR'&&p.cabang_id===fc);
+  let h=kopHtml();
+  h+='<div class="judul"><div class="t1">Daftar Hadir Peserta</div>'+
+     '<div class="t2">'+esc(DATA.event.nama)+' Tahun '+DATA.event.tahun+'</div>'+
+     '<div class="t2">Cabang '+esc(cab.nama_cabang)+(fk?(' — Kategori '+esc(kategoriById(fk).nama_kategori)):'')+'</div></div>';
+  h+='<table class="data"><thead><tr><th style="width:40px">No</th><th style="width:70px">Undian</th><th>Nama Peserta</th><th>Asal Sekolah</th><th style="width:60px">Kelas</th><th style="width:240px">Tanda Tangan</th></tr></thead><tbody>';
+  rows.forEach((r,i)=>{
+    h+='<tr><td style="text-align:center">'+(i+1)+'</td>'+
+       '<td style="text-align:center">'+esc(r.p.nomor_undian)+'</td>'+
+       '<td>'+esc(r.p.nama_peserta)+'</td>'+
+       '<td>'+esc(r.p.asal_instansi||'-')+'</td>'+
+       '<td style="text-align:center">'+esc(r.p.kelas||'-')+'</td>'+
+       '<td style="height:36px"></td></tr>';
+  });
+  h+='</tbody></table>';
+  const d=new Date();const B=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  h+='<div style="margin-top:26px;display:flex;justify-content:space-between;gap:40px">'+
+     '<div style="text-align:center;flex:1">Mengetahui,<br>Ketua Panitia<br><br><br><br><b>'+esc(SET().ketua_panitia||'(..............................)')+'</b></div>'+
+     '<div style="text-align:center;flex:1">'+esc(SET().tempat_cetak||'')+', '+d.getDate()+' '+B[d.getMonth()]+' '+d.getFullYear()+'<br>Operator Cabang,<br><br><br><br><b>'+esc(op?op.nama_petugas:'(..............................)')+'</b></div></div>';
+  const w=window.open('','_blank');
+  w.document.write('<html><head><meta charset="utf-8">'+cssLandscape()+'</head><body>'+h+'</body></html>');
+  w.document.close();w.focus();setTimeout(()=>w.print(),300);
+}
+
+/* ===== REKAP BERTANDATANGAN & BA ===== */
 function cetakRekap(){
   const fc=el('fRCabang').value;if(!fc)return toast('Pilih cabang dulu.','err');
   const fk=el('fRKategori').value||null;
@@ -546,15 +631,13 @@ function cetakRekap(){
   const w=window.open('','_blank');w.document.write('<html><head><meta charset="utf-8">'+PRINT_CSS+'</head><body>'+h+'</body></html>');
   w.document.close();w.focus();setTimeout(()=>w.print(),300);
 }
-
 async function buatBA(jenis){
   let fc=el('fRCabang').value||null,fk=el('fRKategori').value||null;
   if(jenis==='HASIL'&&!fc)return toast('Pilih cabang dulu.','err');
   if(jenis==='SEMUA'||jenis==='KABUPATEN'){fc=null;fk=null;}
   const {data,error}=await (await sb()).rpc('spectra_create_ba',{p_kode_akses:sesi.kode_akses,p_jenis:jenis,p_cabang_id:fc,p_kategori_id:fk});
   if(error)return toast(error.message,'err');if(data.error)return toast(data.error,'err');
-  const msg=data.exists?('BA '+data.nomor+' sudah terbit — menampilkan arsip.'):('BA '+data.nomor+' diterbitkan.');
-  toast(msg,data.exists?'warn':'ok');
+  toast(data.exists?('BA '+data.nomor+' sudah terbit — menampilkan arsip.'):('BA '+data.nomor+' diterbitkan.'),data.exists?'warn':'ok');
   await muat();
   const ba=BALIST.find(x=>x.nomor===data.nomor);if(ba)cetakBAIsi(ba);
 }
@@ -585,6 +668,7 @@ function renderBA(){el('baList').innerHTML=BALIST.length?BALIST.map(b=>
   '<button class="btn btn-ghost btn-icon" title="Cetak" onclick="cetakBAIsi(BALIST.find(x=>x.id===\''+b.id+'\'))"><i data-lucide="printer"></i></button></div></div>').join('')
   :'<span class="muted small">Belum ada berita acara.</span>';icons();}
 
+/* ===== EDITOR TEMPLATE ===== */
 const TOKENS=['{{NOMOR_BA}}','{{HARI}}','{{TANGGAL_PANJANG}}','{{TEMPAT}}','{{NAMA_EVENT}}','{{TAHUN}}','{{CABANG}}','{{KATEGORI}}','{{JUMLAH_PESERTA}}','{{JUMLAH_PESERTA_TERBILANG}}','{{TABEL_JUARA}}','{{TABEL_SEMUA}}','{{TABEL_KANDIDAT}}','{{BLOK_TTD}}'];
 function loadTpl(){
   const key=el('selTpl').value;const s=SET();
@@ -598,9 +682,9 @@ function prevTpl(){
   const rep={'{{NOMOR_BA}}':'001/BA-CONTOH/2026','{{HARI}}':'Senin','{{TANGGAL_PANJANG}}':'1 Januari 2026','{{TEMPAT}}':(s.tempat_cetak||'Tempat'),
    '{{NAMA_EVENT}}':DATA.event.nama,'{{TAHUN}}':String(DATA.event.tahun),'{{CABANG}}':'Cabang Contoh','{{KATEGORI}}':'Kategori Contoh',
    '{{JUMLAH_PESERTA}}':'12','{{JUMLAH_PESERTA_TERBILANG}}':'dua belas',
-   '{{TABEL_JUARA}}':'<table class="data"><tr><th>Peringkat</th><th>No.</th><th>Nama</th><th>Asal</th><th>Total</th></tr><tr><td>Juara 1</td><td>01</td><td>Nama Contoh</td><td>SD Contoh</td><td>180</td></tr></table>',
-   '{{TABEL_SEMUA}}':'<table class="data"><tr><th>Cabang</th><th>Peringkat</th><th>Nama</th><th>Total</th></tr><tr><td>Contoh</td><td>Juara 1</td><td>Nama Contoh</td><td>180</td></tr></table>',
-   '{{TABEL_KANDIDAT}}':'<table class="data"><tr><th>Cabang</th><th>Nama</th><th>Total</th></tr><tr><td>Contoh</td><td>Nama Contoh</td><td>180</td></tr></table>',
+   '{{TABEL_JUARA}}':'<table><tr><th>Peringkat</th><th>No.</th><th>Nama</th><th>Asal</th><th>Total</th></tr><tr><td>Juara 1</td><td>01</td><td>Nama Contoh</td><td>SD Contoh</td><td>180</td></tr></table>',
+   '{{TABEL_SEMUA}}':'<table><tr><th>Cabang</th><th>Peringkat</th><th>Nama</th><th>Total</th></tr><tr><td>Contoh</td><td>Juara 1</td><td>Nama Contoh</td><td>180</td></tr></table>',
+   '{{TABEL_KANDIDAT}}':'<table><tr><th>Cabang</th><th>Nama</th><th>Total</th></tr><tr><td>Contoh</td><td>Nama Contoh</td><td>180</td></tr></table>',
    '{{BLOK_TTD}}':'<div class="ttd"><div class="ttd-row"><div class="slot">Juri 1,<br><br><br><br>(..............................)</div><div class="slot">Mengetahui,<br>Ketua Panitia<br><br><br><br><span class="nama">'+(s.ketua_panitia||'(..............................)')+'</span></div></div></div>'};
   let out=t;Object.keys(rep).forEach(k=>{out=out.split(k).join(rep[k]);});
   el('prevTplBox').innerHTML=kopHtml()+out.replace(/\n/g,'<br>');}
@@ -613,10 +697,11 @@ async function simpanTemplate(){
   const {data,error}=await (await sb()).rpc('spectra_save_settings',{p_kode_akses:sesi.kode_akses,p_settings:p});
   if(error)return toast(error.message,'err');if(data.error)return toast(data.error,'err');
   toast('Template tersimpan.','ok');await muat();}
-function resetTemplate(){const ok=spectraConfirm?null:null;
+function resetTemplate(){
   if(!confirm('Kosongkan template ini agar memakai default server?'))return;
   el('taTpl').value='';prevTpl();}
 
+/* ===== AKSES & PETUGAS ===== */
 function renderAkses(){el('tbAkses').innerHTML=(DATA.petugas||[]).map(p=>
   '<tr'+(p.is_active?'':' style="opacity:.55"')+'><td><b>'+esc(p.nama_petugas)+'</b>'+(p.nip?'<br><small class="muted">NIP '+esc(p.nip)+'</small>':'')+(p.is_active?'':' <span class="badge danger">NONAKTIF</span>')+
   '</td><td><span class="badge '+(p.peran==='ADMIN'?'warn':p.peran==='OPERATOR'?'proc':'ok')+'">'+p.peran+'</span></td>'+
@@ -666,6 +751,7 @@ async function aksiPetugas(aksi,id){const t=petugasById(id);
   const {data,error}=await (await sb()).rpc('spectra_manage_petugas',{p_kode_akses_admin:sesi.kode_akses,p_aksi:aksi,p_payload:{id}});
   if(error)return toast(error.message,'err');if(data.error)return toast(data.error,'err');toast('Berhasil.','ok');await muat();}
 
+/* ===== EVENT ===== */
 function renderEvent(){const e=DATA.event;
   el('eventInfo').innerHTML='<div class="card"><small>Nama</small><b>'+esc(e.nama)+'</b></div>'+
     '<div class="card"><small>Tahun</small><b>'+e.tahun+'</b></div>'+
