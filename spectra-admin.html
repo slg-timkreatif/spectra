@@ -11,8 +11,6 @@
 <script>if(!window.lucide) document.write('<script src="https://unpkg.com/lucide@latest"><\/script>')</script>
 <script src="vendor/xlsx.full.min.js"></script>
 <script>if(!window.XLSX) document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
-<script src="vendor/qrcode.min.js"></script>
-<script>if(!window.QRCode) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>')</script>
 <script src="spectra-ui.js?v=3"></script>
 <script>initTheme('light')</script>
 <style>
@@ -649,12 +647,11 @@ async function buatBA(jenis){
   await muat();
   const ba=BALIST.find(x=>x.nomor===data.nomor);if(ba)cetakBAIsi(ba);
 }
-async function cetakBAIsi(ba){
-  const qr=await qrDataUrl('SPECTRA|'+DATA.event.nama+'|'+ba.nomor+'|'+ba.tanggal_ba+'|'+(ba.qr_sig||'-'));
+function cetakBAIsi(ba){
   const w=window.open('','_blank');
-  w.document.write('<html><head><meta charset="utf-8">'+PRINT_CSS+'</head><body>'+kopHtml()+baBody(ba.isi_snapshot)+
-    (qr?'<div class="qrbox"><img src="'+qr+'"><div>'+esc(ba.nomor)+'</div></div>':'')+'</body></html>');
-  w.document.close();w.focus();setTimeout(()=>w.print(),300);}
+  w.document.write('<html><head><meta charset="utf-8">'+PRINT_CSS+'</head><body>'+kopHtml()+baBody(ba.isi_snapshot)+'</body></html>');
+  w.document.close();w.focus();setTimeout(()=>w.print(),300);
+}
 function openEditBA(id){const ba=BALIST.find(x=>x.id===id);if(!ba)return;
   const ovl=document.createElement('div');ovl.className='ovl';
   ovl.innerHTML='<div class="card wide"><h3 style="margin-bottom:.4rem">✏️ Edit Isi BA '+esc(ba.nomor)+'</h3>'+
