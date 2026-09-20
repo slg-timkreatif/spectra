@@ -29,63 +29,17 @@
   .tot b{font-size:1.35rem;color:var(--primary-text)}
   .aksiCell{display:flex;gap:.4rem;align-items:center;justify-content:center}
 
-  /* Rekap Modal */
-  .rekap-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;display:none;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto}
-  .rekap-overlay.show{display:flex}
-  .rekap-modal{background:var(--surface);border-radius:var(--r-lg);width:100%;max-width:900px;margin:1rem auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-  .rekap-head{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2;border-radius:var(--r-lg) var(--r-lg) 0 0}
-  .rekap-head h2{margin:0;font-size:1.1rem;display:flex;align-items:center;gap:.5rem}
-  .rekap-actions{display:flex;gap:.5rem}
-  .rekap-body{padding:1.5rem;max-height:75vh;overflow-y:auto}
-
-  /* BA Table Styles */
-  .ba-header{text-align:center;margin-bottom:1.5rem}
-  .ba-header h3{margin:0;font-size:1rem;text-transform:uppercase;letter-spacing:1px}
-  .ba-header h4{margin:.3rem 0;font-size:1.2rem;font-weight:700}
-  .ba-header p{margin:.2rem 0;font-size:.85rem;color:var(--text-2)}
-  .ba-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.5rem;margin-bottom:1rem;padding:.8rem;background:var(--surface-2);border-radius:var(--r);font-size:.85rem}
-  .ba-info span{color:var(--text-2)}
-  .ba-info b{color:var(--text)}
-
-  .ba-table{width:100%;border-collapse:collapse;font-size:.85rem}
-  .ba-table th,.ba-table td{border:1px solid var(--border);padding:.5rem .6rem;text-align:left}
-  .ba-table thead th{background:var(--surface-2);font-weight:600;text-align:center;white-space:nowrap}
-  .ba-table tbody tr:nth-child(even){background:var(--surface-2)}
-  .ba-table tbody tr.kosong{opacity:.4}
-  .ba-table tbody tr.kosong td{font-style:italic;color:var(--text-3)}
-  .ba-table .col-no{width:50px;text-align:center;font-weight:600}
-  .ba-table .col-rank{width:50px;text-align:center;font-weight:700}
-  .ba-table .col-undian{width:70px;text-align:center;font-weight:600}
-  .ba-table .col-nilai{width:80px;text-align:right;font-variant-numeric:tabular-nums}
-  .ba-table .col-status{width:80px;text-align:center}
-  .ba-table .rank-1{color:#d4af37;font-weight:900}
-  .ba-table .rank-2{color:#8a8a8a;font-weight:800}
-  .ba-table .rank-3{color:#b87333;font-weight:800}
-
-  .ba-footer{margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.8rem;color:var(--text-2);display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
-
-  .tab-bar{display:flex;gap:.5rem;margin-bottom:1rem;padding:.3rem;background:var(--surface-2);border-radius:var(--r);overflow-x:auto}
-  .tab-btn{padding:.5rem 1rem;border:none;background:transparent;color:var(--text-2);font-size:.85rem;font-weight:500;border-radius:calc(var(--r) - 4px);cursor:pointer;white-space:nowrap;transition:all .2s}
-  .tab-btn:hover{background:var(--surface)}
-  .tab-btn.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-
-  /* Print Styles */
-  @media print {
-    body * { visibility: hidden; }
-    .rekap-overlay, .rekap-overlay * { visibility: visible; }
-    .rekap-overlay { position: absolute; inset: 0; background: white; display: block !important; padding: 0; }
-    .rekap-modal { box-shadow: none; max-width: 100%; margin: 0; border-radius: 0; }
-    .rekap-head { position: static; border: none; padding: .5rem; }
-    .rekap-actions { display: none !important; }
-    .rekap-body { max-height: none; overflow: visible; padding: .5rem; }
-    .ba-table th, .ba-table td { border: 1px solid #333; padding: 4px; }
-    .ba-table tbody tr:nth-child(even) { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .ba-table tbody tr.kosong { opacity: .3; }
-    .ba-table .rank-1 { color: #000 !important; }
-    .ba-table .rank-2 { color: #333 !important; }
-    .ba-table .rank-3 { color: #555 !important; }
-    @page { size: A4 landscape; margin: 1cm; }
-  }
+  /* Seri & peringkat */
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .seg button{padding:.4rem .8rem;border:none;background:var(--surface-2);color:var(--text-2);font-size:.8rem;font-weight:600;cursor:pointer}
+  .seg button.on{background:var(--primary);color:#fff}
+  tr.seriRow td{background:var(--warning-soft)}
+  .seriCard{border-left:4px solid var(--warning);margin-bottom:.6rem;padding:.6rem .8rem;border-radius:10px;background:var(--surface-2)}
+  .seriCard .row{display:flex;justify-content:space-between;gap:.6rem;align-items:center;font-size:.85rem;padding:.15rem 0;flex-wrap:wrap}
+  .rankTbl{width:100%;border-collapse:collapse;font-size:.85rem}
+  .rankTbl th,.rankTbl td{border:1px solid var(--border);padding:.4rem .5rem}
+  .rankTbl th{background:var(--surface-2);text-align:center}
+  .rankTbl tr.seriRow td{background:var(--warning-soft)}
 </style>
 </head>
 <body>
@@ -96,7 +50,6 @@
   </div>
   <div class="topbar-actions">
     <span id="conn"></span>
-    <button class="btn btn-ghost btn-icon" onclick="bukaRekap()" title="Lihat Rekap"><i data-lucide="file-spreadsheet"></i></button>
     <button class="btn btn-ghost btn-icon" onclick="muat()" title="Segarkan"><i data-lucide="refresh-cw"></i></button>
     <button class="btn btn-ghost btn-icon" onclick="toggleTheme()" title="Ganti tema"><i id="icTheme" data-lucide="moon"></i></button>
     <button class="btn btn-ghost btn-icon" onclick="keluarSpectra()" title="Keluar"><i data-lucide="log-out"></i></button>
@@ -115,39 +68,41 @@
   <div class="matrix-wrap"><table class="matrix"><thead id="mHead"></thead><tbody id="mBody"></tbody></table></div>
   <div class="cards" id="cards"></div>
   <div class="card empty" id="empty" hidden><i data-lucide="clipboard-list"></i><p>Belum ada peserta di ruang ini.</p></div>
+
+  <div class="card" style="margin-top:1rem">
+    <div class="card-head"><h3><i data-lucide="trophy"></i> Peringkat Peserta</h3>
+      <div class="seg">
+        <button id="rkS" class="on" onclick="setRank('sementara')">Sementara</button>
+        <button id="rkF" onclick="setRank('final')">Final</button>
+      </div></div>
+    <div class="table-wrap"><table class="rankTbl">
+      <thead><tr><th>#</th><th>Undian</th><th>Nama</th><th>Total</th><th>Ket</th></tr></thead>
+      <tbody id="rankBody"></tbody></table></div>
+    <p class="muted small" id="rankNote" style="margin-top:.5rem"></p>
+  </div>
+
+  <div class="card" style="margin-top:1rem">
+    <div class="card-head"><h3><i data-lucide="equal"></i> Grup Nilai Sama (Seri)</h3></div>
+    <div id="seriBody" class="muted small">Tidak ada nilai sama.</div>
+  </div>
+
   <div class="card" id="fatal" hidden><p id="fatalTxt" class="muted"></p>
     <button class="btn btn-primary btn-block" onclick="location.href='spectra-login.html'">Ke Halaman Login</button></div>
 </main>
 
 <div class="bottombar"><div class="bottombar-in" style="align-items:center">
   <div style="flex:1;font-size:.83rem;color:var(--text-2)" id="ringkasan">Memuat...</div>
-  <button class="btn btn-ghost" onclick="bukaRekap()" style="margin-right:.5rem">
-    <i data-lucide="file-spreadsheet"></i><span>Rekap</span></button>
   <button class="btn btn-primary" id="btnBatch" disabled onclick="sahkanLengkap()">
     <i data-lucide="badge-check"></i><span>Sahkan Semua Lengkap</span></button>
 </div></div>
 
-<!-- Rekap Modal -->
-<div class="rekap-overlay" id="rekapOverlay" onclick="if(event.target===this)tutupRekap()">
-  <div class="rekap-modal">
-    <div class="rekap-head">
-      <h2><i data-lucide="file-spreadsheet"></i>Rekapitulasi Nilai</h2>
-      <div class="rekap-actions">
-        <button class="btn btn-ghost btn-sm" onclick="cetakRekap()"><i data-lucide="printer"></i><span>Cetak</span></button>
-        <button class="btn btn-ghost btn-icon" onclick="tutupRekap()"><i data-lucide="x"></i></button>
-      </div>
-    </div>
-    <div class="rekap-body" id="rekapBody">
-      <p style="text-align:center;color:var(--text-2)">Memuat rekap...</p>
-    </div>
-  </div>
-</div>
-
 <script>
 const sesi = bacaSesi();
-let DATA = null, ROWS = [];
+let DATA = null, ROWS = [], KRITERIA = [], SERI = new Set(), RANKMODE = 'sementara';
 const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const fatal = m => { document.getElementById('fatal').hidden = false; document.getElementById('fatalTxt').textContent = m; };
+const kunci = x => Math.round(Number(x || 0) * 100) / 100;
+const LABEL = ['Juara 1','Juara 2','Juara 3','Harapan 1','Harapan 2','Harapan 3'];
 
 (async function boot(){
   if (!sesi) { location.href = 'spectra-login.html'; return; }
@@ -163,10 +118,15 @@ const fatal = m => { document.getElementById('fatal').hidden = false; document.g
 
 async function muat(senyap){
   try {
-    const { data, error } = await (await sb()).rpc('spectra_get_operator_data', { p_kode_akses: sesi.kode_akses });
+    const client = await sb();
+    const { data, error } = await client.rpc('spectra_get_operator_data', { p_kode_akses: sesi.kode_akses });
     if (error) throw error;
     if (data && data.error) return fatal(data.error);
-    DATA = data; render();
+    DATA = data;
+    const kRes = await client.from('spectra_kriteria').select('*')
+      .eq('cabang_id', (DATA.cabang || {}).id).order('urutan');
+    KRITERIA = (kRes.data || []).slice().sort((a,b) => (b.prioritas_seri||0) - (a.prioritas_seri||0));
+    render();
   } catch (e) { if (!senyap) fatal('Gagal memuat data: ' + e.message); }
 }
 
@@ -179,14 +139,23 @@ function render(){
     const nm = byP[p.id] || {};
     const vals = Object.values(nm);
     const dinilai = vals.length;
-    const nF = vals.filter(v => v.status === 'FINAL').length;
+    const fvals = vals.filter(v => v.status === 'FINAL');
+    const nF = fvals.length;
     const total = vals.reduce((a, v) => a + Number(v.total || 0), 0);
+    const finalTotal = fvals.reduce((a, v) => a + Number(v.total || 0), 0);
     const lengkap = juri.length > 0 && dinilai === juri.length;
     const allFinal = dinilai > 0 && nF === dinilai;
     if (allFinal) nFin++; else if (dinilai > 0) nPr++;
     if (dinilai > 0 && !lengkap) nWarn++;
-    return { p, nm, dinilai, total, lengkap, allFinal };
+    return { p, nm, dinilai, nF, total, finalTotal, lengkap, allFinal };
   });
+
+  /* deteksi dini nilai sama (semua nilai masuk) */
+  const cnt = {};
+  ROWS.forEach(r => { if (r.dinilai > 0) { const k = kunci(r.total); cnt[k] = (cnt[k] || 0) + 1; } });
+  SERI = new Set();
+  ROWS.forEach(r => { if (r.dinilai > 0 && cnt[kunci(r.total)] > 1) SERI.add(r.p.id); });
+
   document.getElementById('stP').textContent = peserta.length;
   document.getElementById('stPr').textContent = nPr;
   document.getElementById('stF').textContent = nFin;
@@ -200,11 +169,11 @@ function render(){
     juri.map(j => '<th>' + esc(j.nama_petugas) + '</th>').join('') +
     '<th>Total</th><th>Status</th><th style="text-align:center">Aksi</th></tr>';
   document.getElementById('mBody').innerHTML = ROWS.map(r =>
-    '<tr><td><b>' + r.p.nomor_undian + '. ' + esc(r.p.nama_peserta) + '</b><br>' +
+    '<tr class="' + (SERI.has(r.p.id) ? 'seriRow' : '') + '"><td><b>' + r.p.nomor_undian + '. ' + esc(r.p.nama_peserta) + '</b><br>' +
     '<small class="muted">' + esc(r.p.asal_instansi || '') + (r.p.nama_kategori ? ' • ' + esc(r.p.nama_kategori) : '') + '</small></td>' +
     juri.map(j => { const v = r.nm[j.id];
       return '<td>' + (v ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + '">' + fmtN(v.total) + '</span>' : '<span class="mcell none">–</span>') + '</td>'; }).join('') +
-    '<td class="tnum"><b>' + fmtN(r.total) + '</b></td>' +
+    '<td class="tnum"><b>' + fmtN(r.total) + '</b>' + (SERI.has(r.p.id) ? ' <span class="badge warn">SERI</span>' : '') + '</td>' +
     '<td><span class="badge ' + (r.allFinal ? 'ok' : r.dinilai ? 'proc' : 'none') + '">' + (r.allFinal ? 'FINAL' : r.dinilai ? 'PROSES' : 'BELUM') + '</span></td>' +
     '<td><div class="aksiCell">' + aksiBtn(r) + '</div></td></tr>').join('');
 
@@ -214,13 +183,81 @@ function render(){
     '<span class="badge ' + (r.lengkap ? 'ok' : 'warn') + '">Juri ' + r.dinilai + '/' + juri.length + '</span></div>' +
     '<div class="jChips">' + juri.map(j => { const v = r.nm[j.id];
       return '<span class="jChip ' + (v ? (v.status === 'FINAL' ? 'final' : 'draft') : '') + '">' + esc(j.nama_petugas) + ': ' + (v ? fmtN(v.total) : 'belum') + '</span>'; }).join('') + '</div>' +
-    '<div class="pFoot"><div class="tot"><small>TOTAL GABUNGAN</small><b>' + fmtN(r.total) + '</b></div>' + aksiBtn(r, true) + '</div></div>').join('');
+    '<div class="pFoot"><div class="tot"><small>TOTAL GABUNGAN</small><b>' + fmtN(r.total) + '</b>' +
+    (SERI.has(r.p.id) ? ' <span class="badge warn">SERI</span>' : '') + '</div>' + aksiBtn(r, true) + '</div></div>').join('');
 
   document.getElementById('empty').hidden = peserta.length > 0;
   const batch = ROWS.filter(r => r.dinilai > 0 && r.lengkap && !r.allFinal);
   document.getElementById('btnBatch').disabled = batch.length === 0;
-  document.getElementById('ringkasan').innerHTML = '<b>' + nFin + '</b> FINAL • <b>' + nPr + '</b> proses • <b>' + nWarn + '</b> ⚠ juri';
+  document.getElementById('ringkasan').innerHTML = '<b>' + nFin + '</b> FINAL • <b>' + nPr + '</b> proses • <b>' + nWarn + '</b> ⚠ juri • <b>' + SERI.size + '</b> seri';
+  renderRank();
+  renderSeri();
   icons();
+}
+
+/* ---- peringkat sementara / final ---- */
+function aspekSums(pId, mode){
+  const out = {};
+  (DATA.nilai || []).forEach(n => {
+    if (n.peserta_id !== playerId(pId)) return;
+    if (mode === 'final' && n.status !== 'FINAL') return;
+    const r = n.rincian || {};
+    Object.keys(r).forEach(k => { out[k] = (out[k] || 0) + Number(r[k] || 0); });
+  });
+  return out;
+}
+function playerId(id){ return id; }
+function cmpTie(aId, bId, mode){
+  const A = aspekSums(aId, mode), B = aspekSums(bId, mode);
+  for (const k of KRITERIA) {
+    const sa = A[k.nama_aspek] || 0, sb = B[k.nama_aspek] || 0;
+    if (sa !== sb) return sb - sa;
+  }
+  return 0;
+}
+function setRank(m){
+  RANKMODE = m;
+  document.getElementById('rkS').classList.toggle('on', m === 'sementara');
+  document.getElementById('rkF').classList.toggle('on', m === 'final');
+  renderRank();
+}
+function renderRank(){
+  const mode = RANKMODE;
+  const list = ROWS.filter(r => mode === 'final' ? r.nF > 0 : r.dinilai > 0)
+    .map(r => ({ r, tot: mode === 'final' ? r.finalTotal : r.total }));
+  const cnt = {};
+  list.forEach(x => { const k = kunci(x.tot); cnt[k] = (cnt[k] || 0) + 1; });
+  list.sort((a, b) => (b.tot - a.tot) || cmpTie(a.r.p.id, b.r.p.id, mode) ||
+    (parseInt(a.r.p.nomor_undian,10)||0) - (parseInt(b.r.p.nomor_undian,10)||0));
+  document.getElementById('rankBody').innerHTML = list.length ? list.map((x, i) => {
+    const seri = cnt[kunci(x.tot)] > 1;
+    return '<tr class="' + (seri ? 'seriRow' : '') + '"><td style="text-align:center">' + (i+1) + '</td>' +
+      '<td style="text-align:center">' + x.r.p.nomor_undian + '</td><td>' + esc(x.r.p.nama_peserta) +
+      (i < 6 ? ' <span class="badge ok">' + LABEL[i] + '</span>' : '') + '</td>' +
+      '<td class="tnum"><b>' + fmtN(x.tot) + '</b></td>' +
+      '<td>' + (seri ? '<span class="badge warn">SERI</span> ' : '') +
+      (mode === 'final' ? '<span class="badge ok">FINAL</span>' : '<span class="badge proc">' + x.r.dinilai + ' juri</span>') + '</td></tr>';
+  }).join('') : '<tr><td colspan="5" class="muted" style="text-align:center">Belum ada nilai.</td></tr>';
+  document.getElementById('rankNote').textContent =
+    (mode === 'sementara' ? 'Sementara = dihitung dari semua nilai yang masuk (deteksi dini). ' : 'Final = hanya nilai berstatus FINAL. ') +
+    'Urutan nilai sama mengikuti prioritas aspek (prioritas_seri).';
+}
+
+/* ---- grup seri + pratinjau unggul seri ---- */
+function renderSeri(){
+  const groups = {};
+  ROWS.forEach(r => { if (r.dinilai > 0) { const k = kunci(r.total); (groups[k] = groups[k] || []).push(r); } });
+  const keys = Object.keys(groups).filter(k => groups[k].length > 1).sort((a,b) => b - a);
+  if (!keys.length) { document.getElementById('seriBody').innerHTML = '<span class="muted small">Tidak ada nilai sama.</span>'; return; }
+  document.getElementById('seriBody').innerHTML = keys.map(k => {
+    const g = groups[k].slice().sort((a,b) => cmpTie(a.p.id, b.p.id, 'sementara'));
+    return '<div class="seriCard"><div class="row"><b>SERI @ ' + fmtN(Number(k)) + '</b>' +
+      '<span class="badge warn">' + g.length + ' peserta</span></div>' +
+      g.map((r, i) => '<div class="row"><span>' + (i+1) + '. #' + r.p.nomor_undian + ' ' + esc(r.p.nama_peserta) +
+        ' — ' + (DATA.juri || []).map(j => { const v = r.nm[j.id]; return v ? fmtN(v.total) : '-'; }).join(' + ') + '</span>' +
+        (i === 0 ? '<span class="badge ok">unggul seri</span>' : '') + '</div>').join('') +
+      '</div>';
+  }).join('');
 }
 
 function aksiBtn(r, lebar){
@@ -264,206 +301,6 @@ async function sahkanLengkap(){
   toast(n + ' peserta disahkan FINAL.', 'ok');
   await muat(true);
 }
-
-/* ========== REKAP / BERITA ACARA ========== */
-let rekapMode = 'semua'; // 'semua', 'final', 'ranking'
-
-function bukaRekap(){
-  document.getElementById('rekapOverlay').classList.add('show');
-  document.body.style.overflow = 'hidden';
-  renderRekap();
-  icons();
-}
-
-function tutupRekap(){
-  document.getElementById('rekapOverlay').classList.remove('show');
-  document.body.style.overflow = '';
-}
-
-function cetakRekap(){
-  window.print();
-}
-
-function setRekapMode(mode){
-  rekapMode = mode;
-  renderRekap();
-}
-
-function renderRekap(){
-  if (!DATA) return;
-  const juri = DATA.juri || [];
-  const peserta = DATA.peserta || [];
-  const nilai = DATA.nilai || [];
-  const cabang = DATA.cabang || {};
-
-  // Build score map
-  const byP = {};
-  nilai.forEach(n => { (byP[n.peserta_id] = byP[n.peserta_id] || {})[n.petugas_id] = n; });
-
-  // Find max nomor_undian
-  let maxUndian = 0;
-  peserta.forEach(p => {
-    const num = parseInt(p.nomor_undian) || 0;
-    if (num > maxUndian) maxUndian = num;
-  });
-
-  // Build complete rows (1 to maxUndian)
-  const completeRows = [];
-  const pesertaByUndian = {};
-  peserta.forEach(p => { pesertaByUndian[p.nomor_undian] = p; });
-
-  for (let i = 1; i <= maxUndian; i++) {
-    const p = pesertaByUndian[i] || pesertaByUndian[String(i)];
-    if (p) {
-      const nm = byP[p.id] || {};
-      const vals = Object.values(nm);
-      const dinilai = vals.length;
-      const nF = vals.filter(v => v.status === 'FINAL').length;
-      const total = vals.reduce((a, v) => a + Number(v.total || 0), 0);
-      const lengkap = juri.length > 0 && dinilai === juri.length;
-      const allFinal = dinilai > 0 && nF === dinilai;
-      completeRows.push({ nomor: i, p, nm, dinilai, total, lengkap, allFinal, kosong: false });
-    } else {
-      completeRows.push({ nomor: i, p: null, nm: {}, dinilai: 0, total: 0, lengkap: false, allFinal: false, kosong: true });
-    }
-  }
-
-  // Filter based on mode
-  let displayRows = [...completeRows];
-  if (rekapMode === 'final') {
-    displayRows = completeRows.filter(r => r.allFinal);
-  } else if (rekapMode === 'ranking') {
-    displayRows = completeRows.filter(r => r.total > 0).sort((a, b) => b.total - a.total);
-  }
-
-  // Calculate stats
-  const totalPeserta = peserta.length;
-  const totalFinal = completeRows.filter(r => r.allFinal).length;
-  const totalProses = completeRows.filter(r => r.dinilai > 0 && !r.allFinal).length;
-  const totalKosong = completeRows.filter(r => r.kosong).length;
-
-  // Current time
-  const now = new Date();
-  const tgl = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const waktu = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-
-  let html = '';
-
-  // Header BA
-  html += '<div class="ba-header">';
-  html += '<h3>REKAPITULASI PENILAIAN</h3>';
-  html += '<h4>' + esc(sesi.nama_event || 'SPECTRA') + '</h4>';
-  if (cabang.nama_cabang || sesi.nama_cabang) {
-    html += '<p>' + esc(cabang.nama_cabang || sesi.nama_cabang) + '</p>';
-  }
-  if (cabang.nama_kategori || sesi.nama_kategori) {
-    html += '<p>Kategori: <b>' + esc(cabang.nama_kategori || sesi.nama_kategori) + '</b></p>';
-  }
-  html += '</div>';
-
-  // Info Box
-  html += '<div class="ba-info">';
-  html += '<div><span>Total Peserta:</span> <b>' + totalPeserta + '</b></div>';
-  html += '<div><span>Final:</span> <b>' + totalFinal + '</b></div>';
-  html += '<div><span>Proses:</span> <b>' + totalProses + '</b></div>';
-  html += '<div><span>Nomor Kosong:</span> <b>' + totalKosong + '</b></div>';
-  html += '<div><span>Jumlah Juri:</span> <b>' + juri.length + '</b></div>';
-  html += '<div><span>Waktu:</span> <b>' + waktu + '</b></div>';
-  html += '</div>';
-
-  // Tab Bar
-  html += '<div class="tab-bar">';
-  html += '<button class="tab-btn ' + (rekapMode === 'semua' ? 'active' : '') + '" onclick="setRekapMode(\'semua\')">Semua Nomor (' + maxUndian + ')</button>';
-  html += '<button class="tab-btn ' + (rekapMode === 'final' ? 'active' : '') + '" onclick="setRekapMode(\'final\')">Hanya FINAL (' + totalFinal + ')</button>';
-  html += '<button class="tab-btn ' + (rekapMode === 'ranking' ? 'active' : '') + '" onclick="setRekapMode(\'ranking\')">Per Ranking (' + completeRows.filter(r=>r.total>0).length + ')</button>';
-  html += '</div>';
-
-  // Table
-  html += '<table class="ba-table">';
-  html += '<thead><tr>';
-  if (rekapMode === 'ranking') html += '<th class="col-rank">#</th>';
-  html += '<th class="col-no">No</th>';
-  html += '<th class="col-undian">Undian</th>';
-  html += '<th>Nama Peserta</th>';
-  html += '<th>Asal / Kontingen</th>';
-  juri.forEach(j => {
-    html += '<th class="col-nilai">' + esc(j.nama_petugas) + '</th>';
-  });
-  html += '<th class="col-nilai">Total</th>';
-  html += '<th class="col-status">Status</th>';
-  html += '</tr></thead><tbody>';
-
-  if (displayRows.length === 0) {
-    html += '<tr><td colspan="' + (rekapMode === 'ranking' ? 6 + juri.length : 5 + juri.length) + '" style="text-align:center;padding:2rem;color:var(--text-3)">Tidak ada data untuk ditampilkan.</td></tr>';
-  } else {
-    let rank = 0;
-    displayRows.forEach((r, idx) => {
-      if (r.kosong) {
-        html += '<tr class="kosong">';
-        if (rekapMode === 'ranking') html += '<td class="col-rank">-</td>';
-        html += '<td class="col-no">' + r.nomor + '</td>';
-        html += '<td class="col-undian">-</td>';
-        html += '<td colspan="' + (2 + juri.length) + '" style="text-align:center;font-style:italic">— Nomor undian tidak terpakai —</td>';
-        html += '<td class="col-status">-</td>';
-        html += '</tr>';
-      } else {
-        rank++;
-        let rankClass = '';
-        if (rekapMode === 'ranking') {
-          if (rank === 1) rankClass = 'rank-1';
-          else if (rank === 2) rankClass = 'rank-2';
-          else if (rank === 3) rankClass = 'rank-3';
-        }
-
-        html += '<tr>';
-        if (rekapMode === 'ranking') {
-          html += '<td class="col-rank ' + rankClass + '">' + rank + '</td>';
-        }
-        html += '<td class="col-no">' + r.nomor + '</td>';
-        html += '<td class="col-undian">' + esc(r.p.nomor_undian) + '</td>';
-        html += '<td><b>' + esc(r.p.nama_peserta) + '</b></td>';
-        html += '<td>' + esc(r.p.asal_instansi || '-') + '</td>';
-
-        juri.forEach(j => {
-          const v = r.nm[j.id];
-          if (v) {
-            const st = v.status === 'FINAL' ? '✓ ' : '';
-            html += '<td class="col-nilai">' + st + fmtN(v.total) + '</td>';
-          } else {
-            html += '<td class="col-nilai" style="color:var(--text-3)">-</td>';
-          }
-        });
-
-        html += '<td class="col-nilai"><b>' + fmtN(r.total) + '</b></td>';
-
-        let statusBadge = '';
-        if (r.allFinal) statusBadge = '<span class="badge ok">FINAL</span>';
-        else if (r.dinilai > 0) statusBadge = '<span class="badge proc">PROSES</span>';
-        else statusBadge = '<span class="badge none">BELUM</span>';
-        html += '<td class="col-status">' + statusBadge + '</td>';
-
-        html += '</tr>';
-      }
-    });
-  }
-
-  html += '</tbody></table>';
-
-  // Footer
-  html += '<div class="ba-footer">';
-  html += '<span>Dicetak: ' + tgl + ' pukul ' + waktu + ' WIB</span>';
-  html += '<span>SPECTRA — Sistem Penilaian Digital</span>';
-  html += '</div>';
-
-  document.getElementById('rekapBody').innerHTML = html;
-}
-
-// Keyboard shortcut: Escape to close rekap
-document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape' && document.getElementById('rekapOverlay').classList.contains('show')) {
-    tutupRekap();
-  }
-});
 </script>
 </body>
 </html>
