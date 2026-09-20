@@ -18,30 +18,32 @@
   .pNav .tengah h3{font-size:1.08rem}
   .pNav .btn-icon{width:44px;height:44px}
   #aspekList .field>span{font-size:.9rem;font-weight:700}
-  .statusline{text-align:center;font-size:.8rem;margin-top:.7rem;color:var(--text-2, #666);min-height:1.2em}
+  .statusline{text-align:center;font-size:.8rem;margin-top:.7rem;color:var(--text-2);min-height:1.2em}
   .spin{animation:putar 1s linear infinite}@keyframes putar{to{transform:rotate(360deg)}}
   .chip.lock::after{content:" 🔒";font-size:.68em}
   .chip.lock{opacity:.75}
   .locknote{display:flex;gap:.5rem;align-items:center;justify-content:center;margin:.6rem 0 0;
-    background:var(--warning-soft, #fff3cd);color:var(--warn-text, #856404);border:1px solid var(--warning, #ffeeba);
+    background:var(--warning-soft);color:var(--warn-text);border:1px solid var(--warning);
     border-radius:10px;padding:.5rem .8rem;font-size:.8rem;font-weight:600}
   input:disabled,textarea:disabled{opacity:.55;cursor:not-allowed}
 
-  /* === REKAP MODAL STYLES === */
-  .modal { position:fixed; inset:0; z-index:1000; display:flex; align-items:center; justify-content:center; }
-  .modal-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.5); backdrop-filter:blur(2px); }
-  .modal-content { position:relative; background:var(--bg-1, #fff); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.2); overflow:hidden; display:flex; flex-direction:column; max-height:90vh; width:95%; max-width:1200px; }
-  .modal-head { display:flex; justify-content:space-between; align-items:center; padding:1rem; border-bottom:1px solid var(--border, #ddd); }
-  .modal-body { padding:1rem; overflow:auto; flex:1; }
-  .modal-foot { padding:1rem; border-top:1px solid var(--border, #ddd); display:flex; justify-content:flex-end; gap:.5rem; background:var(--bg-2, #f8f9fa); }
-  
-  .table-rekap { width:100%; border-collapse:collapse; font-size:.85rem; }
-  .table-rekap th, .table-rekap td { border:1px solid var(--border, #ddd); padding:.5rem; text-align:center; }
-  .table-rekap th { background:var(--bg-2, #f8f9fa); position:sticky; top:0; z-index:1; font-size:.75rem; text-transform:uppercase; }
-  .table-rekap td.empty { color:var(--text-3, #999); background:var(--bg-2, #f8f9fa); }
-  .table-rekap tr.kosong { background:rgba(255, 193, 7, 0.08); }
-  .table-rekap tr.kosong td { color:var(--text-3, #999); font-style:italic; }
-  .table-rekap td.note { text-align:left; font-size:.75rem; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* ===== Layout laptop: master-detail ===== */
+  .plistWrap{display:none}
+  .kbHint{display:none;font-size:.7rem;color:var(--text-3);margin-top:.5rem;text-align:center}
+  @media(min-width:1024px){
+    main{max-width:1200px}
+    .workGrid{display:grid;grid-template-columns:270px 1fr;gap:1rem;align-items:start}
+    .plistWrap{display:block}
+    .chips{display:none}
+    .kbHint{display:block}
+    .plist{max-height:calc(100vh - 250px);overflow:auto;display:flex;flex-direction:column;gap:.3rem;padding:.6rem}
+    .pitem{display:flex;justify-content:space-between;align-items:center;gap:.5rem;width:100%;
+      padding:.5rem .7rem;border:1px solid var(--border);border-radius:10px;cursor:pointer;
+      background:var(--surface);font-size:.85rem;text-align:left;font-family:var(--font);color:var(--text-2)}
+    .pitem small{color:var(--text-3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .pitem.active{border-color:var(--primary);background:var(--primary-soft);color:var(--primary-text);font-weight:700}
+    .pitem.active small{color:var(--primary-text)}
+  }
 </style>
 </head>
 <body>
@@ -54,7 +56,6 @@
   <div class="topbar-actions">
     <span id="conn"></span>
     <span class="badge proc tnum" id="hProg">0/0</span>
-    <button class="btn btn-ghost btn-icon" onclick="showRekap()" title="Lihat Rekap Nilai"><i data-lucide="table"></i></button>
     <button class="btn btn-ghost btn-icon" onclick="toggleTheme()" title="Ganti tema"><i id="icTheme" data-lucide="moon"></i></button>
     <button class="btn btn-ghost btn-icon" onclick="keluarSpectra()" title="Keluar"><i data-lucide="log-out"></i></button>
   </div>
@@ -66,33 +67,44 @@
 </div>
 
 <main>
-  <div class="chips" id="chips"></div>
-
-  <div class="card" id="formCard" hidden style="margin-top:.8rem">
-    <div class="card-head pNav">
-      <button class="btn btn-ghost btn-icon" id="btnPrev" onclick="pilihDelta(-1)" title="Sebelumnya"><i data-lucide="chevron-left"></i></button>
-      <div class="tengah">
-        <h3 id="pNama"></h3>
-        <span class="muted small" id="pAsal"></span><br>
-        <span class="badge proc" id="pKategori" style="margin-top:.3rem"></span><br>
-        <span class="muted small" id="pIdx"></span>
+  <div class="workGrid">
+    <aside class="plistWrap">
+      <div class="card">
+        <div class="card-head"><h3>Peserta</h3><span class="badge proc tnum" id="lProg">0/0</span></div>
+        <div class="plist" id="pList"></div>
+        <div class="kbHint">↑ / ↓ pindah peserta • Ctrl+Enter kirim</div>
       </div>
-      <button class="btn btn-ghost btn-icon" id="btnNext" onclick="pilihDelta(1)" title="Berikutnya"><i data-lucide="chevron-right"></i></button>
+    </aside>
+    <div>
+      <div class="chips" id="chips"></div>
+
+      <div class="card" id="formCard" hidden style="margin-top:.8rem">
+        <div class="card-head pNav">
+          <button class="btn btn-ghost btn-icon" id="btnPrev" onclick="pilihDelta(-1)" title="Sebelumnya"><i data-lucide="chevron-left"></i></button>
+          <div class="tengah">
+            <h3 id="pNama"></h3>
+            <span class="muted small" id="pAsal"></span><br>
+            <span class="badge proc" id="pKategori" style="margin-top:.3rem"></span><br>
+            <span class="muted small" id="pIdx"></span>
+          </div>
+          <button class="btn btn-ghost btn-icon" id="btnNext" onclick="pilihDelta(1)" title="Berikutnya"><i data-lucide="chevron-right"></i></button>
+        </div>
+
+        <div class="locknote" id="lockNote" hidden>🔒 Nilai sudah dikunci operator — tidak dapat diedit.</div>
+
+        <div id="aspekList"></div>
+
+        <label class="field"><span>Catatan juri</span>
+          <textarea class="input" id="inCatatan" rows="2" placeholder="Opsional..."></textarea>
+        </label>
+        <div class="statusline" id="statusLine"></div>
+      </div>
+
+      <div class="card empty" id="emptyCard" hidden>
+        <i data-lucide="swipe"></i>
+        <p>Pilih nomor undian di atas untuk mulai menilai.</p>
+      </div>
     </div>
-
-    <div class="locknote" id="lockNote" hidden>🔒 Nilai sudah dikunci operator — tidak dapat diedit.</div>
-
-    <div id="aspekList"></div>
-
-    <label class="field"><span>Catatan juri</span>
-      <textarea class="input" id="inCatatan" rows="2" placeholder="Opsional..."></textarea>
-    </label>
-    <div class="statusline" id="statusLine"></div>
-  </div>
-
-  <div class="card empty" id="emptyCard" hidden>
-    <i data-lucide="swipe"></i>
-    <p>Pilih nomor undian di atas untuk mulai menilai.</p>
   </div>
 
   <div class="card" id="fatal" hidden>
@@ -110,26 +122,6 @@
     <button class="btn btn-primary" style="flex:1" id="btnKirim" onclick="kirimIni()">
       <i data-lucide="cloud-upload"></i><span id="btnTxt">Kirim Nilai</span>
     </button>
-  </div>
-</div>
-
-<!-- MODAL REKAP NILAI -->
-<div class="modal" id="rekapModal" hidden>
-  <div class="modal-backdrop" onclick="hideRekap()"></div>
-  <div class="modal-content">
-    <div class="modal-head">
-      <h3 style="margin:0; font-size:1.1rem;">Rekapitulasi Nilai Juri</h3>
-      <button class="btn btn-ghost btn-icon" onclick="hideRekap()"><i data-lucide="x"></i></button>
-    </div>
-    <div class="modal-body">
-      <div style="overflow-x:auto;">
-        <table class="table-rekap" id="rekapTable"></table>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="hideRekap()">Tutup</button>
-      <button class="btn btn-primary" onclick="cetakRekap()"><i data-lucide="printer"></i> Cetak / PDF</button>
-    </div>
   </div>
 </div>
 
@@ -225,6 +217,19 @@ function renderChips() {
     b.onclick = () => pilih(p.id);
     box.appendChild(b);
   });
+  renderList();
+}
+
+/* Daftar peserta vertikal (khusus laptop) */
+function renderList() {
+  const box = document.getElementById('pList');
+  if (!box) return;
+  box.innerHTML = peserta.map(p => {
+    const st = locked.has(p.id) ? '🔒' : (synced.has(p.id) ? '✅' : (adaIsi(drafts[p.id]) ? '🟡' : '⬜'));
+    const nm = blind ? '' : (p.nama_peserta || '');
+    return '<button class="pitem ' + (p.id === selectedId ? 'active' : '') + '" onclick="pilih(\'' + p.id + '\')">' +
+      '<b>' + p.nomor_undian + '</b><small>' + nm + '</small><span class="st">' + st + '</span></button>';
+  }).join('');
 }
 
 function pilih(id) {
@@ -267,6 +272,8 @@ function pilih(id) {
 
   const act = document.querySelector('.chip.active');
   if (act) act.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  const li = document.querySelector('.pitem.active');
+  if (li) li.scrollIntoView({ block: 'nearest' });
 }
 
 function applyLockUI() {
@@ -282,6 +289,19 @@ function pilihDelta(d) {
   const t = peserta[idx + d];
   if (t) pilih(t.id);
 }
+
+/* Shortcut keyboard: ↑/↓ pindah peserta (saat fokus tidak di input), Ctrl+Enter kirim */
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT');
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !typing) {
+    e.preventDefault();
+    pilihDelta(e.key === 'ArrowDown' ? 1 : -1);
+  } else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    kirimIni();
+  }
+});
 
 function ubahAspek(k, elInp) {
   if (locked.has(selectedId)) return;
@@ -311,6 +331,8 @@ const updateTotal = () => document.getElementById('totPrev').textContent = fmtN(
 const updateProg = () => {
   const n = peserta.filter(p => synced.has(p.id) || adaIsi(drafts[p.id])).length;
   document.getElementById('hProg').textContent = n + '/' + peserta.length;
+  const lp = document.getElementById('lProg');
+  if (lp) lp.textContent = n + '/' + peserta.length;
 };
 function updateStatusLine() {
   const elS = document.getElementById('statusLine');
@@ -369,127 +391,6 @@ async function kirimSemua() {
   toast('Mengirim ' + list.length + ' nilai...', 'warn');
   const ok = await kirim(list);
   toast(ok ? 'Semua nilai terkirim.' : 'Sebagian gagal — coba lagi saat sinyal membaik.', ok ? 'ok' : 'err');
-}
-
-// === FITUR REKAP & CETAK BA ===
-function showRekap() {
-  const modal = document.getElementById('rekapModal');
-  const table = document.getElementById('rekapTable');
-  
-  let thead = '<thead><tr><th>No</th><th>No. Undian</th><th>Nama Peserta</th>';
-  kriteria.forEach(k => { thead += `<th>${k.nama_aspek}<br><small>(Maks ${k.nilai_maks})</small></th>`; });
-  thead += '<th>Penalti</th><th>Total</th><th>Catatan</th></tr></thead>';
-  
-  // Logika Gap-Filling: Mendeteksi nomor undian yang kosong/terlewat
-  let maxNum = 0, isNumeric = true;
-  const numMap = {};
-  peserta.forEach(p => {
-    const match = String(p.nomor_undian).match(/\d+/);
-    const n = match ? parseInt(match[0], 10) : NaN;
-    if (isNaN(n)) isNumeric = false;
-    else if (n > maxNum) maxNum = n;
-    numMap[n] = p;
-  });
-  
-  let rowsData = [];
-  if (isNumeric && maxNum > 0 && maxNum <= peserta.length + 15) {
-    for (let i = 1; i <= maxNum; i++) {
-      const p = numMap[i];
-      let undianDisplay = p ? p.nomor_undian : String(i).padStart(String(maxNum).length, '0');
-      rowsData.push({ no: i, undian: undianDisplay, peserta: p, isGap: !p });
-    }
-  } else {
-    peserta.forEach((p, i) => rowsData.push({ no: i + 1, undian: p.nomor_undian, peserta: p, isGap: false }));
-  }
-  
-  let tbody = '<tbody>';
-  rowsData.forEach(row => {
-    const p = row.peserta;
-    const d = p ? (drafts[p.id] || { rincian: {}, penalti: 0, catatan: '' }) : { rincian: {}, penalti: 0, catatan: '' };
-    const hasScore = p ? adaIsi(d) : false;
-    
-    let trClass = row.isGap ? 'kosong' : (!hasScore ? 'kosong' : '');
-    tbody += `<tr class="${trClass}">`;
-    tbody += `<td>${row.no}</td>`;
-    tbody += `<td><b>${row.undian}</b></td>`;
-    tbody += `<td style="text-align:left; white-space:nowrap;">${p ? (blind ? '<i>[Disamarkan]</i>' : (p.nama_peserta || '-')) : '<i>Kosong / Tidak Hadir</i>'}</td>`;
-    
-    let total = 0;
-    kriteria.forEach(k => {
-      const val = d.rincian[k.nama_aspek];
-      if (val !== undefined && val !== '') {
-        tbody += `<td>${fmtN(val)}</td>`;
-        total += Number(val);
-      } else {
-        tbody += `<td class="empty">-</td>`;
-      }
-    });
-    
-    const penalti = Number(d.penalti) || 0;
-    total -= penalti;
-    
-    tbody += `<td>${penalti > 0 ? fmtN(penalti) : '-'}</td>`;
-    tbody += `<td><b>${hasScore ? fmtN(total) : '-'}</b></td>`;
-    tbody += `<td class="note" title="${d.catatan || ''}">${d.catatan || '-'}</td>`;
-    tbody += `</tr>`;
-  });
-  tbody += '</tbody>';
-  
-  table.innerHTML = thead + tbody;
-  modal.hidden = false;
-  icons();
-}
-
-function hideRekap() { document.getElementById('rekapModal').hidden = true; }
-
-function cetakRekap() {
-  const printContent = document.getElementById('rekapTable').outerHTML;
-  const win = window.open('', '_blank');
-  win.document.write(`
-    <html>
-    <head>
-      <title>Rekap Nilai Juri - ${sesi.nama_event}</title>
-      <style>
-        body { font-family: Arial, sans-serif; font-size: 10pt; padding: 20px; color:#000; }
-        h2 { text-align: center; margin-bottom: 5px; text-transform:uppercase; }
-        h4 { text-align: center; margin-top: 0; color: #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #000; padding: 6px; text-align: center; font-size: 9pt; }
-        th { background: #eee; text-transform:uppercase; font-size:8pt; }
-        .empty { color: #999; background: #f9f9f9; }
-        .kosong { background: #fff9e6; color:#666; font-style:italic; }
-        .note { text-align:left; font-size:8pt; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        @media print { body { padding: 0; } @page { size: A4 landscape; margin: 1cm; } }
-      </style>
-    </head>
-    <body>
-      <h2>REKAPITULASI NILAI JURI</h2>
-      <h4>${sesi.nama_event} ${sesi.nama_cabang ? '— ' + sesi.nama_cabang : ''} ${sesi.nama_kategori ? '('+sesi.nama_kategori+')' : ''}</h4>
-      <p style="text-align:right; margin-bottom:10px; font-size:9pt;">Juri: <b>${sesi.nama_petugas || '-'}</b></p>
-      ${printContent}
-      <br><br>
-      <table style="width:100%; border:none; margin-top:40px; font-size:10pt;">
-        <tr>
-          <td style="border:none; text-align:center; width:30%;">Mengetahui,<br>Ketua Cabang</td>
-          <td style="border:none;"></td>
-          <td style="border:none; text-align:center; width:30%;">Juri</td>
-        </tr>
-        <tr>
-          <td style="border:none; height:60px;"></td>
-          <td style="border:none;"></td>
-          <td style="border:none;"></td>
-        </tr>
-        <tr>
-          <td style="border:none; text-align:center;"><b>(...........................)</b></td>
-          <td style="border:none;"></td>
-          <td style="border:none; text-align:center;"><b>(${sesi.nama_petugas || '...........................'})</b></td>
-        </tr>
-      </table>
-    </body>
-    </html>
-  `);
-  win.document.close();
-  setTimeout(() => win.print(), 500);
 }
 
 window.addEventListener('online', () => { initConn('conn'); kirimSemua(); refreshLocks(); });
