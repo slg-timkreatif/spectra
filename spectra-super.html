@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPECTRA — Super Admin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link rel="stylesheet" href="spectra-theme.css?v=2">
+<script src="vendor/supabase.min.js"></script>
+<script src="vendor/lucide.min.js"></script>
+<script>if(!window.lucide) document.write('<script src="https://unpkg.com/lucide@latest"><\/script>')</script>
+<script src="spectra-ui.js?v=2"></script>
+<script>initTheme('light')</script>
+<style>
+  main{max-width:980px;margin:0 auto;padding:1rem 1rem 4rem}
+  table.ev{width:100%;border-collapse:collapse;font-size:.88rem}
+  table.ev th,table.ev td{border:1px solid var(--border);padding:.5rem .6rem;vertical-align:middle}
+  table.ev th{background:var(--surface-2)}
+  .rowAct{display:flex;gap:.35rem;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+  .rowAct select{width:auto;padding:.3rem .5rem;font-size:.8rem}
+  .ovl{position:fixed;inset:0;background:rgba(4,8,16,.55);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:90;padding:1rem;overflow-y:auto}
+  .ovl .card{max-width:560px;width:100%}
+  .kodeBox{font-family:ui-monospace,monospace;background:var(--surface-2);border:1px dashed var(--border);border-radius:10px;padding:.6rem .8rem;font-size:1rem;font-weight:700;text-align:center;margin:.6rem 0}
+  .admRow{display:flex;justify-content:space-between;gap:.6rem;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .admRow:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-in">
+  <div class="brand"><div class="brand-logo"><i data-lucide="shield-alert"></i></div><div><b>SPECTRA</b><small>Super Admin</small></div></div>
+  <div class="topbar-actions">
+    <span class="badge warn" id="sessLabel" hidden></span>
+    <button class="btn btn-ghost btn-icon" onclick="toggleTheme()" title="Ganti tema"><i id="icTheme" data-lucide="moon"></i></button>
+    <button class="btn btn-ghost btn-icon" id="btnOut" hidden onclick="logoutSuper()" title="Keluar"><i data-lucide="log-out"></i></button>
+  </div>
+</div></header>
+
+<main>
+  <div class="card" id="loginCard">
+    <h3 style="margin-bottom:.8rem">🔐 Masuk Super Admin</h3>
+    <label class="field"><span>Kode Super</span><input class="input" id="inSuper" type="password" placeholder="Kode super Anda"></label>
+    <button class="btn btn-primary btn-block" onclick="loginSuper()"><i data-lucide="log-in"></i> Masuk</button>
+    <p class="muted small" style="margin-top:.6rem">Sesi berlaku 2 jam. Semua aksi super tercatat di log audit. Jangan bagikan halaman ini.</p>
+  </div>
+
+  <div id="appArea" hidden>
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="openBuat()"><i data-lucide="plus"></i> Buat Event Baru</button>
+      <button class="btn btn-ghost" onclick="loadEvents()"><i data-lucide="refresh-cw"></i> Segarkan</button>
+      <a class="btn btn-ghost" href="spectra-login.html"><i data-lucide="external-link"></i> Login Admin Event</a>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3><i data-lucide="layers"></i> Daftar Event</h3></div>
+      <div class="table-wrap"><table class="ev">
+        <thead><tr><th>Event</th><th>Tahun</th><th>Status</th><th>Cabang</th><th>Peserta</th><th style="text-align:right">Aksi</th></tr></thead>
+        <tbody id="evBody"></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="card" id="fatal" hidden><p id="fatalTxt" class="muted"></p></div>
+</main>
+
+<div class="ovl" id="ovlBuat" style="display:none"><div class="card">
+  <h3 style="margin-bottom:.8rem">➕ Buat Event Baru</h3>
+  <label class="field"><span>Nama event</span><input class="input" id="bNama" placeholder="FTBI SD 2027"></label>
+  <div class="grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+    <label class="field"><span>Tahun</span><input class="input" id="bTahun" type="number" value="2027"></label>
+    <label class="field"><span>Kode prefix</span><input class="input" id="bKode" placeholder="FTBI27" style="text-transform:uppercase"></label>
+  </div>
+  <label class="field"><span>Lokasi</span><input class="input" id="bLokasi" placeholder="Kec. Selogiri"></label>
+  <p class="muted small">Event dibuat berstatus DRAFT beserta satu kode ADMIN pertama. Lengkapi cabang/kriteria lewat spectra-setup setelah login admin event.</p>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="tutup('ovlBuat')">Batal</button>
+    <button class="btn btn-primary" onclick="simpanBuat()">Buat Event</button></div>
+</div></div>
+
+<div class="ovl" id="ovlAdmins" style="display:none"><div class="card">
+  <h3 style="margin-bottom:.4rem">🔑 Kode Admin — <span id="admEvName"></span></h3>
+  <p class="muted small">Aksi melihat/reset kode tercatat di log audit.</p>
+  <div id="admList"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="tutup('ovlAdmins')">Tutup</button></div>
+</div></div>
+
+<div class="ovl" id="ovlHasil" style="display:none"><div class="card">
+  <h3 style="margin-bottom:.4rem">✅ Event Dibuat</h3>
+  <p class="muted small">Simpan kode admin berikut — kode hanya ditampilkan sekali di sini dan tercatat di log.</p>
+  <div class="kodeBox" id="hasilKode">-</div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="copyKode()"><i data-lucide="copy"></i> Salin</button>
+    <button class="btn btn-primary" onclick="tutup('ovlHasil')">Selesai</button></div>
+</div></div>
+
+<script>
+const SKEY='spectra_super_sess';
+const el=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let EVLIST=[], CUR_EV=null;
+
+function getSess(){try{const s=JSON.parse(localStorage.getItem(SKEY));if(s&&s.exp>Date.now())return s;}catch(e){}return null;}
+function setSess(s){localStorage.setItem(SKEY,JSON.stringify(s));}
+function clearSess(){localStorage.removeItem(SKEY);}
+const kodeSuper=()=>{const s=getSess();return s?s.k:'';};
+function tutup(id){el(id).style.display='none';}
+
+(async function boot(){
+  el('icTheme').setAttribute('data-lucide',themeIcon());
+  const s=getSess();
+  if(s)showApp(s);else showLogin();
+  icons();
+})();
+function showLogin(){el('loginCard').hidden=false;el('appArea').hidden=true;el('btnOut').hidden=true;el('sessLabel').hidden=true;}
+function showApp(s){el('loginCard').hidden=true;el('appArea').hidden=false;el('btnOut').hidden=false;
+  el('sessLabel').hidden=false;el('sessLabel').textContent=s.label||'SUPER';loadEvents();}
+
+async function loginSuper(){
+  const k=el('inSuper').value.trim();
+  if(!k)return toast('Isi kode super.','err');
+  const {data,error}=await (await sb()).rpc('spectra_super_verify',{p_kode:k});
+  if(error)return toast(error.message,'err');
+  if(!data||!data.ok)return toast('Kode super tidak valid.','err');
+  setSess({k:k.toUpperCase(),exp:Date.now()+2*3600*1000,label:data.label});
+  el('inSuper').value='';showApp(getSess());icons();
+}
+function logoutSuper(){clearSess();showLogin();}
+
+async function loadEvents(){
+  const {data,error}=await (await sb()).rpc('spectra_super_list_events',{p_kode:kodeSuper()});
+  if(error)return toast(error.message,'err');
+  if(data&&data.error){clearSess();showLogin();return toast(data.error,'err');}
+  EVLIST=Array.isArray(data)?data:[];
+  renderEvents();
+}
+function renderEvents(){
+  el('evBody').innerHTML=EVLIST.map(e=>{
+    const badge=e.status==='AKTIF'?'ok':e.status==='DRAFT'?'warn':e.status==='ARSIP'?'none':'proc';
+    return '<tr><td><b>'+esc(e.nama)+'</b><br><small class="muted">'+esc(e.slug||'')+'</small></td>'+
+      '<td style="text-align:center">'+e.tahun+'</td>'+
+      '<td style="text-align:center"><span class="badge '+badge+'">'+e.status+'</span></td>'+
+      '<td style="text-align:center">'+e.cabang+'</td><td style="text-align:center">'+e.peserta+'</td>'+
+      '<td><div class="rowAct">'+
+      '<select class="input" onchange="setStatusEv(\''+e.id+'\',this.value)">'+
+        ['DRAFT','AKTIF','SELESAI','ARSIP'].map(s=>'<option '+(s===e.status?'selected':'')+'>'+s+'</option>').join('')+'</select>'+
+      '<button class="btn btn-ghost btn-icon" title="Lihat kode admin" onclick="lihatKode(\''+e.id+'\')"><i data-lucide="key-round"></i></button>'+
+      '<button class="btn btn-danger btn-icon" title="Hapus event" onclick="hapusEvent(\''+e.id+'\')"><i data-lucide="trash-2"></i></button>'+
+      '</div></td></tr>';
+  }).join('')||'<tr><td colspan="6" class="muted" style="text-align:center">Belum ada event.</td></tr>';
+  icons();
+}
+
+async function setStatusEv(id,st){
+  const e=EVLIST.find(x=>x.id===id);if(!e)return;
+  const ok=await spectraConfirm({judul:'Ubah status',pesan:'Event "'+e.nama+'" menjadi '+st+'?',teksYa:'Ubah'});
+  if(!ok)return loadEvents();
+  const {data,error}=await (await sb()).rpc('spectra_super_set_status',{p_kode:kodeSuper(),p_event_id:id,p_status:st});
+  if(error)return toast(error.message,'err');
+  if(data&&data.error)return toast(data.error,'err');
+  toast('Status diperbarui.','ok');loadEvents();
+}
+
+async function lihatKode(id){
+  CUR_EV=id;
+  const e=EVLIST.find(x=>x.id===id);
+  el('admEvName').textContent=e?e.nama:'';
+  const {data,error}=await (await sb()).rpc('spectra_super_get_admins',{p_kode:kodeSuper(),p_event_id:id});
+  if(error)return toast(error.message,'err');
+  if(data&&data.error)return toast(data.error,'err');
+  const list=Array.isArray(data)?data:[];
+  el('admList').innerHTML=list.length?list.map(a=>
+    '<div class="admRow"><div><b>'+esc(a.nama)+'</b> '+(a.active?'':'<span class="badge danger">NONAKTIF</span>')+
+    '<br><code>'+esc(a.kode)+'</code></div>'+
+    '<button class="btn btn-warn" onclick="resetKode(\''+a.id+'\')"><i data-lucide="rotate-ccw"></i> Reset</button></div>').join('')
+    :'<p class="muted small">Tidak ada admin untuk event ini.</p>';
+  el('ovlAdmins').style.display='grid';icons();
+}
+async function resetKode(adminId){
+  const ok=await spectraConfirm({judul:'Reset kode admin',pesan:'Kode lama akan tidak berlaku dan kode baru dibuat. Lanjutkan?',teksYa:'Reset',bahaya:true});
+  if(!ok)return;
+  const {data,error}=await (await sb()).rpc('spectra_super_reset_admin',{p_kode:kodeSuper(),p_event_id:CUR_EV,p_admin_id:adminId});
+  if(error)return toast(error.message,'err');
+  if(data&&data.error)return toast(data.error,'err');
+  toast('Kode baru: '+data.kode_baru,'ok');
+  lihatKode(CUR_EV);
+}
+
+async function hapusEvent(id){
+  const e=EVLIST.find(x=>x.id===id);if(!e)return;
+  const conf=prompt('Hapus PERMANEN event "'+e.nama+'" beserta seluruh data?\nKetik nama event untuk konfirmasi:');
+  if(conf===null)return;
+  if(conf.trim().toLowerCase()!==e.nama.trim().toLowerCase())return toast('Konfirmasi salah.','err');
+  const {data,error}=await (await sb()).rpc('spectra_super_delete_event',{p_kode:kodeSuper(),p_event_id:id,p_konfirmasi:conf});
+  if(error)return toast(error.message,'err');
+  if(data&&data.error)return toast(data.error,'err');
+  toast('Event dihapus.','ok');loadEvents();
+}
+
+function openBuat(){el('ovlBuat').style.display='grid';icons();}
+async function simpanBuat(){
+  const payload={nama_event:el('bNama').value.trim(),tahun:Number(el('bTahun').value)||new Date().getFullYear(),
+    kode_event:el('bKode').value.trim().toUpperCase(),lokasi:el('bLokasi').value.trim()};
+  if(!payload.nama_event||!payload.kode_event)return toast('Nama & kode wajib diisi.','err');
+  const {data,error}=await (await sb()).rpc('spectra_super_create_event',{p_kode:kodeSuper(),p_payload:payload});
+  if(error)return toast(error.message,'err');
+  if(data&&data.error)return toast(data.error,'err');
+  tutup('ovlBuat');
+  el('hasilKode').textContent=data.admin_kode;
+  el('ovlHasil').style.display='grid';icons();
+  loadEvents();
+}
+function copyKode(){
+  const t=el('hasilKode').textContent;
+  if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast('Tersalin.','ok'));
+  else toast('Salin manual: '+t,'warn');
+}
+</script>
+</body>
+</html>
