@@ -204,7 +204,13 @@
           </div>
           <p class="muted small">Rekap & BA Hasil mengikuti cabang+kategori terpilih. BA Semua Cabang = Juara 1–3 & Harapan 1–3 seluruh cabang. BA Kandidat = juara 1 tiap cabang. Cetak BA menyertakan QR metadata arsip.</p>
         </div>
-
+<div class="card" style="margin-bottom:1rem">
+  <div class="card-head"><h3><i data-lucide="award"></i> Rekap Nilai Akhir (Resmi)</h3></div>
+  <p class="muted small">Satu dokumen berisi seluruh cabang & kategori untuk dibagikan ke semua sekolah. Hanya nilai yang sudah disahkan (FINAL); hanya total akhir tanpa rincian per juri; peringkat penuh + label juara; catatan aturan main & blok tanda tangan otomatis.</p>
+  <div class="toolbar" style="margin-bottom:0">
+    <button class="btn btn-primary" onclick="cetakRekapResmi()"><i data-lucide="printer"></i> Cetak Rekap Akhir Keseluruhan</button>
+  </div>
+</div>
         <div class="card">
           <div class="card-head"><h3><i data-lucide="archive"></i> Riwayat Berita Acara</h3></div>
           <div id="baList" class="muted small">Belum ada berita acara.</div>
@@ -635,6 +641,92 @@ function cetakRekap(){
   h+='<div class="slot">Operator,<br><br><br><br>(..............................)</div>';
   h+='<div class="slot">Mengetahui,<br>Ketua Panitia,<br><br><br><br><span class="nama">'+esc(s.ketua_panitia||'(..............................)')+'</span></div></div></div>';
   const w=window.open('','_blank');w.document.write('<html><head><meta charset="utf-8">'+PRINT_CSS+'</head><body>'+h+'</body></html>');
+  w.document.close();w.focus();setTimeout(()=>w.print(),300);
+}
+/* ===== REKAP NILAI AKHIR RESMI — semua cabang, 1 dokumen ===== */
+async function cetakRekapResmi(){
+  const client=await sb();
+  const kRes=await client.from('spectra_kriteria')
+    .select('cabang_id,nama_aspek,prioritas_seri,urutan').eq('event_id',sesi.event_id);
+  const KRIT={};
+  (kRes.data||[]).forEach(k=>{ (KRIT[k.cabang_id]=KRIT[k.cabang_id]||[]).push(k); });
+  Object.keys(KRIT).forEach(c=>KRIT[c].sort((a,b)=>(b.prioritas_seri||0)-(a.prioritas_seri||0)||(a.urutan||0)-(b.urutan||0)));
+
+  /* agregat nilai FINAL per peserta */
+  const fin={};
+  (DATA.nilai||[]).forEach(n=>{
+    if(n.status!=='FINAL')return;
+    const f=fin[n.peserta_id]=fin[n.peserta_id]||{total:0,nF:0,aspek:{}};
+    f.total+=Number(n.total||0); f.nF++;
+    const r=n.rincian||{};
+    Object.keys(r).forEach(a=>{f.aspek[a]=(f.aspek[a]||0)+Number(r[a]||0);});
+  });
+
+  /* deteksi peserta belum sah */
+  const byP={};
+  (DATA.nilai||[]).forEach(n=>{ (byP[n.peserta_id]=byP[n.peserta_id]||{})[n.petugas_id]=n; });
+  let unrat=0;
+  (DATA.peserta||[]).forEach(p=>{
+    const vals=Object.values(byP[p.id]||{});
+    if(vals.length>0 && !vals.every(v=>v.status==='FINAL')) unrat++;
+  });
+  if(unrat>0){
+    const ok=await spectraConfirm({judul:'Ada nilai belum sah',
+      pesan:unrat+' peserta memiliki nilai yang belum disahkan (non-FINAL) dan TIDAK akan ikut dalam dokumen resmi ini. Lanjutkan cetak?',
+      teksYa:'Lanjutkan Cetak'});
+    if(!ok)return;
+  }
+
+  const cmp=(aId,bId,cabId)=>{
+    const A=(fin[aId]||{}).aspek||{}, B=(fin[bId]||{}).aspek||{};
+    for(const k of (KRIT[cabId]||[])){ const sa=A[k.nama_aspek]||0, sb=B[k.nama_aspek]||0; if(sa!==sb)return sb-sa; }
+    return 0;
+  };
+
+  let sections='';
+  (DATA.cabang||[]).forEach(cab=>{
+    const katList=(DATA.kategori||[])
+      .filter(k=>(DATA.peserta||[]).some(p=>p.cabang_id===cab.id&&p.kategori_id===k.id&&fin[p.id]))
+      .map(k=>({id:k.id,nama:k.nama_kategori}));
+    if((DATA.peserta||[]).some(p=>p.cabang_id===cab.id&&!p.kategori_id&&fin[p.id])) katList.push({id:null,nama:'Umum'});
+    katList.forEach(kat=>{
+      const rows=(DATA.peserta||[])
+        .filter(p=>p.cabang_id===cab.id&&(p.kategori_id||null)===kat.id&&fin[p.id])
+        .map(p=>({p,f:fin[p.id]}))
+        .sort((a,b)=>(b.f.total-a.f.total)||cmp(a.p.id,b.p.id,cab.id)||
+          ((parseInt(a.p.nomor_undian,10)||0)-(parseInt(b.p.nomor_undian,10)||0)));
+      if(!rows.length)return;
+      sections+='<div class="sec"><h3>Cabang '+esc(cab.nama_cabang)+' — Kategori '+esc(kat.nama)+'</h3>'+
+        '<table class="data"><thead><tr><th style="width:60px">Peringkat</th><th style="width:70px">Undian</th>'+
+        '<th>Nama Peserta</th><th>Sekolah</th><th style="width:80px">Total</th><th style="width:110px">Keterangan</th></tr></thead><tbody>'+
+        rows.map((x,i)=>{const L=i<6?['Juara 1','Juara 2','Juara 3','Harapan 1','Harapan 2','Harapan 3'][i]:'';
+          return '<tr><td style="text-align:center">'+(i+1)+'</td><td style="text-align:center">'+esc(x.p.nomor_undian)+
+            '</td><td>'+esc(x.p.nama_peserta)+'</td><td>'+esc(x.p.asal_instansi||'-')+
+            '</td><td style="text-align:center"><b>'+fmtNilai(x.f.total)+'</b></td><td style="text-align:center">'+L+'</td></tr>';}).join('')+
+        '</tbody></table></div>';
+    });
+  });
+  if(!sections)return toast('Belum ada nilai FINAL untuk dicetak.','err');
+
+  const s=SET();
+  const d=new Date();const B=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  let h=kopHtml();
+  h+='<div class="judul"><div class="t1">Rekapitulasi Nilai Akhir Hasil Penilaian</div>'+
+     '<div class="t2">'+esc(DATA.event.nama)+' Tahun '+DATA.event.tahun+'</div>'+
+     '<div class="t2">(Hasil Resmi — Nilai Tersahkan)</div></div>';
+  h+=sections;
+  h+='<p style="font-size:9.5pt;margin-top:14px">Catatan:<br>'+
+     '1. Total merupakan nilai akhir gabungan dewan juri yang telah disahkan panitia.<br>'+
+     '2. Nilai sama (seri) diselesaikan berdasarkan prioritas aspek penilaian yang ditetapkan panitia.<br>'+
+     '3. Keputusan dewan juri bersifat mutlak dan tidak dapat diganggu gugat.</p>';
+  h+='<p style="text-align:right;margin:18px 0 0">'+esc(s.tempat_cetak||'')+', '+d.getDate()+' '+B[d.getMonth()]+' '+d.getFullYear()+'</p>';
+  h+='<div style="display:flex;justify-content:space-between;gap:40px">'+
+     '<div style="text-align:center;flex:1">Ketua Panitia,<br><br><br><br><b>'+esc(s.ketua_panitia||'(..............................)')+'</b></div>'+
+     (s.pejabat_kedua?('<div style="text-align:center;flex:1">Mengetahui,<br>'+esc(s.jabatan_kedua||'')+'<br><br><br><br><b>'+esc(s.pejabat_kedua)+'</b></div>'):'')+
+     '</div>';
+  const css=PRINT_CSS+'<style>.sec{margin-top:16px}.sec h3{font-size:11pt;margin:0 0 4px;text-transform:uppercase}tr{page-break-inside:avoid}.sec table{margin:4px 0}</style>';
+  const w=window.open('','_blank');
+  w.document.write('<html><head><meta charset="utf-8">'+css+'</head><body>'+h+'</body></html>');
   w.document.close();w.focus();setTimeout(()=>w.print(),300);
 }
 async function buatBA(jenis){
