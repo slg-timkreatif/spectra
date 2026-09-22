@@ -148,6 +148,24 @@
             </div></div>
           <div class="table-wrap"><table class="matrix" id="matriksTable"></table></div>
         </div>
+
+        <div class="card" style="margin-top:1rem">
+          <div class="card-head"><h3><i data-lucide="file-up"></i> Nilai External (Google Form)</h3></div>
+          <div class="toolbar">
+            <select class="input" id="fXCabang" style="width:auto"><option value="">Pilih Cabang</option></select>
+            <select class="input" id="fXKategori" style="width:auto"><option value="">Semua Kategori</option></select>
+            <button class="btn btn-ghost" onclick="unduhTemplateNilai()"><i data-lucide="download"></i> Unduh Template</button>
+            <label class="btn btn-primary" style="cursor:pointer"><i data-lucide="upload"></i> Import Template
+              <input type="file" id="fileNilaiX" accept=".xlsx,.xls,.csv" style="display:none" onchange="parseNilaiExternal(this.files[0])"></label>
+          </div>
+          <div id="xPrev" hidden>
+            <div class="toolbar"><span class="badge ok" id="xOk">0</span><span class="badge warn" id="xErr">0</span>
+              <label style="display:flex;gap:.4rem;align-items:center;font-size:.8rem"><input type="checkbox" id="xLangsung"> langsung FINAL</label>
+              <button class="btn btn-primary" id="btnXImpor" onclick="jalankanImportNilai()"><i data-lucide="check"></i> Import Nilai</button></div>
+            <div class="table-wrap"><table><thead><tr><th>Baris</th><th>Nomor</th><th>Status</th></tr></thead><tbody id="tbXPrev"></tbody></table></div>
+          </div>
+          <p class="muted small">Tempel hasil Google Form ke sheet ISI template (kolom nomor + skor), simpan, lalu import. Nilai masuk sebagai "Dewan Juri (Google Form)".</p>
+        </div>
       </section>
 
       <section id="sec-laporan" hidden>
@@ -381,6 +399,8 @@ function isiFilter(){
   el('fDCabang').innerHTML=opts;
   const kopts='<option value="">Semua Kategori</option>'+DATA.kategori.map(k=>'<option value="'+k.id+'">'+k.nama_kategori+'</option>').join('');
   el('fKategori').innerHTML=kopts;el('fDKategori').innerHTML=kopts;
+  el('fXCabang').innerHTML=opts;
+  el('fXKategori').innerHTML=kopts;
 }
 function isiRKategori(){
   const fc=el('fRCabang').value;
@@ -764,6 +784,103 @@ function renderBA(){el('baList').innerHTML=BALIST.length?BALIST.map(b=>
   '<div style="display:flex;gap:.4rem"><button class="btn btn-ghost btn-icon" title="Edit isi" onclick="openEditBA(\''+b.id+'\')"><i data-lucide="pencil"></i></button>'+
   '<button class="btn btn-ghost btn-icon" title="Cetak" onclick="cetakBAIsi(BALIST.find(x=>x.id===\''+b.id+'\'))"><i data-lucide="printer"></i></button></div></div>').join('')
   :'<span class="muted small">Belum ada berita acara.</span>';icons();}
+
+/* ===== NILAI EXTERNAL (GOOGLE FORM) ===== */
+let XPREV=[];
+const X_IS_OP=(sesi.peran==='OPERATOR');
+function xScope(){
+  if(X_IS_OP)return{cab:(DATA.cabang||{}).id||null,kat:sesi.kategori_id||null};
+  return{cab:(el('fXCabang')?el('fXCabang').value:'')||null,kat:(el('fXKategori')?el('fXKategori').value:'')||null};
+}
+function xKriteria(cab){
+  if(X_IS_OP)return(KRITERIA||[]);
+  return(DATA.kriteria||[]).filter(k=>k.cabang_id===cab);
+}
+function xPesertaScope(cab,kat){
+  return(DATA.peserta||[]).filter(p=>p.cabang_id===cab&&(!kat||p.kategori_id===kat)).map(p=>({
+    nomor_undian:p.nomor_undian,nama_peserta:p.nama_peserta,
+    nama_kategori:X_IS_OP?(p.nama_kategori||'Umum'):((kategoriById(p.kategori_id).nama_kategori)||'Umum')}));
+}
+function unduhTemplateNilai(){
+  const sc=xScope();if(!sc.cab)return toast('Pilih cabang dulu.','err');
+  const krit=xKriteria(sc.cab)||[];
+  if(!krit.length)return toast('Cabang ini belum punya kriteria/aspek.','err');
+  const head=['Nomor Undian',...krit.map(k=>k.nama_aspek),'Penalti','Catatan'];
+  const wsISI=XLSX.utils.aoa_to_sheet([head,...Array.from({length:80},()=>Array(head.length).fill(''))]);
+  const ps=xPesertaScope(sc.cab,sc.kat);
+  const wsPes=XLSX.utils.aoa_to_sheet([['Nomor Undian','Nama Peserta','Kategori'],
+    ...ps.map(p=>[p.nomor_undian,p.nama_peserta,p.nama_kategori||'Umum'])]);
+  const wsKr=XLSX.utils.aoa_to_sheet([['Aspek','Nilai Maks'],...krit.map(k=>[k.nama_aspek,k.nilai_maks])]);
+  const wsAt=XLSX.utils.aoa_to_sheet([['ATURAN TEMPLATE NILAI EXTERNAL'],
+    ['1. Jangan mengubah header/urutan kolom sheet ISI.'],
+    ['2. Urutan baris bebas; pencocokan memakai Nomor Undian.'],
+    ['3. Isi skor angka 0 s/d nilai maks aspek; penalti >= 0.'],
+    ['4. Baris nomor tak dikenal / skor tidak lengkap akan dilewati saat import.'],
+    ['5. Tempel hasil Google Form (kolom nomor + skor) mulai baris 2 sheet ISI.']]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,wsISI,'ISI');
+  XLSX.utils.book_append_sheet(wb,wsPes,'PESERTA');
+  XLSX.utils.book_append_sheet(wb,wsKr,'KRITERIA');
+  XLSX.utils.book_append_sheet(wb,wsAt,'ATURAN');
+  XLSX.writeFile(wb,'template_nilai_external.xlsx');
+}
+function parseNilaiExternal(file){
+  if(!file)return;
+  const sc=xScope();if(!sc.cab)return toast('Pilih cabang dulu.','err');
+  const krit=xKriteria(sc.cab)||[];
+  const rd=new FileReader();
+  rd.onload=e=>{try{
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+    const sh=wb.Sheets['ISI']||wb.Sheets[wb.SheetNames[0]];
+    const aoa=XLSX.utils.sheet_to_json(sh,{header:1,defval:''});
+    const hi=aoa.findIndex(r=>r.some(c=>/nomor\s*undian/i.test(String(c))));
+    if(hi===-1)return toast('Sheet ISI / header "Nomor Undian" tidak ditemukan.','err');
+    const heads=aoa[hi].map(h=>String(h).trim());
+    const iN=heads.findIndex(h=>/nomor\s*undian/i.test(h));
+    const iPen=heads.findIndex(h=>/^penalti$/i.test(h));
+    const iCat=heads.findIndex(h=>/^catatan$/i.test(h));
+    const missing=krit.filter(k=>!heads.includes(k.nama_aspek));
+    if(missing.length)return toast('Template kedaluwarsa, kolom tidak ditemukan: '+missing.map(m=>m.nama_aspek).join(', ')+'. Unduh ulang template.','err');
+    const iAs={};krit.forEach(k=>{iAs[k.nama_aspek]=heads.indexOf(k.nama_aspek);});
+    const known=new Set(xPesertaScope(sc.cab,sc.kat).map(p=>String(p.nomor_undian).trim()));
+    XPREV=[];const seen=new Set();
+    aoa.slice(hi+1).forEach((row,idx)=>{
+      const nomor=String(row[iN]??'').trim();
+      if(!nomor)return;
+      if(seen.has(nomor)){XPREV.push({baris:hi+2+idx,nomor,ok:false,why:'duplikat'});return;}
+      seen.add(nomor);
+      if(!known.has(nomor)){XPREV.push({baris:hi+2+idx,nomor,ok:false,why:'nomor tak dikenal'});return;}
+      const rinc={};let ok=true;
+      krit.forEach(k=>{
+        const v=row[iAs[k.nama_aspek]];
+        const num=(v===''||v==null)?NaN:Number(v);
+        if(isNaN(num)||num<0||num>Number(k.nilai_maks))ok=false;else rinc[k.nama_aspek]=num;
+      });
+      const pen=iPen>=0?(Number(row[iPen])||0):0;
+      const cat=iCat>=0?String(row[iCat]??''):'';
+      XPREV.push({baris:hi+2+idx,nomor,ok,why:ok?'siap':'skor tidak lengkap',rinc,pen,cat});
+    });
+    const okN=XPREV.filter(r=>r.ok).length;
+    el('xPrev').hidden=false;
+    el('xOk').textContent=okN+' siap';el('xErr').textContent=(XPREV.length-okN)+' bermasalah';
+    el('btnXImpor').disabled=okN===0;
+    el('tbXPrev').innerHTML=XPREV.map(r=>'<tr><td>'+r.baris+'</td><td>'+esc(r.nomor)+'</td><td class="small" style="color:'+(r.ok?'var(--ok-text)':'var(--danger-text)')+'">'+(r.ok?'✅ siap':'🔴 '+r.why)+'</td></tr>').join('');
+    icons();
+  }catch(err){toast('Gagal membaca file: '+err.message,'err');}};
+  rd.readAsArrayBuffer(file);
+}
+async function jalankanImportNilai(){
+  const sc=xScope();
+  const rows=XPREV.filter(r=>r.ok).map(r=>({nomor_undian:r.nomor,rincian:r.rinc,penalti:r.pen,catatan:r.cat}));
+  const status=(el('xLangsung')&&el('xLangsung').checked)?'FINAL':'DRAFT';
+  const {data,error}=await (await sb()).rpc('spectra_import_nilai_external',{
+    p_kode_akses:sesi.kode_akses,p_cabang_id:sc.cab,p_kategori_id:sc.kat,p_rows:rows,p_status:status});
+  if(error)return toast(error.message,'err');
+  if(data.error)return toast(data.error,'err');
+  toast('Import: '+data.inserted+' baru, '+data.updated+' diperbarui, '+data.skipped_unknown+' tak dikenal, '+data.skipped_incomplete+' tidak lengkap.','ok');
+  el('xPrev').hidden=true;XPREV=[];
+  await muat();
+}
 
 /* ===== EDITOR TEMPLATE ===== */
 const TOKENS=['{{NOMOR_BA}}','{{HARI}}','{{TANGGAL_PANJANG}}','{{TEMPAT}}','{{NAMA_EVENT}}','{{TAHUN}}','{{CABANG}}','{{KATEGORI}}','{{JUMLAH_PESERTA}}','{{JUMLAH_PESERTA_TERBILANG}}','{{TABEL_JUARA}}','{{TABEL_SEMUA}}','{{TABEL_KANDIDAT}}','{{BLOK_TTD}}'];
