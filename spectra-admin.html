@@ -255,6 +255,36 @@
       <section id="sec-event" hidden>
         <div class="eventInfo" id="eventInfo"></div>
         <div class="card" style="margin-bottom:1rem">
+          <div class="card-head"><h3><i data-lucide="pencil-ruler"></i> Edit Event</h3>
+            <button class="btn btn-primary" onclick="simpanEditEvent()"><i data-lucide="save"></i> Simpan</button></div>
+          <div class="grid2">
+            <label class="field"><span>Nama event</span><input class="input" id="eEvNama"></label>
+            <label class="field"><span>Tahun</span><input class="input" id="eEvTahun" type="number"></label>
+            <label class="field"><span>Lokasi</span><input class="input" id="eEvLokasi"></label>
+            <label class="field"><span>Kode prefix (nomor BA)</span><input class="input" id="eEvPrefix" style="text-transform:uppercase"></label>
+          </div>
+          <p class="muted small">Slug tidak dapat diubah (dipakai tautan livescore & dasar kode akses). Kode prefix hanya memengaruhi nomor BA yang terbit setelah perubahan; BA lama tetap.</p>
+        </div>
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-head"><h3><i data-lucide="network"></i> Kelola Cabang & Kriteria</h3>
+            <button class="btn btn-ghost" onclick="openEditCabang(null)"><i data-lucide="plus"></i> Tambah Cabang</button></div>
+          <div class="toolbar"><select class="input" id="sCab" onchange="renderStruktur()" style="width:auto"></select></div>
+          <div class="grid2">
+            <label class="field"><span>Nama cabang</span><input class="input" id="sCabNama"></label>
+            <label class="field"><span>Kode cabang</span><input class="input" id="sCabKode" style="text-transform:uppercase"></label>
+            <label class="field"><span>Urutan</span><input class="input" id="sCabUrut" type="number"></label>
+            <div style="display:flex;gap:.5rem;align-items:flex-end">
+              <button class="btn btn-primary" onclick="simpanCabang()"><i data-lucide="save"></i> Simpan Cabang</button>
+              <button class="btn btn-danger" onclick="hapusCabang()"><i data-lucide="trash-2"></i> Hapus</button>
+            </div>
+          </div>
+          <div class="table-wrap" style="margin-top:.8rem"><table>
+            <thead><tr><th>Aspek</th><th>Maks</th><th>Urutan</th><th>Prioritas Seri</th><th style="text-align:right">Aksi</th></tr></thead>
+            <tbody id="tbKriteria"></tbody></table></div>
+          <button class="btn btn-ghost" onclick="openEditKriteria(null)"><i data-lucide="plus"></i> Tambah Aspek</button>
+          <p class="muted small" style="margin-top:.5rem">Ganti nama aspek = aman (kunci nilai ikut dipindah). Tambah/hapus aspek dikunci bila cabang sudah punya nilai. Hapus cabang hanya bila tanpa peserta & nilai.</p>
+        </div>
+        <div class="card" style="margin-bottom:1rem">
           <div class="card-head"><h3><i data-lucide="image"></i> Kop Surat (3 baris + logo kiri/kanan)</h3>
             <button class="btn btn-primary" onclick="simpanSettings()"><i data-lucide="save"></i> Simpan</button></div>
           <div class="grid2">
@@ -1031,7 +1061,69 @@ function renderEvent(){const e=DATA.event;
   el('eventInfo').innerHTML='<div class="card"><small>Nama</small><b>'+esc(e.nama)+'</b></div>'+
     '<div class="card"><small>Tahun</small><b>'+e.tahun+'</b></div>'+
     '<div class="card"><small>Status</small><b><span class="badge '+(e.status==='AKTIF'?'ok':e.status==='DRAFT'?'warn':'none')+'">'+e.status+'</span></b></div>'+
-    '<div class="card"><small>Slug</small><b>'+esc(e.slug||'-')+'</b></div>';}
+    '<div class="card"><small>Slug</small><b>'+esc(e.slug||'-')+'</b></div>';
+  el('eEvNama').value=e.nama||'';
+  el('eEvTahun').value=e.tahun||'';
+  el('eEvLokasi').value=e.lokasi||'';
+  el('eEvPrefix').value=e.kode_prefix||'';
+  isiCabSelect();}
+async function simpanEditEvent(){
+  const payload={nama_event:el('eEvNama').value.trim(),tahun:el('eEvTahun').value,
+    lokasi:el('eEvLokasi').value.trim(),kode_prefix:el('eEvPrefix').value.trim().toUpperCase()};
+  if(!payload.nama_event)return toast('Nama event wajib diisi.','err');
+  const ok=await spectraConfirm({judul:'Perbarui event',pesan:'Ubah identitas event menjadi "'+payload.nama_event+' ('+payload.tahun+')"?',teksYa:'Simpan'});
+  if(!ok)return;
+  const r=await (await sb()).rpc('spectra_update_event',{p_kode_akses:sesi.kode_akses,p_payload:payload});
+  if(r.error)return toast(r.error.message,'err');
+  if(r.data&&r.data.error)return toast(r.data.error,'err');
+  toast('Event diperbarui.','ok');await muat();}
+function isiCabSelect(){ el('sCab').innerHTML=(DATA.cabang||[]).map(c=>'<option value="'+c.id+'">'+esc(c.nama_cabang)+'</option>').join(''); renderStruktur(); }
+function renderStruktur(){ const c=cabangById(el('sCab').value); if(!c.id)return;
+  el('sCabNama').value=c.nama_cabang||''; el('sCabKode').value=c.kode_cabang||''; el('sCabUrut').value=c.urutan||0;
+  const kr=(DATA.kriteria||[]).filter(k=>k.cabang_id===c.id).sort((a,b)=>(a.urutan||0)-(b.urutan||0));
+  el('tbKriteria').innerHTML=kr.map(k=>'<tr><td>'+esc(k.nama_aspek)+'</td><td class="tnum">'+k.nilai_maks+'</td><td class="tnum">'+(k.urutan||0)+'</td><td class="tnum">'+(k.prioritas_seri||0)+'</td><td><div class="actCell"><button class="btn btn-ghost btn-icon" onclick="openEditKriteria(\''+k.id+'\')"><i data-lucide="pencil"></i></button><button class="btn btn-danger btn-icon" onclick="hapusKriteria(\''+k.id+'\')"><i data-lucide="trash-2"></i></button></div></td></tr>').join('')||'<tr><td colspan="5" class="muted">Belum ada aspek.</td></tr>';
+  icons(); }
+async function simpanCabang(){ const id=el('sCab').value; if(!id)return toast('Pilih cabang.','err');
+  const r=await (await sb()).rpc('spectra_manage_struktur',{p_kode_akses:sesi.kode_akses,p_aksi:'CABANG_UPDATE',p_payload:{cabang_id:id,nama_cabang:el('sCabNama').value.trim(),kode_cabang:el('sCabKode').value.trim(),urutan:el('sCabUrut').value}});
+  if(r.error)return toast(r.error.message,'err'); if(r.data&&r.data.error)return toast(r.data.error,'err');
+  toast('Cabang diperbarui.','ok'); await muat(); }
+async function hapusCabang(){ const id=el('sCab').value; const c=cabangById(id); if(!c.id)return;
+  const ok=await spectraConfirm({judul:'Hapus cabang',pesan:'Hapus cabang "'+c.nama_cabang+'"? Hanya cabang tanpa peserta & nilai.',teksYa:'Hapus',bahaya:true}); if(!ok)return;
+  const r=await (await sb()).rpc('spectra_manage_struktur',{p_kode_akses:sesi.kode_akses,p_aksi:'CABANG_DELETE',p_payload:{cabang_id:id}});
+  if(r.error)return toast(r.error.message,'err'); if(r.data&&r.data.error)return toast(r.data.error,'err');
+  toast('Cabang dihapus.','ok'); await muat(); }
+function openEditCabang(id){ const c=id?cabangById(id):null; const ovl=document.createElement('div'); ovl.className='ovl';
+  ovl.innerHTML='<div class="card"><h3>'+(c?'Edit':'Tambah')+' Cabang</h3>'
+   +'<label class="field"><span>Nama cabang</span><input class="input" id="cNama" value="'+esc(c?c.nama_cabang:'')+'"></label>'
+   +'<label class="field"><span>Kode cabang</span><input class="input" id="cKode" style="text-transform:uppercase" value="'+esc(c?c.kode_cabang:'')+'"></label>'
+   +'<label class="field"><span>Urutan</span><input class="input" id="cUrut" type="number" value="'+(c?(c.urutan||0):0)+'"></label>'
+   +'<div class="modal-actions"><button class="btn btn-ghost" onclick="this.closest(\'.ovl\').remove()">Batal</button><button class="btn btn-primary" onclick="simpanModalCabang(\''+(id||'')+'\')">Simpan</button></div></div>';
+  document.body.appendChild(ovl); icons(); }
+async function simpanModalCabang(id){ const payload={nama_cabang:el('cNama').value.trim(),kode_cabang:el('cKode').value.trim(),urutan:el('cUrut').value};
+  const aksi=id?'CABANG_UPDATE':'CABANG_CREATE'; if(id)payload.cabang_id=id;
+  const r=await (await sb()).rpc('spectra_manage_struktur',{p_kode_akses:sesi.kode_akses,p_aksi:aksi,p_payload:payload});
+  if(r.error)return toast(r.error.message,'err'); if(r.data&&r.data.error)return toast(r.data.error,'err');
+  document.querySelector('.ovl').remove(); toast('Cabang tersimpan.','ok'); await muat(); }
+function openEditKriteria(id){ const cab=el('sCab').value; if(!cab)return toast('Pilih cabang.','err');
+  const k=id?(DATA.kriteria||[]).find(x=>x.id===id):null; const ovl=document.createElement('div'); ovl.className='ovl';
+  ovl.innerHTML='<div class="card"><h3>'+(k?'Edit':'Tambah')+' Aspek</h3>'
+   +'<label class="field"><span>Nama aspek</span><input class="input" id="aNama" value="'+esc(k?k.nama_aspek:'')+'"></label>'
+   +'<label class="field"><span>Nilai maks</span><input class="input" id="aMaks" type="number" value="'+(k?k.nilai_maks:100)+'"></label>'
+   +'<label class="field"><span>Urutan</span><input class="input" id="aUrut" type="number" value="'+(k?(k.urutan||0):0)+'"></label>'
+   +'<label class="field"><span>Prioritas seri (lebih tinggi = didahulukan)</span><input class="input" id="aPrio" type="number" value="'+(k?(k.prioritas_seri||0):0)+'"></label>'
+   +'<div class="modal-actions"><button class="btn btn-ghost" onclick="this.closest(\'.ovl\').remove()">Batal</button><button class="btn btn-primary" onclick="simpanModalKriteria(\''+(id||'')+'\')">Simpan</button></div></div>';
+  document.body.appendChild(ovl); icons(); }
+async function simpanModalKriteria(id){ const cab=el('sCab').value;
+  const payload={cabang_id:cab,nama_aspek:el('aNama').value.trim(),nilai_maks:el('aMaks').value,urutan:el('aUrut').value,prioritas_seri:el('aPrio').value};
+  const aksi=id?'KRITERIA_UPDATE':'KRITERIA_CREATE'; if(id)payload.kriteria_id=id;
+  const r=await (await sb()).rpc('spectra_manage_struktur',{p_kode_akses:sesi.kode_akses,p_aksi:aksi,p_payload:payload});
+  if(r.error)return toast(r.error.message,'err'); if(r.data&&r.data.error)return toast(r.data.error,'err');
+  document.querySelector('.ovl').remove(); toast('Aspek tersimpan.','ok'); await muat(); }
+async function hapusKriteria(id){ const k=(DATA.kriteria||[]).find(x=>x.id===id); if(!k)return;
+  const ok=await spectraConfirm({judul:'Hapus aspek',pesan:'Hapus aspek "'+k.nama_aspek+'"? Hanya bila cabang belum punya nilai.',teksYa:'Hapus',bahaya:true}); if(!ok)return;
+  const r=await (await sb()).rpc('spectra_manage_struktur',{p_kode_akses:sesi.kode_akses,p_aksi:'KRITERIA_DELETE',p_payload:{kriteria_id:id}});
+  if(r.error)return toast(r.error.message,'err'); if(r.data&&r.data.error)return toast(r.data.error,'err');
+  toast('Aspek dihapus.','ok'); await muat(); }
 function renderBlind(){el('blindList').innerHTML=(DATA.cabang||[]).map(c=>
   '<div class="blindRow"><div><b>'+esc(c.nama_cabang)+'</b> <span class="muted small">'+esc(c.kode_cabang)+'</span></div>'+
   '<button class="btn '+(c.blind_judging?'btn-warn':'btn-ghost')+'" onclick="setBlind(\''+c.id+'\','+(!c.blind_judging)+')"><i data-lucide="'+(c.blind_judging?'eye-off':'eye')+'"></i> '+(c.blind_judging?'Blind AKTIF':'Non-Blind')+'</button></div>').join('');icons();}
