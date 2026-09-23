@@ -138,6 +138,8 @@ const adaIsi = d => d && d.rincian && Object.values(d.rincian).some(v => v !== '
 const statusOf = id => locked.has(id) ? 'lock' : (synced.has(id) ? 'ok' : (adaIsi(drafts[id]) ? 'warn' : ''));
 const daftarKotor = () => peserta.filter(p => adaIsi(drafts[p.id]) && !synced.has(p.id) && !locked.has(p.id)).map(p => p.id);
 const fatal = m => { document.getElementById('fatal').hidden = false; document.getElementById('fatalTxt').textContent = m; };
+const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const unitBadge = p => (p.jenis_peserta && p.jenis_peserta !== 'INDIVIDU') ? (' <span class="badge warn">👥 ' + ((p.anggota||[]).length||0) + '</span>') : '';
 
 (async function boot() {
   if (!sesi) { location.href = 'spectra-login.html'; return; }
@@ -228,7 +230,7 @@ function renderList() {
     const st = locked.has(p.id) ? '🔒' : (synced.has(p.id) ? '✅' : (adaIsi(drafts[p.id]) ? '🟡' : '⬜'));
     const nm = blind ? '' : (p.nama_peserta || '');
     return '<button class="pitem ' + (p.id === selectedId ? 'active' : '') + '" onclick="pilih(\'' + p.id + '\')">' +
-      '<b>' + p.nomor_undian + '</b><small>' + nm + '</small><span class="st">' + st + '</span></button>';
+      '<b>' + p.nomor_undian + '</b>' + unitBadge(p) + '<small>' + nm + '</small><span class="st">' + st + '</span></button>';
   }).join('');
 }
 
@@ -242,7 +244,7 @@ function pilih(id) {
   document.getElementById('btnNext').disabled = idx >= peserta.length - 1;
   document.getElementById('pIdx').textContent = 'Peserta ' + (idx + 1) + '/' + peserta.length;
 
-  document.getElementById('pNama').textContent = blind ? ('Peserta Nomor ' + p.nomor_undian) : p.nama_peserta;
+  document.getElementById('pNama').innerHTML = (blind ? ('Peserta Nomor ' + p.nomor_undian) : esc(p.nama_peserta)) + unitBadge(p);
   document.getElementById('pAsal').textContent = blind ? '' : (p.asal_instansi || '');
   document.getElementById('pKategori').textContent = (p.spectra_kategori && p.spectra_kategori.nama_kategori) || 'Umum';
 
