@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SPECTRA — Panel Operator</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-<link rel="stylesheet" href="spectra-theme.css?v=2">
+<link rel="stylesheet" href="spectra-theme.css?v=3">
 <script src="vendor/supabase.min.js"></script>
 <script src="vendor/lucide.min.js"></script>
 <script>if(!window.lucide) document.write('<script src="https://unpkg.com/lucide@latest"><\/script>')</script>
 <script src="vendor/xlsx.full.min.js"></script>
 <script>if(!window.XLSX) document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
-<script src="spectra-ui.js?v=2"></script>
+<script src="spectra-ui.js?v=3"></script>
 <script>initTheme('light')</script>
 <style>
   main{max-width:1120px;margin:0 auto;padding:1rem 1rem 7.5rem}
@@ -30,8 +30,6 @@
   .tot small{color:var(--text-3);font-size:.62rem;letter-spacing:2px;display:block}
   .tot b{font-size:1.35rem;color:var(--primary-text)}
   .aksiCell{display:flex;gap:.4rem;align-items:center;justify-content:center}
-
-  /* Seri & peringkat */
   .seg{display:inline-flex;border:1px solid var(--border);border-radius:10px;overflow:hidden}
   .seg button{padding:.4rem .8rem;border:none;background:var(--surface-2);color:var(--text-2);font-size:.8rem;font-weight:600;cursor:pointer}
   .seg button.on{background:var(--primary);color:#fff}
@@ -41,7 +39,6 @@
   .rankTbl{width:100%;border-collapse:collapse;font-size:.85rem}
   .rankTbl th,.rankTbl td{border:1px solid var(--border);padding:.4rem .5rem}
   .rankTbl th{background:var(--surface-2);text-align:center}
-  .rankTbl tr.seriRow td{background:var(--warning-soft)}
 </style>
 </head>
 <body>
@@ -69,6 +66,24 @@
 
   <div class="matrix-wrap"><table class="matrix"><thead id="mHead"></thead><tbody id="mBody"></tbody></table></div>
   <div class="cards" id="cards"></div>
+  <div class="card empty" id="empty" hidden><i data-lucide="clipboard-list"></i><p>Belum ada peserta di ruang ini.</p></div>
+
+  <div class="card" style="margin-top:1rem">
+    <div class="card-head"><h3><i data-lucide="trophy"></i> Peringkat Peserta</h3>
+      <div class="seg">
+        <button id="segS" class="on" onclick="setRank('sementara')">Sementara</button>
+        <button id="segF" onclick="setRank('final')">Final</button>
+      </div></div>
+    <div class="table-wrap"><table class="rankTbl">
+      <thead><tr><th>#</th><th>Undian</th><th>Nama</th><th>Total</th><th>Ket</th></tr></thead>
+      <tbody id="rankBody"></tbody></table></div>
+    <p class="muted small" id="rankNote" style="margin-top:.5rem"></p>
+  </div>
+
+  <div class="card" style="margin-top:1rem">
+    <div class="card-head"><h3><i data-lucide="equal"></i> Grup Nilai Sama (Seri)</h3></div>
+    <div id="seriBody" class="muted small">Tidak ada nilai sama.</div>
+  </div>
 
   <div class="card" style="margin-top:1rem">
     <div class="card-head"><h3><i data-lucide="file-up"></i> Nilai External (Google Form)</h3></div>
@@ -83,25 +98,7 @@
         <button class="btn btn-primary" id="btnXImpor" onclick="jalankanImportNilai()"><i data-lucide="check"></i> Import Nilai</button></div>
       <div class="table-wrap"><table><thead><tr><th>Baris</th><th>Nomor</th><th>Status</th></tr></thead><tbody id="tbXPrev"></tbody></table></div>
     </div>
-    <p class="muted small">Khusus cabang Anda. Tempel hasil Google Form ke sheet ISI template, lalu import. Nilai masuk sebagai "Dewan Juri (Google Form)".</p>
-  </div>
-  <div class="card empty" id="empty" hidden><i data-lucide="clipboard-list"></i><p>Belum ada peserta di ruang ini.</p></div>
-
-  <div class="card" style="margin-top:1rem">
-    <div class="card-head"><h3><i data-lucide="trophy"></i> Peringkat Peserta</h3>
-      <div class="seg">
-        <button id="rkS" class="on" onclick="setRank('sementara')">Sementara</button>
-        <button id="rkF" onclick="setRank('final')">Final</button>
-      </div></div>
-    <div class="table-wrap"><table class="rankTbl">
-      <thead><tr><th>#</th><th>Undian</th><th>Nama</th><th>Total</th><th>Ket</th></tr></thead>
-      <tbody id="rankBody"></tbody></table></div>
-    <p class="muted small" id="rankNote" style="margin-top:.5rem"></p>
-  </div>
-
-  <div class="card" style="margin-top:1rem">
-    <div class="card-head"><h3><i data-lucide="equal"></i> Grup Nilai Sama (Seri)</h3></div>
-    <div id="seriBody" class="muted small">Tidak ada nilai sama.</div>
+    <p class="muted small">Khusus cabang Anda. Tempel hasil Google Form ke sheet ISI template (kolom nomor + skor + timestamp), simpan, lalu import. Nilai masuk sebagai "Dewan Juri (Google Form)".</p>
   </div>
 
   <div class="card" id="fatal" hidden><p id="fatalTxt" class="muted"></p>
@@ -115,247 +112,228 @@
 </div></div>
 
 <script>
-const sesi = bacaSesi();
-let DATA = null, ROWS = [], KRITERIA = [], SERI = new Set(), RANKMODE = 'sementara';
-let SUB = {};
-async function loadSub(){ const r = await (await sb()).from('spectra_peserta').select('id,submitted_at').eq('event_id', sesi.event_id); SUB = {}; (r.data||[]).forEach(function(p){ SUB[p.id] = p.submitted_at ? Date.parse(p.submitted_at) : null; }); }
-function timeCmp(aId,bId){ const ta=SUB[aId], tb=SUB[bId]; if(ta==null||tb==null) return 0; return ta-tb; }
-var _renderOrig = window.render;
-window.render = async function(){ try{ await loadSub(); }catch(e){} _renderOrig(); };
-let SUB = {};
-async function loadSub(){ const r = await (await sb()).from('spectra_peserta').select('id,submitted_at').eq('event_id', sesi.event_id); SUB = {}; (r.data||[]).forEach(function(p){ SUB[p.id] = p.submitted_at ? Date.parse(p.submitted_at) : null; }); }
-function timeCmp(aId,bId){ const ta=SUB[aId], tb=SUB[bId]; if(ta==null||tb==null) return 0; return ta-tb; }
-let ANGK = {};
-const angOf = id => (ANGK[id] && ANGK[id].anggota) || [];
-const jenisOf = id => (ANGK[id] && ANGK[id].jenis_peserta) || 'INDIVIDU';
-async function loadAnggota(cab, kat){ const { data, error } = await (await sb()).rpc('spectra_list_anggota', { p_kode_akses: sesi.kode_akses, p_cabang_id: cab||null, p_kategori_id: kat||null }); if(error) return; (data||[]).forEach(a=>{ ANGK[a.peserta_id]=a; }); }
-function badgeHtml(id){ const j=jenisOf(id); if(j==='INDIVIDU') return ''; return ' <span class="badge warn">'+j+'·'+angOf(id).length+'</span> <button class="btn btn-ghost btn-icon" style="padding:.1rem .3rem" title="lihat anggota" onclick="toggleAng(\''+id+'\',this)"><i data-lucide="users"></i></button>'; }
-function angBoxHtml(id){ const j=jenisOf(id); if(j==='INDIVIDU'||!angOf(id).length) return ''; return '<div id="ang-'+id+'" style="display:none;margin-top:.3rem" class="muted small">'+angOf(id).map((a,i)=>(i+1)+'. '+esc(a.nama)+(a.kelas?' ('+esc(a.kelas)+')':'')).join('<br>')+'</div>'; }
-function toggleAng(id,btn){ const box=document.getElementById('ang-'+id); if(!box) return; const open=box.style.display!=='none'; box.style.display=open?'none':'block'; btn.title=open?'lihat anggota':'tutup'; }
-const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const fatal = m => { document.getElementById('fatal').hidden = false; document.getElementById('fatalTxt').textContent = m; };
-const kunci = x => Math.round(Number(x || 0) * 100) / 100;
-const LABEL = ['Juara 1','Juara 2','Juara 3','Harapan 1','Harapan 2','Harapan 3'];
+const sesi=bacaSesi();
+let DATA=null, ROWS=[], KRITERIA=[], SERI=new Set(), RANKMODE='sementara';
+let ANGK={};
+let SUB={};
+let XPREV=[];
+const el=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fatal=m=>{el('fatal').hidden=false;el('fatalTxt').textContent=m;};
+const angOf=id=>(ANGK[id]&&ANGK[id].anggota)||[];
+const jenisOf=id=>(ANGK[id]&&ANGK[id].jenis_peserta)||'INDIVIDU';
+async function loadAnggota(cab,kat){
+  const r=await (await sb()).rpc('spectra_list_anggota',{p_kode_akses:sesi.kode_akses,p_cabang_id:cab||null,p_kategori_id:kat||null});
+  if(r.error)return;
+  (r.data||[]).forEach(a=>{ANGK[a.peserta_id]=a;});
+}
+async function loadSub(){
+  const r=await (await sb()).from('spectra_peserta').select('id,submitted_at').eq('event_id',sesi.event_id);
+  SUB={};
+  (r.data||[]).forEach(p=>{SUB[p.id]=p.submitted_at?Date.parse(p.submitted_at):null;});
+}
+function timeCmp(aId,bId){const ta=SUB[aId],tb=SUB[bId];if(ta==null||tb==null)return 0;return ta-tb;}
+function badgeHtml(id){const j=jenisOf(id);if(j==='INDIVIDU')return '';
+  return ' <span class="badge warn">'+j+'·'+angOf(id).length+'</span> <button class="btn btn-ghost btn-icon" style="padding:.1rem .3rem" title="lihat anggota" onclick="toggleAng(\''+id+'\',this)"><i data-lucide="users"></i></button>';}
+function angBoxHtml(id){const j=jenisOf(id);if(j==='INDIVIDU'||!angOf(id).length)return '';
+  return '<div id="ang-'+id+'" style="display:none;margin-top:.3rem" class="muted small">'+angOf(id).map((a,i)=>(i+1)+'. '+esc(a.nama)+(a.kelas?' ('+esc(a.kelas)+')':'')).join('<br>')+'</div>';}
+function toggleAng(id,btn){const box=el('ang-'+id);if(!box)return;const open=box.style.display!=='none';box.style.display=open?'none':'block';btn.title=open?'lihat anggota':'tutup';}
 
 (async function boot(){
-  if (!sesi) { location.href = 'spectra-login.html'; return; }
-  if (sesi.peran !== 'OPERATOR') return fatal('Halaman ini khusus OPERATOR. Sesi Anda: ' + sesi.peran + '.');
-  document.getElementById('hEvent').textContent = sesi.nama_event;
-  document.getElementById('hCabang').textContent =
-    (sesi.nama_cabang || '') + (sesi.nama_kategori ? ' • ' + sesi.nama_kategori : '') + ' • Panel Operator';
-  document.getElementById('icTheme').setAttribute('data-lucide', themeIcon());
+  if(!sesi){location.href='spectra-login.html';return;}
+  if(sesi.peran!=='OPERATOR')return fatal('Halaman ini khusus OPERATOR. Sesi Anda: '+sesi.peran+'.');
+  el('hEvent').textContent=sesi.nama_event;
+  el('hCabang').textContent=(sesi.nama_cabang||'')+(sesi.nama_kategori?' • '+sesi.nama_kategori:'')+' • Panel Operator';
+  el('icTheme').setAttribute('data-lucide',themeIcon());
   initConn('conn');
   await muat();
-  setInterval(() => { if (navigator.onLine) muat(true); }, 45000);
+  setInterval(()=>{if(navigator.onLine)muat(true);},45000);
 })();
 
 async function muat(senyap){
-  try {
-    const client = await sb();
-    const { data, error } = await client.rpc('spectra_get_operator_data', { p_kode_akses: sesi.kode_akses });
-    if (error) throw error;
-    if (data && data.error) return fatal(data.error);
-    DATA = data;
-    const kRes = await client.from('spectra_kriteria').select('*')
-      .eq('cabang_id', (DATA.cabang || {}).id).order('urutan');
-    KRITERIA = (kRes.data || []).slice().sort((a,b) => (b.prioritas_seri||0) - (a.prioritas_seri||0));
-    await loadAnggota((DATA.cabang||{}).id, sesi.kategori_id);
+  try{
+    const client=await sb();
+    const {data,error}=await client.rpc('spectra_get_operator_data',{p_kode_akses:sesi.kode_akses});
+    if(error)throw error;
+    if(data&&data.error)return fatal(data.error);
+    DATA=data;
+    const kRes=await client.from('spectra_kriteria').select('*').eq('cabang_id',(DATA.cabang||{}).id).order('urutan');
+    KRITERIA=(kRes.data||[]).slice().sort((a,b)=>(b.prioritas_seri||0)-(a.prioritas_seri||0));
+    await loadAnggota((DATA.cabang||{}).id,sesi.kategori_id);
+    await loadSub();
     render();
-  } catch (e) { if (!senyap) fatal('Gagal memuat data: ' + e.message); }
+  }catch(e){if(!senyap)fatal('Gagal memuat data: '+e.message);}
 }
 
 function render(){
-  const juri = DATA.juri || [], peserta = DATA.peserta || [], nilai = DATA.nilai || [];
-  const byP = {};
-  nilai.forEach(n => { (byP[n.peserta_id] = byP[n.peserta_id] || {})[n.petugas_id] = n; });
-  let nPr = 0, nFin = 0, nWarn = 0;
-  ROWS = peserta.map(p => {
-    const nm = byP[p.id] || {};
-    const vals = Object.values(nm);
-    const dinilai = vals.length;
-    const fvals = vals.filter(v => v.status === 'FINAL');
-    const nF = fvals.length;
-    const total = vals.reduce((a, v) => a + Number(v.total || 0), 0);
-    const finalTotal = fvals.reduce((a, v) => a + Number(v.total || 0), 0);
-    const lengkap = juri.length > 0 && dinilai === juri.length;
-    const allFinal = dinilai > 0 && nF === dinilai;
-    if (allFinal) nFin++; else if (dinilai > 0) nPr++;
-    if (dinilai > 0 && !lengkap) nWarn++;
-    return { p, nm, dinilai, nF, total, finalTotal, lengkap, allFinal };
+  const juri=DATA.juri||[], peserta=DATA.peserta||[], nilai=DATA.nilai||[];
+  const byP={};
+  nilai.forEach(n=>{(byP[n.peserta_id]=byP[n.peserta_id]||{})[n.petugas_id]=n;});
+  let nPr=0,nFin=0,nWarn=0;
+  ROWS=peserta.map(p=>{
+    const nm=byP[p.id]||{};
+    const vals=Object.values(nm);
+    const dinilai=vals.length;
+    const fvals=vals.filter(v=>v.status==='FINAL');
+    const nF=fvals.length;
+    const total=vals.reduce((a,v)=>a+Number(v.total||0),0);
+    const finalTotal=fvals.reduce((a,v)=>a+Number(v.total||0),0);
+    const lengkap=juri.length>0&&dinilai===juri.length;
+    const allFinal=dinilai>0&&nF===dinilai;
+    if(allFinal)nFin++;else if(dinilai>0)nPr++;
+    if(dinilai>0&&!lengkap)nWarn++;
+    return {p,nm,dinilai,nF,total,finalTotal,lengkap,allFinal};
   });
+  el('stP').textContent=peserta.length;
+  el('stPr').textContent=nPr;
+  el('stF').textContent=nFin;
+  el('stW').textContent=nWarn;
+  const wb=el('warnBox');
+  if(nWarn>0){wb.hidden=false;wb.querySelector('span').textContent=nWarn+' peserta belum dinilai lengkap '+juri.length+' juri.';}
+  else wb.hidden=true;
 
-  /* deteksi dini nilai sama (semua nilai masuk) */
-  const cnt = {};
-  ROWS.forEach(r => { if (r.dinilai > 0) { const k = kunci(r.total); cnt[k] = (cnt[k] || 0) + 1; } });
-  SERI = new Set();
-  ROWS.forEach(r => { if (r.dinilai > 0 && cnt[kunci(r.total)] > 1) SERI.add(r.p.id); });
+  const cnt={};
+  ROWS.forEach(r=>{if(r.dinilai>0){const k=Math.round(r.total*100)/100;cnt[k]=(cnt[k]||0)+1;}});
+  SERI=new Set();
+  ROWS.forEach(r=>{if(r.dinilai>0&&cnt[Math.round(r.total*100)/100]>1)SERI.add(r.p.id);});
 
-  document.getElementById('stP').textContent = peserta.length;
-  document.getElementById('stPr').textContent = nPr;
-  document.getElementById('stF').textContent = nFin;
-  document.getElementById('stW').textContent = nWarn;
-  const wb = document.getElementById('warnBox');
-  if (nWarn > 0) { wb.hidden = false;
-    wb.querySelector('span').textContent = nWarn + ' peserta belum dinilai lengkap ' + juri.length + ' juri.';
-  } else wb.hidden = true;
+  el('mHead').innerHTML='<tr><th>Peserta</th>'+juri.map(j=>'<th>'+esc(j.nama_petugas)+'</th>').join('')+'<th>Total</th><th>Status</th><th style="text-align:center">Aksi</th></tr>';
+  el('mBody').innerHTML=ROWS.map(r=>
+    '<tr class="'+(SERI.has(r.p.id)?'seriRow':'')+'"><td><b>'+r.p.nomor_undian+'. '+esc(r.p.nama_peserta)+'</b>'+badgeHtml(r.p.id)+'<br>'+
+    '<small class="muted">'+esc(r.p.asal_instansi||'')+(r.p.nama_kategori?' • '+esc(r.p.nama_kategori):'')+'</small>'+angBoxHtml(r.p.id)+'</td>'+
+    juri.map(j=>{const v=r.nm[j.id];
+      return '<td>'+(v?'<span class="mcell '+(v.status==='FINAL'?'final':'draft')+'">'+fmtN(v.total)+'</span>':'<span class="mcell none">–</span>')+'</td>';}).join('')+
+    '<td class="tnum"><b>'+fmtN(r.total)+'</b>'+(SERI.has(r.p.id)?' <span class="badge warn">SERI</span>':'')+'</td>'+
+    '<td><span class="badge '+(r.allFinal?'ok':r.dinilai?'proc':'none')+'">'+(r.allFinal?'FINAL':r.dinilai?'PROSES':'BELUM')+'</span></td>'+
+    '<td><div class="aksiCell">'+aksiBtn(r)+'</div></td></tr>').join('');
 
-  document.getElementById('mHead').innerHTML = '<tr><th>Peserta</th>' +
-    juri.map(j => '<th>' + esc(j.nama_petugas) + '</th>').join('') +
-    '<th>Total</th><th>Status</th><th style="text-align:center">Aksi</th></tr>';
-  document.getElementById('mBody').innerHTML = ROWS.map(r =>
-    '<tr class="' + (SERI.has(r.p.id) ? 'seriRow' : '') + '"><td><b>' + r.p.nomor_undian + '. ' + esc(r.p.nama_peserta) + '</b>' + badgeHtml(r.p.id) + '<br>' +
-    '<small class="muted">' + esc(r.p.asal_instansi || '') + (r.p.nama_kategori ? ' • ' + esc(r.p.nama_kategori) : '') + '</small>' + angBoxHtml(r.p.id) + '</td>' +
-    juri.map(j => { const v = r.nm[j.id];
-      return '<td>' + (v ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + '">' + fmtN(v.total) + '</span>' : '<span class="mcell none">–</span>') + '</td>'; }).join('') +
-    '<td class="tnum"><b>' + fmtN(r.total) + '</b>' + (SERI.has(r.p.id) ? ' <span class="badge warn">SERI</span>' : '') + '</td>' +
-    '<td><span class="badge ' + (r.allFinal ? 'ok' : r.dinilai ? 'proc' : 'none') + '">' + (r.allFinal ? 'FINAL' : r.dinilai ? 'PROSES' : 'BELUM') + '</span></td>' +
-    '<td><div class="aksiCell">' + aksiBtn(r) + '</div></td></tr>').join('');
+  el('cards').innerHTML=ROWS.map(r=>
+    '<div class="card"><div class="card-head"><div><h3 style="font-size:1rem">'+r.p.nomor_undian+'. '+esc(r.p.nama_peserta)+'</h3>'+badgeHtml(r.p.id)+
+    '<span class="muted small">'+esc(r.p.asal_instansi||'-')+(r.p.nama_kategori?' • '+esc(r.p.nama_kategori):'')+'</span>'+angBoxHtml(r.p.id)+'</div>'+
+    '<span class="badge '+(r.lengkap?'ok':'warn')+'">Juri '+r.dinilai+'/'+juri.length+'</span></div>'+
+    '<div class="jChips">'+juri.map(j=>{const v=r.nm[j.id];
+      return '<span class="jChip '+(v?(v.status==='FINAL'?'final':'draft'):'')+'">'+esc(j.nama_petugas)+': '+(v?fmtN(v.total):'belum')+'</span>';}).join('')+'</div>'+
+    '<div class="pFoot"><div class="tot"><small>TOTAL GABUNGAN</small><b>'+fmtN(r.total)+'</b>'+(SERI.has(r.p.id)?' <span class="badge warn">SERI</span>':'')+'</div>'+aksiBtn(r,true)+'</div></div>').join('');
 
-  document.getElementById('cards').innerHTML = ROWS.map(r =>
-    '<div class="card"><div class="card-head"><div><h3 style="font-size:1rem">' + r.p.nomor_undian + '. ' + esc(r.p.nama_peserta) + '</h3>' + badgeHtml(r.p.id) +
-    '<span class="muted small">' + esc(r.p.asal_instansi || '-') + (r.p.nama_kategori ? ' • ' + esc(r.p.nama_kategori) : '') + '</span>' + angBoxHtml(r.p.id) + '</div>' +
-    '<span class="badge ' + (r.lengkap ? 'ok' : 'warn') + '">Juri ' + r.dinilai + '/' + juri.length + '</span></div>' +
-    '<div class="jChips">' + juri.map(j => { const v = r.nm[j.id];
-      return '<span class="jChip ' + (v ? (v.status === 'FINAL' ? 'final' : 'draft') : '') + '">' + esc(j.nama_petugas) + ': ' + (v ? fmtN(v.total) : 'belum') + '</span>'; }).join('') + '</div>' +
-    '<div class="pFoot"><div class="tot"><small>TOTAL GABUNGAN</small><b>' + fmtN(r.total) + '</b>' +
-    (SERI.has(r.p.id) ? ' <span class="badge warn">SERI</span>' : '') + '</div>' + aksiBtn(r, true) + '</div></div>').join('');
-
-  document.getElementById('empty').hidden = peserta.length > 0;
-  const batch = ROWS.filter(r => r.dinilai > 0 && r.lengkap && !r.allFinal);
-  document.getElementById('btnBatch').disabled = batch.length === 0;
-  document.getElementById('ringkasan').innerHTML = '<b>' + nFin + '</b> FINAL • <b>' + nPr + '</b> proses • <b>' + nWarn + '</b> ⚠ juri • <b>' + SERI.size + '</b> seri';
+  el('empty').hidden=peserta.length>0;
+  const batch=ROWS.filter(r=>r.dinilai>0&&r.lengkap&&!r.allFinal);
+  el('btnBatch').disabled=batch.length===0;
+  el('ringkasan').innerHTML='<b>'+nFin+'</b> FINAL • <b>'+nPr+'</b> proses • <b>'+nWarn+'</b> ⚠ juri • <b>'+SERI.size+'</b> seri';
   renderRank();
   renderSeri();
   icons();
 }
 
-/* ---- peringkat sementara / final ---- */
-function aspekSums(pId, mode){
-  const out = {};
-  (DATA.nilai || []).forEach(n => {
-    if (n.peserta_id !== playerId(pId)) return;
-    if (mode === 'final' && n.status !== 'FINAL') return;
-    const r = n.rincian || {};
-    Object.keys(r).forEach(k => { out[k] = (out[k] || 0) + Number(r[k] || 0); });
-  });
-  return out;
-}
-function playerId(id){ return id; }
-function cmpTie(aId, bId, mode){
-  const A = aspekSums(aId, mode), B = aspekSums(bId, mode);
-  for (const k of KRITERIA) {
-    const sa = A[k.nama_aspek] || 0, sb = B[k.nama_aspek] || 0;
-    if (sa !== sb) return sb - sa;
-  }
-  return 0;
-}
-function setRank(m){
-  RANKMODE = m;
-  document.getElementById('rkS').classList.toggle('on', m === 'sementara');
-  document.getElementById('rkF').classList.toggle('on', m === 'final');
-  renderRank();
-}
-function renderRank(){
-  const mode = RANKMODE;
-  const list = ROWS.filter(r => mode === 'final' ? r.nF > 0 : r.dinilai > 0)
-    .map(r => ({ r, tot: mode === 'final' ? r.finalTotal : r.total }));
-  const cnt = {};
-  list.forEach(x => { const k = kunci(x.tot); cnt[k] = (cnt[k] || 0) + 1; });
-  list.sort((a, b) => (b.tot - a.tot) || timeCmp(a.r.p.id, b.r.p.id) || cmpTie(a.r.p.id, b.r.p.id, mode) ||
-    (parseInt(a.r.p.nomor_undian,10)||0) - (parseInt(b.r.p.nomor_undian,10)||0));
-  document.getElementById('rankBody').innerHTML = list.length ? list.map((x, i) => {
-    const seri = cnt[kunci(x.tot)] > 1;
-    return '<tr class="' + (seri ? 'seriRow' : '') + '"><td style="text-align:center">' + (i+1) + '</td>' +
-      '<td style="text-align:center">' + x.r.p.nomor_undian + '</td><td>' + esc(x.r.p.nama_peserta) +
-      (i < 6 ? ' <span class="badge ok">' + LABEL[i] + '</span>' : '') + '</td>' +
-      '<td class="tnum"><b>' + fmtN(x.tot) + '</b></td>' +
-      '<td>' + (seri ? '<span class="badge warn">SERI</span> ' : '') +
-      (mode === 'final' ? '<span class="badge ok">FINAL</span>' : '<span class="badge proc">' + x.r.dinilai + ' juri</span>') + '</td></tr>';
-  }).join('') : '<tr><td colspan="5" class="muted" style="text-align:center">Belum ada nilai.</td></tr>';
-  document.getElementById('rankNote').textContent =
-    (mode === 'sementara' ? 'Sementara = dihitung dari semua nilai yang masuk (deteksi dini). ' : 'Final = hanya nilai berstatus FINAL. ') +
-    'Urutan nilai sama mengikuti prioritas aspek (prioritas_seri).';
+function aksiBtn(r,lebar){
+  const cls=lebar?'btn':'btn btn-icon';
+  if(r.allFinal)return '<button class="'+cls+' btn-warn" onclick="validasi(\''+r.p.id+'\',\'DRAFT\')"><i data-lucide="lock-open"></i>'+(lebar?'<span> Buka Kunci</span>':'')+'</button>';
+  if(r.dinilai>0)return '<button class="'+cls+' btn-primary" onclick="validasi(\''+r.p.id+'\',\'FINAL\')"><i data-lucide="badge-check"></i>'+(lebar?'<span> Sahkan Final</span>':'')+'</button>';
+  return '<button class="'+cls+' btn-ghost" disabled><i data-lucide="minus"></i>'+(lebar?'<span> Belum ada nilai</span>':'')+'</button>';
 }
 
-/* ---- grup seri + pratinjau unggul seri ---- */
-function renderSeri(){
-  const groups = {};
-  ROWS.forEach(r => { if (r.dinilai > 0) { const k = kunci(r.total); (groups[k] = groups[k] || []).push(r); } });
-  const keys = Object.keys(groups).filter(k => groups[k].length > 1).sort((a,b) => b - a);
-  if (!keys.length) { document.getElementById('seriBody').innerHTML = '<span class="muted small">Tidak ada nilai sama.</span>'; return; }
-  document.getElementById('seriBody').innerHTML = keys.map(k => {
-    const g = groups[k].slice().sort((a,b) => cmpTie(a.p.id, b.p.id, 'sementara'));
-    return '<div class="seriCard"><div class="row"><b>SERI @ ' + fmtN(Number(k)) + '</b>' +
-      '<span class="badge warn">' + g.length + ' peserta</span></div>' +
-      g.map((r, i) => '<div class="row"><span>' + (i+1) + '. #' + r.p.nomor_undian + ' ' + esc(r.p.nama_peserta) +
-        ' — ' + (DATA.juri || []).map(j => { const v = r.nm[j.id]; return v ? fmtN(v.total) : '-'; }).join(' + ') + '</span>' +
-        (i === 0 ? '<span class="badge ok">unggul seri</span>' : '') + '</div>').join('') +
-      '</div>';
-  }).join('');
-}
-
-function aksiBtn(r, lebar){
-  const cls = lebar ? 'btn' : 'btn btn-icon';
-  if (r.allFinal) return '<button class="' + cls + ' btn-warn" onclick="validasi(\'' + r.p.id + '\',\'DRAFT\')"><i data-lucide="lock-open"></i>' + (lebar ? '<span> Buka Kunci</span>' : '') + '</button>';
-  if (r.dinilai > 0) return '<button class="' + cls + ' btn-primary" onclick="validasi(\'' + r.p.id + '\',\'FINAL\')"><i data-lucide="badge-check"></i>' + (lebar ? '<span> Sahkan Final</span>' : '') + '</button>';
-  return '<button class="' + cls + ' btn-ghost" disabled><i data-lucide="minus"></i>' + (lebar ? '<span> Belum ada nilai</span>' : '') + '</button>';
-}
-
-async function validasi(pesertaId, status){
-  const r = ROWS.find(x => x.p.id === pesertaId); if (!r) return;
-  if (status === 'FINAL' && !r.lengkap) {
-    const ok = await spectraConfirm({ judul: 'Juri belum lengkap',
-      pesan: 'Peserta "' + r.p.nama_peserta + '" baru dinilai ' + r.dinilai + ' dari ' + (DATA.juri || []).length + ' juri. Sahkan tetap?',
-      teksYa: 'Sahkan Tetap', bahaya: true });
-    if (!ok) return;
+async function validasi(pesertaId,status){
+  const r=ROWS.find(x=>x.p.id===pesertaId);if(!r)return;
+  if(status==='FINAL'&&!r.lengkap){
+    const ok=await spectraConfirm({judul:'Juri belum lengkap',
+      pesan:'Peserta "'+r.p.nama_peserta+'" baru dinilai '+r.dinilai+' dari '+(DATA.juri||[]).length+' juri. Sahkan tetap?',
+      teksYa:'Sahkan Tetap',bahaya:true});
+    if(!ok)return;
   }
-  if (status === 'DRAFT') {
-    const ok = await spectraConfirm({ judul: 'Buka kunci?', pesan: 'Nilai "' + r.p.nama_peserta + '" akan kembali ke DRAFT dan hilang dari livescore.', teksYa: 'Buka Kunci' });
-    if (!ok) return;
+  if(status==='DRAFT'){
+    const ok=await spectraConfirm({judul:'Buka kunci?',pesan:'Nilai "'+r.p.nama_peserta+'" akan kembali ke DRAFT dan hilang dari livescore.',teksYa:'Buka Kunci'});
+    if(!ok)return;
   }
-  const { error } = await (await sb()).rpc('spectra_validasi_operator', {
-    p_kode_akses: sesi.kode_akses, p_cabang_id: (DATA.cabang || {}).id, p_peserta_id: pesertaId, p_status: status });
-  if (error) return toast('Gagal: ' + error.message, 'err');
-  toast(status === 'FINAL' ? 'Nilai disahkan FINAL.' : 'Kunci dibuka.', 'ok');
+  const {error}=await (await sb()).rpc('spectra_validasi_operator',{
+    p_kode_akses:sesi.kode_akses,p_cabang_id:(DATA.cabang||{}).id,p_peserta_id:pesertaId,p_status:status});
+  if(error)return toast('Gagal: '+error.message,'err');
+  toast(status==='FINAL'?'Nilai disahkan FINAL.':'Kunci dibuka.','ok');
   await muat(true);
 }
 
 async function sahkanLengkap(){
-  const batch = ROWS.filter(r => r.dinilai > 0 && r.lengkap && !r.allFinal);
-  if (!batch.length) return;
-  const ok = await spectraConfirm({ judul: 'Sahkan ' + batch.length + ' peserta?',
-    pesan: 'Hanya peserta dengan juri lengkap yang akan disahkan menjadi FINAL dan tampil di livescore.', teksYa: 'Sahkan Semua' });
-  if (!ok) return;
-  let n = 0;
-  for (const r of batch) {
-    const { error } = await (await sb()).rpc('spectra_validasi_operator', {
-      p_kode_akses: sesi.kode_akses, p_cabang_id: (DATA.cabang || {}).id, p_peserta_id: r.p.id, p_status: 'FINAL' });
-    if (!error) n++;
+  const batch=ROWS.filter(r=>r.dinilai>0&&r.lengkap&&!r.allFinal);
+  if(!batch.length)return;
+  const ok=await spectraConfirm({judul:'Sahkan '+batch.length+' peserta?',
+    pesan:'Hanya peserta dengan juri lengkap yang akan disahkan menjadi FINAL dan tampil di livescore.',teksYa:'Sahkan Semua'});
+  if(!ok)return;
+  let n=0;
+  for(const r of batch){
+    const {error}=await (await sb()).rpc('spectra_validasi_operator',{
+      p_kode_akses:sesi.kode_akses,p_cabang_id:(DATA.cabang||{}).id,p_peserta_id:r.p.id,p_status:'FINAL'});
+    if(!error)n++;
   }
-  toast(n + ' peserta disahkan FINAL.', 'ok');
+  toast(n+' peserta disahkan FINAL.','ok');
   await muat(true);
 }
-/* ===== NILAI EXTERNAL (GOOGLE FORM) ===== */
-let XPREV=[];
-const X_IS_OP=(sesi.peran==='OPERATOR');
-function xScope(){
-  if(X_IS_OP)return{cab:(DATA.cabang||{}).id||null,kat:sesi.kategori_id||null};
-  return{cab:(el('fXCabang')?el('fXCabang').value:'')||null,kat:(el('fXKategori')?el('fXKategori').value:'')||null};
+
+function aspekSums(pId,mode){
+  const out={};
+  (DATA.nilai||[]).forEach(n=>{
+    if(n.peserta_id!==pId)return;
+    if(mode==='final'&&n.status!=='FINAL')return;
+    const r=n.rincian||{};
+    Object.keys(r).forEach(k=>{out[k]=(out[k]||0)+Number(r[k]||0);});
+  });
+  return out;
 }
-function xKriteria(cab){
-  if(X_IS_OP)return(KRITERIA||[]);
-  return(DATA.kriteria||[]).filter(k=>k.cabang_id===cab);
+function cmpTie(aId,bId,mode){
+  const A=aspekSums(aId,mode),B=aspekSums(bId,mode);
+  for(const k of KRITERIA){const sa=A[k.nama_aspek]||0,sb=B[k.nama_aspek]||0;if(sa!==sb)return sb-sa;}
+  return 0;
 }
+function setRank(m){
+  RANKMODE=m;
+  el('segS').classList.toggle('on',m==='sementara');
+  el('segF').classList.toggle('on',m==='final');
+  renderRank();
+}
+function renderRank(){
+  const mode=RANKMODE;
+  const list=ROWS.filter(r=>mode==='final'?r.nF>0:r.dinilai>0).map(r=>({r,tot:mode==='final'?r.finalTotal:r.total}));
+  const cnt={};
+  list.forEach(x=>{const k=Math.round(x.tot*100)/100;cnt[k]=(cnt[k]||0)+1;});
+  list.sort((a,b)=>(b.tot-a.tot)||timeCmp(a.r.p.id,b.r.p.id)||cmpTie(a.r.p.id,b.r.p.id,mode)||
+    ((parseInt(a.r.p.nomor_undian,10)||0)-(parseInt(b.r.p.nomor_undian,10)||0)));
+  el('rankBody').innerHTML=list.length?list.map((x,i)=>{
+    const seri=cnt[Math.round(x.tot*100)/100]>1;
+    return '<tr class="'+(seri?'seriRow':'')+'"><td style="text-align:center">'+(i+1)+'</td>'+
+      '<td style="text-align:center">'+x.r.p.nomor_undian+'</td>'+
+      '<td>'+esc(x.r.p.nama_peserta)+(i<6?' <span class="badge ok">'+['Juara 1','Juara 2','Juara 3','Harapan 1','Harapan 2','Harapan 3'][i]+'</span>':'')+'</td>'+
+      '<td class="tnum"><b>'+fmtN(x.tot)+'</b></td>'+
+      '<td>'+(seri?'<span class="badge warn">SERI</span> ':'')+(mode==='final'?'<span class="badge ok">FINAL</span>':'<span class="badge proc">'+x.r.dinilai+' juri</span>')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" class="muted" style="text-align:center">Belum ada nilai.</td></tr>';
+  el('rankNote').textContent=(mode==='sementara'?'Sementara = dihitung dari semua nilai yang masuk (deteksi dini). ':'Final = hanya nilai berstatus FINAL. ')+'Urutan nilai sama: waktu selesai tercepat, lalu prioritas aspek.';
+}
+function renderSeri(){
+  const groups={};
+  ROWS.forEach(r=>{if(r.dinilai>0){const k=Math.round(r.total*100)/100;(groups[k]=groups[k]||[]).push(r);}});
+  const keys=Object.keys(groups).filter(k=>groups[k].length>1).sort((a,b)=>b-a);
+  if(!keys.length){el('seriBody').innerHTML='<span class="muted small">Tidak ada nilai sama.</span>';return;}
+  el('seriBody').innerHTML=keys.map(k=>{
+    const g=groups[k].slice().sort((a,b)=>timeCmp(a.p.id,b.p.id)||cmpTie(a.p.id,b.p.id,'sementara'));
+    return '<div class="seriCard"><div class="row"><b>SERI @ '+fmtN(Number(k))+'</b><span class="badge warn">'+g.length+' peserta</span></div>'+
+      g.map((r,i)=>'<div class="row"><span>'+(i+1)+'. #'+r.p.nomor_undian+' '+esc(r.p.nama_peserta)+' — '+(DATA.juri||[]).map(j=>{const v=r.nm[j.id];return v?fmtN(v.total):'-';}).join(' + ')+'</span>'+(i===0?'<span class="badge ok">unggul seri</span>':'')+'</div>').join('')+
+      '</div>';
+  }).join('');
+}
+
+/* ===== NILAI EXTERNAL (GOOGLE FORM) — khusus cabang operator ===== */
+function xScope(){return {cab:(DATA.cabang||{}).id||null,kat:sesi.kategori_id||null};}
+function xKriteria(cab){return KRITERIA||[];}
 function xPesertaScope(cab,kat){
-  return(DATA.peserta||[]).filter(p=>p.cabang_id===cab&&(!kat||p.kategori_id===kat)).map(p=>({
-    nomor_undian:p.nomor_undian,nama_peserta:p.nama_peserta,
-    nama_kategori:X_IS_OP?(p.nama_kategori||'Umum'):((typeof kategoriById==='function'?kategoriById(p.kategori_id):{}).nama_kategori||'Umum')}));
+  return (DATA.peserta||[]).filter(p=>(!kat||p.kategori_id===kat)).map(p=>({
+    nomor_undian:p.nomor_undian,nama_peserta:p.nama_peserta,nama_kategori:p.nama_kategori||'Umum'}));
+}
+function normTs(v){
+  if(v==null||v==='')return '';
+  if(typeof v==='number'){const d=new Date(Math.round((v-25569)*86400*1000));return isNaN(d.getTime())?'':d.toISOString();}
+  const d=new Date(v);return isNaN(d.getTime())?'':d.toISOString();
 }
 function unduhTemplateNilai(){
-  const sc=xScope();if(!sc.cab)return toast('Pilih cabang dulu.','err');
+  const sc=xScope();if(!sc.cab)return toast('Cabang belum termuat.','err');
   const krit=xKriteria(sc.cab)||[];
   if(!krit.length)return toast('Cabang ini belum punya kriteria/aspek.','err');
-  const head=['Nomor Undian',...krit.map(k=>k.nama_aspek),'Penalti','Catatan'];
+  const head=['Nomor Undian',...krit.map(k=>k.nama_aspek),'Penalti','Catatan','Timestamp'];
   const wsISI=XLSX.utils.aoa_to_sheet([head,...Array.from({length:80},()=>Array(head.length).fill(''))]);
   const ps=xPesertaScope(sc.cab,sc.kat);
   const wsPes=XLSX.utils.aoa_to_sheet([['Nomor Undian','Nama Peserta','Kategori'],
@@ -366,7 +344,7 @@ function unduhTemplateNilai(){
     ['2. Urutan baris bebas; pencocokan memakai Nomor Undian.'],
     ['3. Isi skor angka 0 s/d nilai maks aspek; penalti >= 0.'],
     ['4. Baris nomor tak dikenal / skor tidak lengkap akan dilewati saat import.'],
-    ['5. Tempel hasil Google Form (kolom nomor + skor) mulai baris 2 sheet ISI.']]);
+    ['5. Tempel hasil Google Form (kolom nomor + skor + timestamp) mulai baris 2 sheet ISI.']]);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,wsISI,'ISI');
   XLSX.utils.book_append_sheet(wb,wsPes,'PESERTA');
@@ -376,7 +354,7 @@ function unduhTemplateNilai(){
 }
 function parseNilaiExternal(file){
   if(!file)return;
-  const sc=xScope();if(!sc.cab)return toast('Pilih cabang dulu.','err');
+  const sc=xScope();if(!sc.cab)return toast('Cabang belum termuat.','err');
   const krit=xKriteria(sc.cab)||[];
   const rd=new FileReader();
   rd.onload=e=>{try{
@@ -389,6 +367,7 @@ function parseNilaiExternal(file){
     const iN=heads.findIndex(h=>/nomor\s*undian/i.test(h));
     const iPen=heads.findIndex(h=>/^penalti$/i.test(h));
     const iCat=heads.findIndex(h=>/^catatan$/i.test(h));
+    const iTs=heads.findIndex(h=>/^timestamp$/i.test(h)||/waktu/i.test(h));
     const missing=krit.filter(k=>!heads.includes(k.nama_aspek));
     if(missing.length)return toast('Template kedaluwarsa, kolom tidak ditemukan: '+missing.map(m=>m.nama_aspek).join(', ')+'. Unduh ulang template.','err');
     const iAs={};krit.forEach(k=>{iAs[k.nama_aspek]=heads.indexOf(k.nama_aspek);});
@@ -408,12 +387,13 @@ function parseNilaiExternal(file){
       });
       const pen=iPen>=0?(Number(row[iPen])||0):0;
       const cat=iCat>=0?String(row[iCat]??''):'';
-      XPREV.push({baris:hi+2+idx,nomor,ok,why:ok?'siap':'skor tidak lengkap',rinc,pen,cat});
+      const ts=iTs>=0?normTs(row[iTs]):'';
+      XPREV.push({baris:hi+2+idx,nomor,ok,why:ok?'siap':'skor tidak lengkap',rinc,pen,cat,ts});
     });
     const okN=XPREV.filter(r=>r.ok).length;
     el('xPrev').hidden=false;
     el('xOk').textContent=okN+' siap';el('xErr').textContent=(XPREV.length-okN)+' bermasalah';
-    el('btnXImpor').disabled=okN===0;
+    el('btnXImpor').disabled=(okN===0);
     el('tbXPrev').innerHTML=XPREV.map(r=>'<tr><td>'+r.baris+'</td><td>'+esc(r.nomor)+'</td><td class="small" style="color:'+(r.ok?'var(--ok-text)':'var(--danger-text)')+'">'+(r.ok?'✅ siap':'🔴 '+r.why)+'</td></tr>').join('');
     icons();
   }catch(err){toast('Gagal membaca file: '+err.message,'err');}};
@@ -427,9 +407,13 @@ async function jalankanImportNilai(){
     p_kode_akses:sesi.kode_akses,p_cabang_id:sc.cab,p_kategori_id:sc.kat,p_rows:rows,p_status:status});
   if(error)return toast(error.message,'err');
   if(data.error)return toast(data.error,'err');
-  toast('Import: '+data.inserted+' baru, '+data.updated+' diperbarui, '+data.skipped_unknown+' tak dikenal, '+data.skipped_incomplete+' tidak lengkap.','ok');
+  const tsItems=XPREV.filter(r=>r.ok&&r.ts).map(r=>({nomor:r.nomor,timestamp:r.ts}));
+  if(tsItems.length){
+    await (await sb()).rpc('spectra_set_submitted_at',{p_kode_akses:sesi.kode_akses,p_cabang_id:sc.cab,p_items:tsItems});
+  }
+  toast('Import: '+data.inserted+' baru, '+data.updated+' diperbarui, '+data.skipped_unknown+' tak dikenal, '+data.skipped_incomplete+' tidak lengkap.'+(tsItems.length?' Timestamp tersimpan.':''),'ok');
   el('xPrev').hidden=true;XPREV=[];
-  await muat();
+  await muat(true);
 }
 </script>
 </body>
