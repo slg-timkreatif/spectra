@@ -551,6 +551,9 @@ function unduhTemplate(){const ws=XLSX.utils.aoa_to_sheet([
   ['1','Contoh Nama','SD Contoh 1',(DATA.cabang[0]||{}).nama_cabang||'Cabang','Putra','Sragen','2014-05-12','12345678','5A','INDIVIDU','','','','',''],
   ['2','Tim Contoh','SD Contoh 2',(DATA.cabang[0]||{}).nama_cabang||'Cabang','Putra','','','','','KELOMPOK','Nama1; Nama2; Nama3','N1; N2; N3','5A; 5A; 5B','Sragen; Solo; Wonogiri','2014-05-12; 2014-07-01; 2014-09-15']]);
   XLSX.writeFile({SheetNames:['Peserta'],Sheets:{Peserta:ws}},'template_peserta_spectra.xlsx');}
+function normTs(v){ if(v==null||v==='')return '';
+  if(typeof v==='number'){ const d=new Date(Math.round((v-25569)*86400*1000)); return isNaN(d.getTime())?'':d.toISOString(); }
+  const d=new Date(v); return isNaN(d.getTime())?'':d.toISOString(); }
 function fmtTglExcel(v){if(v==null||v==='')return '';if(typeof v==='number'){const d=new Date(Math.round((v-25569)*86400*1000));return d.toISOString().slice(0,10);}
   const s=String(v).trim();const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return s;}
 function parseFile(file){if(!file)return;const rd=new FileReader();
@@ -617,7 +620,7 @@ function unduhTemplateNilai(){
   const sc=xScope();if(!sc.cab)return toast('Pilih cabang dulu.','err');
   const krit=xKriteria(sc.cab)||[];
   if(!krit.length)return toast('Cabang ini belum punya kriteria/aspek.','err');
-  const head=['Nomor Undian',...krit.map(k=>k.nama_aspek),'Penalti','Catatan'];
+  const head=['Nomor Undian',...krit.map(k=>k.nama_aspek),'Penalti','Catatan','Timestamp'];
   const wsISI=XLSX.utils.aoa_to_sheet([head,...Array.from({length:80},()=>Array(head.length).fill(''))]);
   const ps=xPesertaScope(sc.cab,sc.kat);
   const wsPes=XLSX.utils.aoa_to_sheet([['Nomor Undian','Nama Peserta','Kategori'],
@@ -651,6 +654,7 @@ function parseNilaiExternal(file){
     const iN=heads.findIndex(h=>/nomor\s*undian/i.test(h));
     const iPen=heads.findIndex(h=>/^penalti$/i.test(h));
     const iCat=heads.findIndex(h=>/^catatan$/i.test(h));
+    const iTs=heads.findIndex(h=>/^timestamp$/i.test(h)||/waktu/i.test(h));
     const missing=krit.filter(k=>!heads.includes(k.nama_aspek));
     if(missing.length)return toast('Template kedaluwarsa, kolom tidak ditemukan: '+missing.map(m=>m.nama_aspek).join(', ')+'. Unduh ulang template.','err');
     const iAs={};krit.forEach(k=>{iAs[k.nama_aspek]=heads.indexOf(k.nama_aspek);});
@@ -670,7 +674,8 @@ function parseNilaiExternal(file){
       });
       const pen=iPen>=0?(Number(row[iPen])||0):0;
       const cat=iCat>=0?String(row[iCat]??''):'';
-      XPREV.push({baris:hi+2+idx,nomor,ok,why:ok?'siap':'skor tidak lengkap',rinc,pen,cat});
+      const ts=iTs>=0?normTs(row[iTs]):'';
+      XPREV.push({baris:hi+2+idx,nomor,ok,why:ok?'siap':'skor tidak lengkap',rinc,pen,cat,ts});
     });
     const okN=XPREV.filter(r=>r.ok).length;
     el('xPrev').hidden=false;
@@ -689,7 +694,11 @@ async function jalankanImportNilai(){
     p_kode_akses:sesi.kode_akses,p_cabang_id:sc.cab,p_kategori_id:sc.kat,p_rows:rows,p_status:status});
   if(error)return toast(error.message,'err');
   if(data.error)return toast(data.error,'err');
-  toast('Import: '+data.inserted+' baru, '+data.updated+' diperbarui, '+data.skipped_unknown+' tak dikenal, '+data.skipped_incomplete+' tidak lengkap.','ok');
+  const tsItems=XPREV.filter(r=>r.ok&&r.ts).map(r=>({nomor:r.nomor,timestamp:r.ts}));
+  if(tsItems.length){
+    await (await sb()).rpc('spectra_set_submitted_at',{p_kode_akses:sesi.kode_akses,p_cabang_id:sc.cab,p_items:tsItems});
+  }
+  toast('Import: '+data.inserted+' baru, '+data.updated+' diperbarui, '+data.skipped_unknown+' tak dikenal, '+data.skipped_incomplete+' tidak lengkap.'+(tsItems.length?' Timestamp tersimpan.':''),'ok');
   el('xPrev').hidden=true;XPREV=[];
   await muat();
 }
@@ -845,6 +854,10 @@ async function cetakRekapResmi(){
       teksYa:'Lanjutkan Cetak'});
     if(!ok)return;
   }
+  const sRes=await client.from('spectra_peserta').select('id,submitted_at').eq('event_id',sesi.event_id);
+  const SUB={};(sRes.data||[]).forEach(p=>{SUB[p.id]=p.submitted_at?Date.parse(p.submitted_at):null;});
+  const timeCmp=(aId,bId)=>{const ta=SUB[aId],tb=SUB[bId];
+    if(ta==null&&tb==null)return 0; if(ta==null)return 1; if(tb==null)return -1; return ta-tb;};
   const cmp=(aId,bId,cabId)=>{
     const A=(fin[aId]||{}).aspek||{},B=(fin[bId]||{}).aspek||{};
     for(const k of (KRIT[cabId]||[])){const sa=A[k.nama_aspek]||0,sb=B[k.nama_aspek]||0;if(sa!==sb)return sb-sa;}
@@ -860,7 +873,7 @@ async function cetakRekapResmi(){
       const rows=(DATA.peserta||[])
         .filter(p=>p.cabang_id===cab.id&&(p.kategori_id||null)===kat.id&&fin[p.id])
         .map(p=>({p,f:fin[p.id]}))
-        .sort((a,b)=>(b.f.total-a.f.total)||cmp(a.p.id,b.p.id,cab.id)||
+        .sort((a,b)=>(b.f.total-a.f.total)||timeCmp(a.p.id,b.p.id)||cmp(a.p.id,b.p.id,cab.id)||
           ((parseInt(a.p.nomor_undian,10)||0)-(parseInt(b.p.nomor_undian,10)||0)));
       if(!rows.length)return;
       sections+='<div class="sec"><h3>Cabang '+esc(cab.nama_cabang)+' — Kategori '+esc(kat.nama)+'</h3>'+
@@ -892,7 +905,7 @@ async function cetakRekapResmi(){
   }
   h+='<p style="font-size:9.5pt;margin-top:14px">Catatan:<br>'+
      '1. Total merupakan nilai akhir gabungan dewan juri yang telah disahkan panitia.<br>'+
-     '2. Nilai sama (seri) diselesaikan berdasarkan prioritas aspek penilaian yang ditetapkan panitia.<br>'+
+     '2. Nilai sama (seri) diselesaikan berdasarkan waktu selesai tercepat (timestamp), lalu prioritas aspek penilaian.<br>'+
      '3. Keputusan dewan juri bersifat mutlak dan tidak dapat diganggu gugat.</p>';
   h+='<p style="text-align:right;margin:18px 0 0">'+esc(s.tempat_cetak||'')+', '+d.getDate()+' '+B[d.getMonth()]+' '+d.getFullYear()+'</p>';
   h+='<div style="display:flex;justify-content:space-between;gap:40px">'+
