@@ -857,7 +857,7 @@ async function cetakRekapResmi(){
   const sRes=await client.from('spectra_peserta').select('id,submitted_at').eq('event_id',sesi.event_id);
   const SUB={};(sRes.data||[]).forEach(p=>{SUB[p.id]=p.submitted_at?Date.parse(p.submitted_at):null;});
   const timeCmp=(aId,bId)=>{const ta=SUB[aId],tb=SUB[bId];
-    if(ta==null&&tb==null)return 0; if(ta==null)return 1; if(tb==null)return -1; return ta-tb;};
+    if(ta==null||tb==null)return 0; return ta-tb;};
   const cmp=(aId,bId,cabId)=>{
     const A=(fin[aId]||{}).aspek||{},B=(fin[bId]||{}).aspek||{};
     for(const k of (KRIT[cabId]||[])){const sa=A[k.nama_aspek]||0,sb=B[k.nama_aspek]||0;if(sa!==sb)return sb-sa;}
