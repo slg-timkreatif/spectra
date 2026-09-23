@@ -9,6 +9,8 @@
 <script src="vendor/supabase.min.js"></script>
 <script src="vendor/lucide.min.js"></script>
 <script>if(!window.lucide) document.write('<script src="https://unpkg.com/lucide@latest"><\/script>')</script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script>if(!window.XLSX) document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
 <script src="spectra-ui.js?v=2"></script>
 <script>initTheme('light')</script>
 <style>
@@ -115,6 +117,14 @@
 <script>
 const sesi = bacaSesi();
 let DATA = null, ROWS = [], KRITERIA = [], SERI = new Set(), RANKMODE = 'sementara';
+let SUB = {};
+async function loadSub(){ const r = await (await sb()).from('spectra_peserta').select('id,submitted_at').eq('event_id', sesi.event_id); SUB = {}; (r.data||[]).forEach(function(p){ SUB[p.id] = p.submitted_at ? Date.parse(p.submitted_at) : null; }); }
+function timeCmp(aId,bId){ const ta=SUB[aId], tb=SUB[bId]; if(ta==null||tb==null) return 0; return ta-tb; }
+var _renderOrig = window.render;
+window.render = async function(){ try{ await loadSub(); }catch(e){} _renderOrig(); };
+let SUB = {};
+async function loadSub(){ const r = await (await sb()).from('spectra_peserta').select('id,submitted_at').eq('event_id', sesi.event_id); SUB = {}; (r.data||[]).forEach(function(p){ SUB[p.id] = p.submitted_at ? Date.parse(p.submitted_at) : null; }); }
+function timeCmp(aId,bId){ const ta=SUB[aId], tb=SUB[bId]; if(ta==null||tb==null) return 0; return ta-tb; }
 let ANGK = {};
 const angOf = id => (ANGK[id] && ANGK[id].anggota) || [];
 const jenisOf = id => (ANGK[id] && ANGK[id].jenis_peserta) || 'INDIVIDU';
@@ -251,7 +261,7 @@ function renderRank(){
     .map(r => ({ r, tot: mode === 'final' ? r.finalTotal : r.total }));
   const cnt = {};
   list.forEach(x => { const k = kunci(x.tot); cnt[k] = (cnt[k] || 0) + 1; });
-  list.sort((a, b) => (b.tot - a.tot) || cmpTie(a.r.p.id, b.r.p.id, mode) ||
+  list.sort((a, b) => (b.tot - a.tot) || timeCmp(a.r.p.id, b.r.p.id) || cmpTie(a.r.p.id, b.r.p.id, mode) ||
     (parseInt(a.r.p.nomor_undian,10)||0) - (parseInt(b.r.p.nomor_undian,10)||0));
   document.getElementById('rankBody').innerHTML = list.length ? list.map((x, i) => {
     const seri = cnt[kunci(x.tot)] > 1;
