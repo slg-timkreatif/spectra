@@ -115,6 +115,13 @@
 <script>
 const sesi = bacaSesi();
 let DATA = null, ROWS = [], KRITERIA = [], SERI = new Set(), RANKMODE = 'sementara';
+let ANGK = {};
+const angOf = id => (ANGK[id] && ANGK[id].anggota) || [];
+const jenisOf = id => (ANGK[id] && ANGK[id].jenis_peserta) || 'INDIVIDU';
+async function loadAnggota(cab, kat){ const { data, error } = await (await sb()).rpc('spectra_list_anggota', { p_kode_akses: sesi.kode_akses, p_cabang_id: cab||null, p_kategori_id: kat||null }); if(error) return; (data||[]).forEach(a=>{ ANGK[a.peserta_id]=a; }); }
+function badgeHtml(id){ const j=jenisOf(id); if(j==='INDIVIDU') return ''; return ' <span class="badge warn">'+j+'·'+angOf(id).length+'</span> <button class="btn btn-ghost btn-icon" style="padding:.1rem .3rem" title="lihat anggota" onclick="toggleAng(\''+id+'\',this)"><i data-lucide="users"></i></button>'; }
+function angBoxHtml(id){ const j=jenisOf(id); if(j==='INDIVIDU'||!angOf(id).length) return ''; return '<div id="ang-'+id+'" style="display:none;margin-top:.3rem" class="muted small">'+angOf(id).map((a,i)=>(i+1)+'. '+esc(a.nama)+(a.kelas?' ('+esc(a.kelas)+')':'')).join('<br>')+'</div>'; }
+function toggleAng(id,btn){ const box=document.getElementById('ang-'+id); if(!box) return; const open=box.style.display!=='none'; box.style.display=open?'none':'block'; btn.title=open?'lihat anggota':'tutup'; }
 const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const fatal = m => { document.getElementById('fatal').hidden = false; document.getElementById('fatalTxt').textContent = m; };
 const kunci = x => Math.round(Number(x || 0) * 100) / 100;
@@ -142,6 +149,7 @@ async function muat(senyap){
     const kRes = await client.from('spectra_kriteria').select('*')
       .eq('cabang_id', (DATA.cabang || {}).id).order('urutan');
     KRITERIA = (kRes.data || []).slice().sort((a,b) => (b.prioritas_seri||0) - (a.prioritas_seri||0));
+    await loadAnggota((DATA.cabang||{}).id, sesi.kategori_id);
     render();
   } catch (e) { if (!senyap) fatal('Gagal memuat data: ' + e.message); }
 }
@@ -185,8 +193,8 @@ function render(){
     juri.map(j => '<th>' + esc(j.nama_petugas) + '</th>').join('') +
     '<th>Total</th><th>Status</th><th style="text-align:center">Aksi</th></tr>';
   document.getElementById('mBody').innerHTML = ROWS.map(r =>
-    '<tr class="' + (SERI.has(r.p.id) ? 'seriRow' : '') + '"><td><b>' + r.p.nomor_undian + '. ' + esc(r.p.nama_peserta) + '</b><br>' +
-    '<small class="muted">' + esc(r.p.asal_instansi || '') + (r.p.nama_kategori ? ' • ' + esc(r.p.nama_kategori) : '') + '</small></td>' +
+    '<tr class="' + (SERI.has(r.p.id) ? 'seriRow' : '') + '"><td><b>' + r.p.nomor_undian + '. ' + esc(r.p.nama_peserta) + '</b>' + badgeHtml(r.p.id) + '<br>' +
+    '<small class="muted">' + esc(r.p.asal_instansi || '') + (r.p.nama_kategori ? ' • ' + esc(r.p.nama_kategori) : '') + '</small>' + angBoxHtml(r.p.id) + '</td>' +
     juri.map(j => { const v = r.nm[j.id];
       return '<td>' + (v ? '<span class="mcell ' + (v.status === 'FINAL' ? 'final' : 'draft') + '">' + fmtN(v.total) + '</span>' : '<span class="mcell none">–</span>') + '</td>'; }).join('') +
     '<td class="tnum"><b>' + fmtN(r.total) + '</b>' + (SERI.has(r.p.id) ? ' <span class="badge warn">SERI</span>' : '') + '</td>' +
@@ -194,8 +202,8 @@ function render(){
     '<td><div class="aksiCell">' + aksiBtn(r) + '</div></td></tr>').join('');
 
   document.getElementById('cards').innerHTML = ROWS.map(r =>
-    '<div class="card"><div class="card-head"><div><h3 style="font-size:1rem">' + r.p.nomor_undian + '. ' + esc(r.p.nama_peserta) + '</h3>' +
-    '<span class="muted small">' + esc(r.p.asal_instansi || '-') + (r.p.nama_kategori ? ' • ' + esc(r.p.nama_kategori) : '') + '</span></div>' +
+    '<div class="card"><div class="card-head"><div><h3 style="font-size:1rem">' + r.p.nomor_undian + '. ' + esc(r.p.nama_peserta) + '</h3>' + badgeHtml(r.p.id) +
+    '<span class="muted small">' + esc(r.p.asal_instansi || '-') + (r.p.nama_kategori ? ' • ' + esc(r.p.nama_kategori) : '') + '</span>' + angBoxHtml(r.p.id) + '</div>' +
     '<span class="badge ' + (r.lengkap ? 'ok' : 'warn') + '">Juri ' + r.dinilai + '/' + juri.length + '</span></div>' +
     '<div class="jChips">' + juri.map(j => { const v = r.nm[j.id];
       return '<span class="jChip ' + (v ? (v.status === 'FINAL' ? 'final' : 'draft') : '') + '">' + esc(j.nama_petugas) + ': ' + (v ? fmtN(v.total) : 'belum') + '</span>'; }).join('') + '</div>' +
