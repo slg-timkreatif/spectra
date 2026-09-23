@@ -59,7 +59,7 @@
   .chips{display:flex;flex-wrap:wrap;gap:.35rem;margin:.4rem 0 .6rem}
   .chipT{cursor:pointer;border:1px solid var(--border);border-radius:999px;padding:.15rem .6rem;font-size:.7rem;font-family:ui-monospace,monospace;background:var(--surface-2);color:var(--text-2)}
   .chipT:hover{background:var(--primary-soft);color:var(--primary-text)}
-  .angRow{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:.4rem;margin-bottom:.4rem;align-items:center}
+  .angRow{display:grid;grid-template-columns:2fr 1fr .8fr 1fr 1.3fr auto;gap:.4rem;margin-bottom:.4rem;align-items:center}
   tr.grpHead td{background:var(--surface-2);font-weight:700}
 </style>
 </head>
@@ -470,11 +470,15 @@ function angRowHtml(a){return '<div class="angRow">'+
   '<input class="input ang-nama" placeholder="Nama anggota" value="'+esc(a&&a.nama||'')+'">'+
   '<input class="input ang-nisn" placeholder="NISN" value="'+esc(a&&a.nisn||'')+'">'+
   '<input class="input ang-kelas" placeholder="Kelas" value="'+esc(a&&a.kelas||'')+'">'+
+  '<input class="input ang-tempat" placeholder="Tempat lahir" value="'+esc(a&&a.tempat_lahir||'')+'">'+
+  '<input class="input ang-tgl" type="date" value="'+((a&&a.tanggal_lahir)||'')+'">'+
   '<button class="btn btn-danger btn-icon" onclick="this.parentElement.remove()"><i data-lucide="x"></i></button></div>';}
 function addAngRow(){el('angList').insertAdjacentHTML('beforeend',angRowHtml(null));icons();}
 function collectAnggota(){return [...el('angList').children].map(d=>({
   nama:d.querySelector('.ang-nama').value.trim(),nisn:d.querySelector('.ang-nisn').value.trim(),
-  kelas:d.querySelector('.ang-kelas').value.trim()})).filter(a=>a.nama);}
+  kelas:d.querySelector('.ang-kelas').value.trim(),
+  tempat_lahir:d.querySelector('.ang-tempat').value.trim(),
+  tanggal_lahir:d.querySelector('.ang-tgl').value})).filter(a=>a.nama);}
 async function openEditPeserta(id){const p=pesertaById(id);if(!p)return;
   await loadAnggota(null,null,id);
   const ang=angOf(id),jns=jenisOf(id);
@@ -513,9 +517,9 @@ async function hapusPeserta(id){const p=pesertaById(id);if(!p)return;
   if(error)return toast(error.message,'err');if(data.error)return toast(data.error,'err');
   toast('Peserta dihapus.','ok');await muat();}
 function unduhTemplate(){const ws=XLSX.utils.aoa_to_sheet([
-  ['Nomor Undian','Nama Peserta','Asal Instansi','Cabang','Kategori','Tempat Lahir','Tanggal Lahir','NISN','Kelas','Jenis','Daftar Anggota','Daftar NISN','Daftar Kelas'],
-  ['1','Contoh Nama','SD Contoh 1',(DATA.cabang[0]||{}).nama_cabang||'Cabang','Putra','Sragen','2014-05-12','12345678','5A','INDIVIDU','','',''],
-  ['2','Tim Contoh','SD Contoh 2',(DATA.cabang[0]||{}).nama_cabang||'Cabang','Putra','','','','','KELOMPOK','Nama1; Nama2; Nama3','N1; N2; N3','5A; 5A; 5B']]);
+  ['Nomor Undian','Nama Peserta','Asal Instansi','Cabang','Kategori','Tempat Lahir','Tanggal Lahir','NISN','Kelas','Jenis','Daftar Anggota','Daftar NISN','Daftar Kelas','Daftar Tempat Lahir','Daftar Tanggal Lahir'],
+  ['1','Contoh Nama','SD Contoh 1',(DATA.cabang[0]||{}).nama_cabang||'Cabang','Putra','Sragen','2014-05-12','12345678','5A','INDIVIDU','','','','',''],
+  ['2','Tim Contoh','SD Contoh 2',(DATA.cabang[0]||{}).nama_cabang||'Cabang','Putra','','','','','KELOMPOK','Nama1; Nama2; Nama3','N1; N2; N3','5A; 5A; 5B','Sragen; Solo; Wonogiri','2014-05-12; 2014-07-01; 2014-09-15']]);
   XLSX.writeFile({SheetNames:['Peserta'],Sheets:{Peserta:ws}},'template_peserta_spectra.xlsx');}
 function fmtTglExcel(v){if(v==null||v==='')return '';if(typeof v==='number'){const d=new Date(Math.round((v-25569)*86400*1000));return d.toISOString().slice(0,10);}
   const s=String(v).trim();const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return s;}
@@ -528,6 +532,7 @@ function parseFile(file){if(!file)return;const rd=new FileReader();
     const iN=col('nomor'),iNm=col('nama');let iA=col('asal');if(iA<0)iA=col('sekolah');if(iA<0)iA=col('instansi');
     const iC=col('cabang'),iK=col('kategori'),iT=col('tempat'),iTL=col('tanggal'),iNISN=col('nisn'),iKLS=col('kelas');
     const iJ=col('jenis'),iAng=col('daftar anggota'),iAngN=col('daftar nisn'),iAngK=col('daftar kelas');
+    const iAngT=col('daftar tempat lahir'),iAngTgl=col('daftar tanggal lahir');
     const split=v=>String(v??'').split(';').map(s=>s.trim()).filter(Boolean);
     PREV=[];aoa.slice(hi+1).forEach((r,idx)=>{if(r.every(c=>String(c).trim()===''))return;
       const nomor=String(r[iN]??'').trim(),nama=String(r[iNm]??'').trim();
@@ -535,7 +540,8 @@ function parseFile(file){if(!file)return;const rd=new FileReader();
       const cab=(DATA.cabang||[]).find(c=>c.kode_cabang.toLowerCase()===cabRef.toLowerCase()||c.nama_cabang.toLowerCase()===cabRef.toLowerCase());
       let ok=true,pesan='✅ siap';if(!nomor||!nama){ok=false;pesan='🔴 nomor/nama kosong';}else if(!cab){ok=false;pesan='🔴 cabang tidak dikenal';}
       const namaA=iAng>=0?split(r[iAng]):[];const nisnA=iAngN>=0?split(r[iAngN]):[];const klsA=iAngK>=0?split(r[iAngK]):[];
-      const anggota=namaA.map((nm,i)=>({nama:nm,nisn:nisnA[i]||'',kelas:klsA[i]||''}));
+      const tmpA=iAngT>=0?split(r[iAngT]):[];const tglA=iAngTgl>=0?split(r[iAngTgl]):[];
+      const anggota=namaA.map((nm,i)=>({nama:nm,nisn:nisnA[i]||'',kelas:klsA[i]||'',tempat_lahir:tmpA[i]||'',tanggal_lahir:tglA[i]?fmtTglExcel(tglA[i]):''}));
       const jenis=iJ>=0?String(r[iJ]??'').trim().toUpperCase():'INDIVIDU';
       PREV.push({baris:hi+2+idx,nomor,nama,asal:iA>=0?String(r[iA]??'').trim():'',cabang:cabRef,
         kategori:iK>=0?String(r[iK]??'').trim():'',tempat:iT>=0?String(r[iT]??'').trim():'',
@@ -702,16 +708,31 @@ function cetakDaftarPeserta(){
      '<div class="t2">'+(el('fDCabang').value?('Cabang: '+esc(cabangById(el('fDCabang').value).nama_cabang)):'Semua Cabang')+
      (el('fDKategori').value?(' — Kategori: '+esc(kategoriById(el('fDKategori').value).nama_kategori)):'')+'</div></div>';
   h+='<table class="data"><thead><tr><th>No</th><th>Undian</th><th>Sekolah</th><th>Cabang</th><th>Kategori</th><th>Nama</th><th>TTL</th><th>NISN</th><th>Kelas</th></tr></thead><tbody>';
-  rows.forEach((r,i)=>{
-    h+='<tr><td style="text-align:center">'+(i+1)+'</td>'+
-       '<td style="text-align:center">'+esc(r.p.nomor_undian)+'</td>'+
-       '<td>'+esc(r.p.asal_instansi||'-')+'</td>'+
-       '<td>'+esc(r.cab.nama_cabang||'-')+'</td>'+
-       '<td>'+esc(r.kat.nama_kategori||'Umum')+'</td>'+
-       '<td>'+esc(r.p.nama_peserta)+'</td>'+
-       '<td>'+esc((r.p.tempat_lahir||'')+(r.p.tanggal_lahir?', '+r.p.tanggal_lahir:''))+'</td>'+
-       '<td>'+esc(r.p.nisn||'-')+'</td>'+
-       '<td style="text-align:center">'+esc(r.p.kelas||'-')+'</td></tr>';
+  let no=0;
+  rows.forEach(r=>{
+    const j=jenisOf(r.p.id),ang=angOf(r.p.id);
+    if(j!=='INDIVIDU'&&ang.length){
+      no++;
+      h+='<tr class="grpHead"><td style="text-align:center">'+no+'</td><td style="text-align:center">'+esc(r.p.nomor_undian)+'</td>'+
+         '<td>'+esc(r.p.asal_instansi||'-')+'</td><td>'+esc(r.cab.nama_cabang||'-')+'</td><td>'+esc(r.kat.nama_kategori||'Umum')+'</td>'+
+         '<td colspan="4">'+esc(r.p.nama_peserta)+' ('+j+' — '+ang.length+' anggota)</td></tr>';
+      ang.forEach(a=>{
+        h+='<tr><td></td><td></td><td></td><td></td><td></td><td>'+esc(a.nama)+'</td>'+
+           '<td>'+esc((a.tempat_lahir||'')+(a.tanggal_lahir?', '+a.tanggal_lahir:''))+'</td>'+
+           '<td>'+esc(a.nisn||'')+'</td><td style="text-align:center">'+esc(a.kelas||'')+'</td></tr>';
+      });
+    }else{
+      no++;
+      h+='<tr><td style="text-align:center">'+no+'</td>'+
+         '<td style="text-align:center">'+esc(r.p.nomor_undian)+'</td>'+
+         '<td>'+esc(r.p.asal_instansi||'-')+'</td>'+
+         '<td>'+esc(r.cab.nama_cabang||'-')+'</td>'+
+         '<td>'+esc(r.kat.nama_kategori||'Umum')+'</td>'+
+         '<td>'+esc(r.p.nama_peserta)+'</td>'+
+         '<td>'+esc((r.p.tempat_lahir||'')+(r.p.tanggal_lahir?', '+r.p.tanggal_lahir:''))+'</td>'+
+         '<td>'+esc(r.p.nisn||'-')+'</td>'+
+         '<td style="text-align:center">'+esc(r.p.kelas||'-')+'</td></tr>';
+    }
   });
   h+='</tbody></table>';
   const w=window.open('','_blank');
@@ -836,7 +857,7 @@ async function cetakRekapResmi(){
        '<table class="data"><thead><tr><th style="width:70px">Undian</th><th>Nama Unit</th><th>Cabang / Kategori</th><th>Anggota</th></tr></thead><tbody>'+
        nonInd.map(p=>'<tr><td style="text-align:center">'+esc(p.nomor_undian)+'</td><td>'+esc(p.nama_peserta)+
          '</td><td>'+esc(cabangById(p.cabang_id).nama_cabang)+' / '+esc(kategoriById(p.kategori_id).nama_kategori||'Umum')+
-         '</td><td>'+angOf(p.id).map(a=>esc(a.nama)+(a.kelas?' ('+esc(a.kelas)+')':'')).join(', ')+'</td></tr>').join('')+
+         '</td><td>'+angOf(p.id).map(a=>esc(a.nama)+(a.tempat_lahir||a.tanggal_lahir?' ('+esc(a.tempat_lahir||'')+(a.tanggal_lahir?', '+esc(a.tanggal_lahir):'')+')':'')+(a.kelas?' ['+esc(a.kelas)+']':'')).join(', ')+'</td></tr>').join('')+
        '</tbody></table></div>';
   }
   h+='<p style="font-size:9.5pt;margin-top:14px">Catatan:<br>'+
