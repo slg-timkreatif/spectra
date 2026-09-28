@@ -464,42 +464,40 @@ async function simpanSettings(){
 /* ===== DASBOR ===== */
 function rekap(){const map={};(DATA.nilai||[]).forEach(n=>{const m=map[n.peserta_id]=map[n.peserta_id]||{total:0,juri:0,final:0};
   m.total+=Number(n.total||0);m.juri++;if(n.status==='FINAL')m.final++;});return map;}
+/* ===== OVERRIDE: Progres Finalisasi per Cabang + mekar per Kategori ===== */
 function renderDasbor(){
-  const map=rekap();const q=(el('qDasbor').value||'').toLowerCase();
-  const fc=el('fCabang').value,fk=el('fKategori').value;
+  const map=rekap();
+  const q=(el('qDasbor').value||'').toLowerCase();
+  const fc=el('fCabang').value, fk=el('fKategori').value;
   let rows=(DATA.peserta||[]).map(p=>({p,m:map[p.id]}))
-    .filter(r=>(!fc||r.p.cabang_id===fc)&&(!fk||r.p.kategori_id===fk)&&(!q||(r.p.nama_peserta+' '+(r.p.asal_instansi||'')+' '+r.p.nomor_undian).toLowerCase().includes(q)));
+    .filter(r=>(!fc||r.p.cabang_id===fc)&&(!fk||r.p.kategori_id===fk)&&(!q||(r.p.nama_peserta+' '+(r.p.asal_instansi||'')+' '+r.p.nomor_undian).toLowerCase().indexOf(q)>=0)));
   if(el('fSort').value==='total')rows.sort((a,b)=>(b.m?b.m.total:-1)-(a.m?a.m.total:-1));
   else rows.sort((a,b)=>String(a.p.nomor_undian).localeCompare(String(b.p.nomor_undian),undefined,{numeric:true}));
   let nPr=0,nF=0;
   el('tbDasbor').innerHTML=rows.map((r,i)=>{let st,cls;
-    if(!r.m){st='BELUM';cls='none';}else if(r.m.final===r.m.juri){st='FINAL';cls='ok';nF++;}else{st='PROSES';cls='proc';nPr++;}
+    if(!r.m){st='BELUM';cls='none';}else if(r.m.juri>0&&r.m.final===r.m.juri){st='FINAL';cls='ok';nF++;}else{st='PROSES';cls='proc';nPr++;}
     return '<tr><td>'+(i+1)+'</td><td>'+r.p.nomor_undian+'</td><td><b>'+esc(r.p.nama_peserta)+'</b></td><td>'+(r.p.asal_instansi||'-')+
       '</td><td class="small muted">'+cabangById(r.p.cabang_id).nama_cabang+'</td><td class="small muted">'+(kategoriById(r.p.kategori_id).nama_kategori||'Umum')+
       '</td><td class="tnum">'+(r.m?r.m.juri:0)+'</td><td class="tnum"><b>'+fmtNilai(r.m?r.m.total:0)+'</b></td><td><span class="badge '+cls+'">'+st+'</span></td></tr>';}).join('');
   el('stP').textContent=(DATA.peserta||[]).length;el('stPr').textContent=nPr;el('stF').textContent=nF;el('stC').textContent=(DATA.cabang||[]).length;
+
   const progRows=[];
   (DATA.cabang||[]).forEach(c=>{
     const pc=(DATA.peserta||[]).filter(p=>p.cabang_id===c.id);
     const kidSet=[...new Set(pc.map(p=>p.kategori_id))].filter(k=>k);
-    if(kidSet.length===0){
-      const fin=pc.filter(p=>{const m=map[p.id];return m&&m.juri>0&&m.final===m.juri;}).length;
-      const pct=pc.length?Math.round(fin/pc.length*100):0;
-      progRows.push('<div class="progrow"><div class="lbl"><span>'+esc(c.nama_cabang)+'</span><small class="tnum">'+fin+'/'+pc.length+' final</small></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>');
-    }else{
+    const progRow=(label,ps)=>{
+      const fin=ps.filter(p=>{const m=map[p.id];return m&&m.juri>0&&m.final===m.juri;}).length;
+      const pct=ps.length?Math.round(fin/ps.length*100):0;
+      progRows.push('<div class="progrow"><div class="lbl"><span>'+esc(label)+'</span><small class="tnum">'+fin+'/'+ps.length+' final</small></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>');
+    };
+    if(kidSet.length===0){ progRow(c.nama_cabang,pc); }
+    else{
       kidSet.forEach(k=>{
-        const ps=pc.filter(p=>p.kategori_id===k);
-        const fin=ps.filter(p=>{const m=map[p.id];return m&&m.juri>0&&m.final===m.juri;}).length;
-        const pct=ps.length?Math.round(fin/ps.length*100):0;
         const kn=((DATA.kategori||[]).find(x=>x.id===k)||{}).nama_kategori||'';
-        progRows.push('<div class="progrow"><div class="lbl"><span>'+esc(c.nama_cabang+' — '+kn)+'</span><small class="tnum">'+fin+'/'+ps.length+' final</small></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>');
+        progRow(c.nama_cabang+' — '+kn, pc.filter(p=>p.kategori_id===k));
       });
       const noKat=pc.filter(p=>!p.kategori_id);
-      if(noKat.length){
-        const fin=noKat.filter(p=>{const m=map[p.id];return m&&m.juri>0&&m.final===m.juri;}).length;
-        const pct=noKat.length?Math.round(fin/noKat.length*100):0;
-        progRows.push('<div class="progrow"><div class="lbl"><span>'+esc(c.nama_cabang+' — Umum')+'</span><small class="tnum">'+fin+'/'+noKat.length+' final</small></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>');
-      }
+      if(noKat.length) progRow(c.nama_cabang+' — Umum', noKat);
     }
   });
   el('progCabang').innerHTML=progRows.join('')||'<p class="muted small">Belum ada cabang.</p>';
