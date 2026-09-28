@@ -470,7 +470,7 @@ function renderDasbor(){
   const q=(el('qDasbor').value||'').toLowerCase();
   const fc=el('fCabang').value, fk=el('fKategori').value;
   let rows=(DATA.peserta||[]).map(p=>({p,m:map[p.id]}))
-    .filter(r=>(!fc||r.p.cabang_id===fc)&&(!fk||r.p.kategori_id===fk)&&(!q||(r.p.nama_peserta+' '+(r.p.asal_instansi||'')+' '+r.p.nomor_undian).toLowerCase().indexOf(q)>=0)));
+    .filter(r=>(!fc||r.p.cabang_id===fc)&&(!fk||r.p.kategori_id===fk)&&(!q||(r.p.nama_peserta+' '+(r.p.asal_instansi||'')+' '+r.p.nomor_undian).toLowerCase().indexOf(q)>=0));
   if(el('fSort').value==='total')rows.sort((a,b)=>(b.m?b.m.total:-1)-(a.m?a.m.total:-1));
   else rows.sort((a,b)=>String(a.p.nomor_undian).localeCompare(String(b.p.nomor_undian),undefined,{numeric:true}));
   let nPr=0,nF=0;
