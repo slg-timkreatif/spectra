@@ -478,10 +478,31 @@ function renderDasbor(){
       '</td><td class="small muted">'+cabangById(r.p.cabang_id).nama_cabang+'</td><td class="small muted">'+(kategoriById(r.p.kategori_id).nama_kategori||'Umum')+
       '</td><td class="tnum">'+(r.m?r.m.juri:0)+'</td><td class="tnum"><b>'+fmtNilai(r.m?r.m.total:0)+'</b></td><td><span class="badge '+cls+'">'+st+'</span></td></tr>';}).join('');
   el('stP').textContent=(DATA.peserta||[]).length;el('stPr').textContent=nPr;el('stF').textContent=nF;el('stC').textContent=(DATA.cabang||[]).length;
-  el('progCabang').innerHTML=(DATA.cabang||[]).map(c=>{const ps=(DATA.peserta||[]).filter(p=>p.cabang_id===c.id);
-    const fin=ps.filter(p=>{const m=map[p.id];return m&&m.final===m.juri;}).length;
-    const pct=ps.length?Math.round(fin/ps.length*100):0;
-    return '<div class="progrow"><div class="lbl"><span>'+esc(c.nama_cabang)+'</span><small class="tnum">'+fin+'/'+ps.length+' final</small></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>';}).join('')||'<p class="muted small">Belum ada cabang.</p>';
+  const progRows=[];
+  (DATA.cabang||[]).forEach(c=>{
+    const pc=(DATA.peserta||[]).filter(p=>p.cabang_id===c.id);
+    const kidSet=[...new Set(pc.map(p=>p.kategori_id))].filter(k=>k);
+    if(kidSet.length===0){
+      const fin=pc.filter(p=>{const m=map[p.id];return m&&m.juri>0&&m.final===m.juri;}).length;
+      const pct=pc.length?Math.round(fin/pc.length*100):0;
+      progRows.push('<div class="progrow"><div class="lbl"><span>'+esc(c.nama_cabang)+'</span><small class="tnum">'+fin+'/'+pc.length+' final</small></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>');
+    }else{
+      kidSet.forEach(k=>{
+        const ps=pc.filter(p=>p.kategori_id===k);
+        const fin=ps.filter(p=>{const m=map[p.id];return m&&m.juri>0&&m.final===m.juri;}).length;
+        const pct=ps.length?Math.round(fin/ps.length*100):0;
+        const kn=((DATA.kategori||[]).find(x=>x.id===k)||{}).nama_kategori||'';
+        progRows.push('<div class="progrow"><div class="lbl"><span>'+esc(c.nama_cabang+' — '+kn)+'</span><small class="tnum">'+fin+'/'+ps.length+' final</small></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>');
+      });
+      const noKat=pc.filter(p=>!p.kategori_id);
+      if(noKat.length){
+        const fin=noKat.filter(p=>{const m=map[p.id];return m&&m.juri>0&&m.final===m.juri;}).length;
+        const pct=noKat.length?Math.round(fin/noKat.length*100):0;
+        progRows.push('<div class="progrow"><div class="lbl"><span>'+esc(c.nama_cabang+' — Umum')+'</span><small class="tnum">'+fin+'/'+noKat.length+' final</small></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>');
+      }
+    }
+  });
+  el('progCabang').innerHTML=progRows.join('')||'<p class="muted small">Belum ada cabang.</p>';
 }
 
 /* ===== PESERTA ===== */
